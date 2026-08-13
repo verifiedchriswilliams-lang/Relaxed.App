@@ -42,8 +42,11 @@ async function writeScript(
   }
 
   const client = new Anthropic({ apiKey: anthropicKey });
+  // Model is env-configurable so cost/quality can be tuned without a code change.
+  // Default is Opus 5 (best script quality); claude-sonnet-5 is a cheaper option.
+  const model = process.env.ANTHROPIC_MODEL || "claude-opus-5";
   const message = await client.messages.create({
-    model: "claude-opus-5",
+    model,
     max_tokens: 4000,
     system: SCRIPT_SYSTEM_PROMPT,
     messages: [
