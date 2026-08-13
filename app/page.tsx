@@ -175,6 +175,7 @@ export default function Home() {
 
   const [error, setError] = useState<string | null>(null);
   const [script, setScript] = useState("");
+  const [note, setNote] = useState("");
   const [isPreview, setIsPreview] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -253,6 +254,7 @@ export default function Home() {
         throw new Error(data.error || `Request failed (${res.status})`);
 
       setScript(data.script || "");
+      setNote(typeof data.note === "string" ? data.note : "");
       setIsPreview(Boolean(data.mock));
       setScreen("player");
       startPlayback(data.audio as string | null);
@@ -430,12 +432,7 @@ export default function Home() {
                     Tap to hide
                   </button>
                 </div>
-                {isPreview && (
-                  <div className="preview">
-                    Preview mode — add your ElevenLabs key to hear this spoken in{" "}
-                    {voice === "female" ? "a female" : "a male"} voice.
-                  </div>
-                )}
+                {note && <div className="preview">{note}</div>}
                 <div className="body">{cleanScript(script)}</div>
               </div>
             )}

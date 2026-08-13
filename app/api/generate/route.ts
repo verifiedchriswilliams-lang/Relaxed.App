@@ -123,16 +123,54 @@ export async function POST(req: NextRequest) {
     const durationMin = Number(body.durationMin) || 5;
     const voice = body.voice === "male" ? "male" : "female";
 
-    const script = await writeScript(name, contextId, durationMin);
-    const audio = await synthesizeVoice(script, voice);
+    const hasVoiceKey = Boolean(cleanKey(process.env.ELEVENLABS_API_KEY));
+
+    // Graceful degradation: a session should never dead-end on a red error.
+    // If Claude can't write (no credit, outage, rate limit) we fall back to a
+    // calm sample script; if ElevenLabs can't speak, we return the written
+    // session to read along with. The soundscape + breathing visual always play.
+    let script: string;
+    let scriptFailed = false;
+    try {
+      script = await writeScript(name, contextId, durationMin);
+    } catch (err) {
+      console.error("[generate] script generation failed, using sample:", err);
+      script = MOCK_SCRIPT;
+      scriptFailed = true;
+    }
+
+    let audio: string | null = null;
+    let voiceFailed = false;
+    if (!scriptFailed) {
+      try {
+        audio = await synthesizeVoice(script, voice);
+      } catch (err) {
+        console.error("[generate] voice synthesis failed, read-along only:", err);
+        voiceFailed = true;
+      }
+    }
+
+    let note: string | undefined;
+    if (scriptFailed) {
+      note =
+        "We couldn't compose a fresh session just now, so here's a sample one. Please try again in a moment.";
+    } else if (voiceFailed) {
+      note =
+        "The voice is unavailable right now — here's your session to read along with.";
+    } else if (audio === null && !hasVoiceKey) {
+      note =
+        "Preview mode — add your ElevenLabs key to hear this spoken aloud.";
+    }
 
     return NextResponse.json({
       script,
-      audio, // data: URL, or null in mock mode
+      audio, // data: URL, or null when there is no spoken audio
       mock: audio === null,
+      note,
       durationMin,
     });
   } catch (err) {
+    // Only truly unexpected errors (e.g. malformed request) reach here.
     const msg = err instanceof Error ? err.message : "Unknown error";
     return NextResponse.json({ error: msg }, { status: 500 });
   }
