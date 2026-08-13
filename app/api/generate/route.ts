@@ -79,10 +79,19 @@ async function synthesizeVoice(
   const key = cleanKey(process.env.ELEVENLABS_API_KEY);
   if (!key) return null; // mock mode — client will show the script without audio
 
-  const voiceId =
+  // Built-in ElevenLabs premade voices, used unless a valid custom voice ID is
+  // configured. Guard against a mis-pasted API key (or other junk) landing in
+  // the voice-ID env var: a real voice ID is a short token, never an "sk_" key.
+  const DEFAULT_VOICE =
+    voice === "male" ? "pNInz6obpgDQGcFmaJgB" : "21m00Tcm4TlvDq8ikWAM";
+  const configured = cleanKey(
     voice === "male"
-      ? process.env.ELEVENLABS_VOICE_MALE || "pNInz6obpgDQGcFmaJgB"
-      : process.env.ELEVENLABS_VOICE_FEMALE || "21m00Tcm4TlvDq8ikWAM";
+      ? process.env.ELEVENLABS_VOICE_MALE
+      : process.env.ELEVENLABS_VOICE_FEMALE
+  );
+  const looksLikeVoiceId =
+    !!configured && !configured.startsWith("sk_") && configured.length <= 40;
+  const voiceId = looksLikeVoiceId ? (configured as string) : DEFAULT_VOICE;
 
   const res = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
