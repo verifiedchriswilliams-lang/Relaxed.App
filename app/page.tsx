@@ -4,12 +4,28 @@ import { useEffect, useRef, useState } from "react";
 import {
   CONTEXTS,
   DURATIONS,
-  BRAND_DISC,
   getContext,
   type ContextId,
   type Duration,
   type VoiceChoice,
 } from "@/lib/contexts";
+
+// ElevenMind wordmark: the family bar glyph (upright "11"), then Eleven (700)
+// and Mind (400) with no space. The discs are session artwork only and never
+// appear in the wordmark.
+function Wordmark() {
+  return (
+    <div className="wordmark" aria-label="ElevenMind">
+      <span className="em-bars" aria-hidden="true">
+        <i />
+        <i />
+      </span>
+      <span className="em-name">
+        <b>Eleven</b>Mind
+      </span>
+    </div>
+  );
+}
 
 type Soundscape = "silence" | "rain" | "ocean" | "drone";
 const SOUNDSCAPES: { id: Soundscape; label: string }[] = [
@@ -306,10 +322,7 @@ export default function Home() {
     return (
       <main className="wrap">
         <div className="top">
-          <div className="wordmark">
-            <div className="mark disc" style={{ background: BRAND_DISC }} />
-            <div className="name">ElevenMind</div>
-          </div>
+          <Wordmark />
         </div>
         <div className="generating">
           <div className="gen-orb">
@@ -448,10 +461,7 @@ export default function Home() {
   return (
     <main className="wrap">
       <div className="top">
-        <div className="wordmark">
-          <div className="mark disc" style={{ background: BRAND_DISC }} />
-          <div className="name">ElevenMind</div>
-        </div>
+        <Wordmark />
       </div>
 
       <div className="greeting">
