@@ -27,6 +27,15 @@ const MOCK_SCRIPT =
   `There is nothing to do here but breathe. <break time="3s" /> ` +
   `(This is a preview — add your ElevenLabs key to hear it spoken aloud.)`;
 
+// API keys pasted into a dashboard can pick up invisible characters (e.g. the
+// U+2028 line separator), which break HTTP header encoding with a "cannot
+// convert argument to a ByteString" error. Real keys are printable ASCII only,
+// so strip anything outside that range and trim surrounding whitespace.
+function cleanKey(raw: string | undefined): string | undefined {
+  const cleaned = raw?.replace(/[^\x21-\x7E]/g, "");
+  return cleaned || undefined;
+}
+
 async function writeScript(
   name: string,
   contextId: string,
@@ -35,7 +44,7 @@ async function writeScript(
   const context = getContext(contextId);
   if (!context) throw new Error(`Unknown session type: ${contextId}`);
 
-  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const anthropicKey = cleanKey(process.env.ANTHROPIC_API_KEY);
   if (!anthropicKey) {
     // No Anthropic key → deterministic mock script so the flow still works.
     return MOCK_SCRIPT;
@@ -67,7 +76,7 @@ async function synthesizeVoice(
   script: string,
   voice: "female" | "male"
 ): Promise<string | null> {
-  const key = process.env.ELEVENLABS_API_KEY;
+  const key = cleanKey(process.env.ELEVENLABS_API_KEY);
   if (!key) return null; // mock mode — client will show the script without audio
 
   const voiceId =
