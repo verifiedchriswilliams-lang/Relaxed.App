@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import {
   CONTEXTS,
   DURATIONS,
+  BRAND_DISC,
+  getContext,
   type ContextId,
   type Duration,
   type VoiceChoice,
@@ -11,7 +13,7 @@ import {
 
 type Soundscape = "silence" | "rain" | "ocean" | "drone";
 const SOUNDSCAPES: { id: Soundscape; label: string }[] = [
-  { id: "silence", label: "Silence" },
+  { id: "silence", label: "Off" },
   { id: "rain", label: "Rain" },
   { id: "ocean", label: "Ocean" },
   { id: "drone", label: "Drone" },
@@ -22,7 +24,7 @@ interface Prefs {
   voice: VoiceChoice;
   soundscape: Soundscape;
 }
-const PREFS_KEY = "relaxed.prefs.v1";
+const PREFS_KEY = "elevenmind.prefs.v1";
 
 // ---------------------------------------------------------------------------
 // Asset-free ambient engine: synthesizes soundscapes with the Web Audio API,
@@ -133,11 +135,24 @@ class Ambient {
 
 type Screen = "setup" | "generating" | "player";
 
+function greetingFor(): string {
+  const h = new Date().getHours();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+function mmss(total: number): string {
+  const m = Math.floor(total / 60);
+  const s = Math.floor(total % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
 export default function Home() {
   const [screen, setScreen] = useState<Screen>("setup");
   const [name, setName] = useState("");
   const [context, setContext] = useState<ContextId>("meditation");
-  const [duration, setDuration] = useState<Duration>(5);
+  const [duration, setDuration] = useState<Duration>(10);
   const [voice, setVoice] = useState<VoiceChoice>("female");
   const [soundscape, setSoundscape] = useState<Soundscape>("rain");
   const [saveDefault, setSaveDefault] = useState(false);
@@ -146,10 +161,18 @@ export default function Home() {
   const [script, setScript] = useState("");
   const [isPreview, setIsPreview] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [showTranscript, setShowTranscript] = useState(true);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ambientRef = useRef<Ambient>(new Ambient());
   const endTimerRef = useRef<number | null>(null);
+  const tickRef = useRef<number | null>(null);
+
+  const selected = getContext(context) ?? CONTEXTS[0];
+  const soundLabel =
+    SOUNDSCAPES.find((s) => s.id === soundscape)?.label ?? "Off";
+  const totalSecs = duration * 60;
 
   // Load saved preferences on mount.
   useEffect(() => {
@@ -171,8 +194,22 @@ export default function Home() {
     return () => {
       ambientRef.current.stop();
       if (endTimerRef.current) window.clearTimeout(endTimerRef.current);
+      if (tickRef.current) window.clearInterval(tickRef.current);
     };
   }, []);
+
+  function startTick() {
+    if (tickRef.current) window.clearInterval(tickRef.current);
+    tickRef.current = window.setInterval(() => {
+      setElapsed((e) => (e < totalSecs ? e + 1 : e));
+    }, 1000);
+  }
+  function stopTick() {
+    if (tickRef.current) {
+      window.clearInterval(tickRef.current);
+      tickRef.current = null;
+    }
+  }
 
   function persistPrefs() {
     if (saveDefault) {
@@ -186,20 +223,18 @@ export default function Home() {
   async function begin() {
     setError(null);
     persistPrefs();
+    setElapsed(0);
+    setShowTranscript(true);
     setScreen("generating");
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          context,
-          durationMin: duration,
-          voice,
-        }),
+        body: JSON.stringify({ name, context, durationMin: duration, voice }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+      if (!res.ok)
+        throw new Error(data.error || `Request failed (${res.status})`);
 
       setScript(data.script || "");
       setIsPreview(Boolean(data.mock));
@@ -214,6 +249,8 @@ export default function Home() {
   function startPlayback(audio: string | null) {
     ambientRef.current.start(soundscape);
     setPlaying(true);
+    setElapsed(0);
+    startTick();
 
     if (audio && audioRef.current) {
       audioRef.current.src = audio;
@@ -224,7 +261,7 @@ export default function Home() {
     if (endTimerRef.current) window.clearTimeout(endTimerRef.current);
     endTimerRef.current = window.setTimeout(
       () => ambientRef.current.fadeOut(8),
-      duration * 60 * 1000
+      totalSecs * 1000
     );
   }
 
@@ -233,10 +270,12 @@ export default function Home() {
     if (playing) {
       a?.pause();
       ambientRef.current.ctx?.suspend();
+      stopTick();
       setPlaying(false);
     } else {
       a?.play().catch(() => {});
       ambientRef.current.ctx?.resume();
+      startTick();
       setPlaying(true);
     }
   }
@@ -246,176 +285,310 @@ export default function Home() {
     if (audioRef.current) audioRef.current.currentTime = 0;
     ambientRef.current.stop();
     if (endTimerRef.current) window.clearTimeout(endTimerRef.current);
+    stopTick();
     setPlaying(false);
+    setElapsed(0);
     setScreen("setup");
   }
 
-  // ---- Render ----
+  // Breath cue derived from elapsed time (4s in / 5s out on a 9s cadence),
+  // so it keeps cueing even under prefers-reduced-motion when the disc is still.
+  const inhale = elapsed % 9 < 4;
+  const breathCue = !playing ? "Paused" : inhale ? "Breathe in" : "Breathe out";
+  const breathSub = !playing
+    ? "Tap play to continue"
+    : inhale
+      ? "Slowly, through the nose"
+      : "Slowly, through the mouth";
+
+  // ---- Generating ----
   if (screen === "generating") {
     return (
       <main className="wrap">
-        <Brand />
-        <div className="player">
-          <div className="spinner" />
-          <div className="status">
-            Composing your session
-            <br />
-            <span style={{ opacity: 0.7 }}>
-              writing a {duration}-minute {labelFor(context)} just for you…
-            </span>
+        <div className="top">
+          <div className="wordmark">
+            <div className="mark disc" style={{ background: BRAND_DISC }} />
+            <div className="name">ElevenMind</div>
+          </div>
+        </div>
+        <div className="generating">
+          <div className="gen-orb">
+            <div
+              className="disc spin"
+              style={{ background: selected.art }}
+            />
+            <div className="halo" />
+          </div>
+          <div>
+            <div className="gen-title">Composing Your Session</div>
+            <div className="gen-detail">
+              {(name.trim() || "You")} · {selected.label} · {duration} minutes ·{" "}
+              {soundLabel}
+            </div>
+          </div>
+          <div className="steps">
+            <div className="step done">
+              <div className="dot" />
+              <div>Reading the room</div>
+            </div>
+            <div className="step active pulse">
+              <div className="dot" />
+              <div>Writing your words</div>
+            </div>
+            <div className="step">
+              <div className="dot" />
+              <div>Finding the voice</div>
+            </div>
+          </div>
+          <div className="gen-foot">
+            No progress bar. Settle in — find a position you can hold for{" "}
+            {duration} minutes.
           </div>
         </div>
       </main>
     );
   }
 
+  // ---- Player (dark) ----
   if (screen === "player") {
     return (
-      <main className="wrap">
-        <Brand />
-        <div className="player">
-          <div className="orb-wrap">
-            <div className={`orb ${playing ? "" : "paused"}`} />
-          </div>
-          <div className="orb-hint">{playing ? "Breathe with the light" : "Paused"}</div>
-          <div className="controls">
-            <button className="btn primary" onClick={togglePlay}>
-              {playing ? "Pause" : "Resume"}
-            </button>
-            <button className="btn" onClick={end}>
-              End session
-            </button>
-          </div>
-          {isPreview && (
-            <div className="status" style={{ maxWidth: 460 }}>
-              Preview mode — add your ElevenLabs key to hear this spoken in{" "}
-              {voice === "female" ? "a female" : "a male"} voice. Reading along
-              below.
+      <div className="player">
+        <main className="wrap">
+          <div className="player-top">
+            <div className="ctx">
+              {selected.label} · {soundLabel}
             </div>
-          )}
-          {(isPreview || script) && (
-            <div className="scriptbox">{cleanScript(script)}</div>
-          )}
-        </div>
+            <div className="time">
+              {mmss(elapsed)} / {mmss(totalSecs)}
+            </div>
+          </div>
+
+          <div className="player-center">
+            <div className="play-orb">
+              <div
+                className={`disc ${playing ? "breathe" : ""}`}
+                style={{ background: selected.art }}
+              />
+              <div className="ring" />
+            </div>
+            <div className="breath">
+              <div className={`cue ${playing ? "pulse" : ""}`}>{breathCue}</div>
+              <div className="sub">{breathSub}</div>
+            </div>
+          </div>
+
+          <div>
+            <div className="controls">
+              <button className="cbtn" onClick={end} aria-label="End session">
+                End
+              </button>
+              <button
+                className="cbtn play"
+                onClick={togglePlay}
+                aria-label={playing ? "Pause" : "Play"}
+              >
+                {playing ? (
+                  <span className="bars">
+                    <i />
+                    <i />
+                  </span>
+                ) : (
+                  <span className="tri" />
+                )}
+              </button>
+              <button
+                className="cbtn"
+                onClick={() => setShowTranscript((v) => !v)}
+                aria-label="Toggle transcript"
+              >
+                <span className="lines">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+              </button>
+            </div>
+
+            {showTranscript && (isPreview || script) && (
+              <div className="transcript">
+                <div className="thead">
+                  <div className="label">Transcript</div>
+                  <button onClick={() => setShowTranscript(false)}>
+                    Tap to hide
+                  </button>
+                </div>
+                {isPreview && (
+                  <div className="preview">
+                    Preview mode — add your ElevenLabs key to hear this spoken in{" "}
+                    {voice === "female" ? "a female" : "a male"} voice.
+                  </div>
+                )}
+                <div className="body">{cleanScript(script)}</div>
+              </div>
+            )}
+            {!showTranscript && (
+              <button
+                className="show-transcript"
+                onClick={() => setShowTranscript(true)}
+              >
+                Show transcript
+              </button>
+            )}
+          </div>
+        </main>
         <audio ref={audioRef} onEnded={() => ambientRef.current.fadeOut(8)} />
-      </main>
+      </div>
     );
   }
+
+  // ---- Setup ----
+  const top3 = CONTEXTS.slice(0, 3);
+  const bottom2 = CONTEXTS.slice(3);
 
   return (
     <main className="wrap">
-      <Brand />
+      <div className="top">
+        <div className="wordmark">
+          <div className="mark disc" style={{ background: BRAND_DISC }} />
+          <div className="name">ElevenMind</div>
+        </div>
+      </div>
 
-      <div className="section">
-        <label>Your name</label>
-        <input
-          className="field"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="What should we call you?"
-          maxLength={60}
-        />
+      <div className="greeting">
+        <div className="display">
+          {greetingFor()}
+          {name.trim() ? `, ${name.trim()}` : ""}
+        </div>
+        <div className="lede">Let&rsquo;s compose your session.</div>
       </div>
 
       <div className="section">
-        <label>What do you need right now?</label>
-        <div className="grid">
-          {CONTEXTS.map((c) => (
-            <button
-              key={c.id}
-              className={`card ${context === c.id ? "active" : ""}`}
-              onClick={() => setContext(c.id)}
-            >
-              <div className="t">{c.label}</div>
-              <div className="s">{c.tagline}</div>
-            </button>
-          ))}
+        <div className="label">Your name</div>
+        <div className="namecard">
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="What should we call you?"
+            maxLength={60}
+            aria-label="Your name"
+          />
         </div>
       </div>
 
       <div className="section">
-        <label>Length</label>
-        <div className="chips">
-          {DURATIONS.map((d) => (
+        <div className="label">Session</div>
+        <div className="sessions">
+          <div className="session-row">
+            {top3.map((c) => (
+              <button
+                key={c.id}
+                className={`card tall ${context === c.id ? "active" : ""}`}
+                onClick={() => setContext(c.id)}
+              >
+                <div className="thumb disc" style={{ background: c.art }} />
+                <div className="cname">{c.label}</div>
+              </button>
+            ))}
+          </div>
+          <div className="session-row">
+            {bottom2.map((c) => (
+              <button
+                key={c.id}
+                className={`card wide ${context === c.id ? "active" : ""}`}
+                onClick={() => setContext(c.id)}
+              >
+                <div className="thumb disc" style={{ background: c.art }} />
+                <div className="cname">{c.label}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="section">
+        <div className="label">Duration</div>
+        <div className="pills">
+          {DURATIONS.map((d, i) => (
             <button
               key={d}
-              className={`chip ${duration === d ? "active" : ""}`}
+              className={`pill ${duration === d ? "active" : ""}`}
               onClick={() => setDuration(d)}
             >
-              {d} min
+              {i === 0 ? `${d} min` : d}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="section">
-        <label>Voice</label>
-        <div className="chips">
-          {(["female", "male"] as VoiceChoice[]).map((v) => (
+      <div className="duo" style={{ marginTop: 22 }}>
+        <div className="section" style={{ marginTop: 0 }}>
+          <div className="label">Voice</div>
+          <div className="segmented">
             <button
-              key={v}
-              className={`chip ${voice === v ? "active" : ""}`}
-              onClick={() => setVoice(v)}
+              className={`seg ${voice === "female" ? "active" : ""}`}
+              onClick={() => setVoice("female")}
             >
-              {v === "female" ? "Female" : "Male"}
+              Her
             </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="section">
-        <label>Soundscape</label>
-        <div className="chips">
-          {SOUNDSCAPES.map((s) => (
             <button
-              key={s.id}
-              className={`chip ${soundscape === s.id ? "active" : ""}`}
-              onClick={() => setSoundscape(s.id)}
+              className={`seg ${voice === "male" ? "active" : ""}`}
+              onClick={() => setVoice("male")}
             >
-              {s.label}
+              Him
             </button>
-          ))}
+          </div>
+        </div>
+        <div className="section" style={{ marginTop: 0 }}>
+          <div className="label">Soundscape</div>
+          <div className="pills">
+            {SOUNDSCAPES.map((s) => (
+              <button
+                key={s.id}
+                className={`pill sm ${soundscape === s.id ? "active" : ""}`}
+                onClick={() => setSoundscape(s.id)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      <label className="save">
-        <input
-          type="checkbox"
-          checked={saveDefault}
-          onChange={(e) => setSaveDefault(e.target.checked)}
-        />
-        Remember my name, voice, and soundscape on this device
-      </label>
+      <div className="remember">
+        <span>Remember me on this device</span>
+        <button
+          className={`switch ${saveDefault ? "on" : ""}`}
+          role="switch"
+          aria-checked={saveDefault}
+          aria-label="Remember me on this device"
+          onClick={() => setSaveDefault((v) => !v)}
+        >
+          <span className="knob" />
+        </button>
+      </div>
 
       {error && <div className="err">{error}</div>}
 
       <button className="begin" onClick={begin} disabled={!context}>
-        Begin session
+        Begin Session
       </button>
+      <div className="summary">
+        {duration} min · {selected.label} · {voice === "female" ? "Her" : "Him"}{" "}
+        · {soundLabel}
+      </div>
 
       <div className="footnote">
-        Each session is written fresh for you. Not medical or therapeutic advice.
+        Every session is written fresh for you. Not medical or therapeutic
+        advice.
       </div>
     </main>
   );
 }
 
-function Brand() {
-  return (
-    <div className="brand">
-      <h1>
-        relaxed<span className="dot">.app</span>
-      </h1>
-      <p>personalized mindfulness, written for you</p>
-    </div>
-  );
-}
-
-function labelFor(id: ContextId): string {
-  return CONTEXTS.find((c) => c.id === id)?.label.toLowerCase() ?? "session";
-}
-
 // Strip <break/> tags so the read-along text is human-readable.
 function cleanScript(s: string): string {
-  return s.replace(/<break[^>]*\/?>/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  return s
+    .replace(/<break[^>]*\/?>/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }

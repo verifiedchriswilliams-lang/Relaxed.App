@@ -2,6 +2,10 @@
 // mindfulness script — the generation pipeline underneath is identical. The
 // per-context "intent" is where the craft of the great mindfulness teachers is
 // translated into plain, secular guidance the script writer can follow.
+//
+// `art` is the ElevenMind session disc for this context: a six-stop radial
+// gradient (light–mid–light–deep–light–mid) that carries all of the app's
+// colour. The interface itself stays neutral gray; the disc does the mood.
 
 export type ContextId =
   | "meditation"
@@ -14,15 +18,36 @@ export interface SessionContext {
   id: ContextId;
   label: string;
   tagline: string;
+  // The session disc gradient (CSS radial-gradient value).
+  art: string;
   // Guidance handed to the script writer for this context.
   intent: string;
 }
 
+// Session disc palettes, one per context. Six stops, centred.
+const DISC = {
+  meditate:
+    "radial-gradient(circle at 50% 50%, #efe7dd 0%, #b9b6d8 20%, #efeaf2 36%, #6f6fa8 62%, #d9d3e4 82%, #a9a6cc 100%)",
+  sleep:
+    "radial-gradient(circle at 50% 50%, #e6e4ee 0%, #7d7cb4 20%, #ddd9ea 36%, #2f2e5c 62%, #b6b2d2 82%, #55538c 100%)",
+  focus:
+    "radial-gradient(circle at 50% 50%, #e8eee6 0%, #8fbfa6 20%, #eaf1ea 36%, #3f7a68 62%, #cfe0d6 82%, #79ab97 100%)",
+  unwind:
+    "radial-gradient(circle at 50% 50%, #f3ece2 0%, #f0b98a 20%, #f7ece0 36%, #d97d4a 62%, #f2ddc9 82%, #e79f6c 100%)",
+  reset:
+    "radial-gradient(circle at 50% 50%, #f2e6e4 0%, #dc9a94 20%, #f5e9e7 36%, #a94f48 62%, #e8cbc7 82%, #c9756d 100%)",
+} as const;
+
+// The ElevenMind brand mark disc (used in the wordmark / header). Same family
+// as the Meditate palette — the calmest, default session.
+export const BRAND_DISC = DISC.meditate;
+
 export const CONTEXTS: SessionContext[] = [
   {
     id: "meditation",
-    label: "Meditation",
+    label: "Meditate",
     tagline: "Presence and awareness",
+    art: DISC.meditate,
     intent:
       "A classic mindfulness sit, in the plainspoken spirit of MBSR. Anchor attention on the " +
       "physical feeling of the breath and the body — the rise and fall, the weight of the body in " +
@@ -35,6 +60,7 @@ export const CONTEXTS: SessionContext[] = [
     id: "sleep",
     label: "Sleep",
     tagline: "Drift off gently",
+    art: DISC.sleep,
     intent:
       "A wind-down for bed. Slow, low, and unhurried, with quiet permission to let the day be " +
       "finished. Guide a gentle head-to-toe softening — the face, the jaw, the shoulders, the hands, " +
@@ -45,8 +71,9 @@ export const CONTEXTS: SessionContext[] = [
   },
   {
     id: "flow",
-    label: "Flow",
+    label: "Focus",
     tagline: "Focus and deep work",
+    art: DISC.focus,
     intent:
       "A short primer before focused work or study. Briefly settle the body, then let the mental " +
       "clutter settle too — the swirl of to-dos sinking like sediment until the water is clear. Take a " +
@@ -56,8 +83,9 @@ export const CONTEXTS: SessionContext[] = [
   },
   {
     id: "relax",
-    label: "Relax",
+    label: "Unwind",
     tagline: "Unwind and soften",
+    art: DISC.unwind,
     intent:
       "A gentle decompression for a wound-up body and mind. In the simple spirit of 'breathing in, I " +
       "settle; breathing out, I ease,' guide slow breaths that loosen the jaw, drop the shoulders, and " +
@@ -67,8 +95,9 @@ export const CONTEXTS: SessionContext[] = [
   },
   {
     id: "stress-relief",
-    label: "Stress Relief",
+    label: "Reset",
     tagline: "Reset and steady",
+    art: DISC.reset,
     intent:
       "A steadying reset for an anxious, activated, or overwhelmed moment. Begin by grounding through " +
       "the senses — the feet on the floor, the seat beneath, a few sounds that can be heard — to come " +
@@ -168,7 +197,7 @@ export function getDurationBand(durationMin: number): DurationBand {
 
 // System prompt for the script writer (Claude). The script is voiced by
 // ElevenLabs, so it must be plain spoken words plus <break/> pause tags.
-export const SCRIPT_SYSTEM_PROMPT = `You are the writer behind relaxed.app — a personalized mindfulness app for a broad, modern, largely secular US and Western audience. You write original guided mindfulness scripts that a warm, calm text-to-speech voice will read aloud. Each script is generated fresh for one specific person.
+export const SCRIPT_SYSTEM_PROMPT = `You are the writer behind ElevenMind — a personalized mindfulness app for a broad, modern, largely secular US and Western audience. You write original guided mindfulness scripts that a warm, calm text-to-speech voice will read aloud. Each script is generated fresh for one specific person.
 
 VOICE & LINEAGE
 Draw on the best of the most trusted teachers in modern mindfulness: the plainspoken body-and-breath awareness of Jon Kabat-Zinn (MBSR), the warmth and self-compassion of Tara Brach, the steady friendliness of Sharon Salzberg, the grounded practicality of Jack Kornfield, and the gentle present-moment simplicity of Thich Nhat Hanh. Take their skill and humanity — NOT their vocabulary. This is their craft translated for someone who may be quietly skeptical of anything that sounds "spiritual."
