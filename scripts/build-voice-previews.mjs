@@ -68,7 +68,7 @@ const GUIDES = JSON.parse(
 // someone with a wink, not a narrator. {name} is filled from lib/voices.json.
 const PREVIEW_TEMPLATES = {
   "female-us": "I'm {name}. I speak, therefore I am.",
-  "male-us": "I'm {name}. I'll do the breathing — you take the credit.",
+  "male-us": "I'm {name}. First rule of the quiet mind: you don't talk about it.",
   "female-uk": "I'm {name}. Keep calm, and let me carry on.",
   "male-uk": "I'm {name}. Deep breaths, deeper voice.",
 };
