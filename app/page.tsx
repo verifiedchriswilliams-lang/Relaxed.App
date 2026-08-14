@@ -135,7 +135,7 @@ const VOICE_RATE = 1.0;
 // Minimum time to hold the "composing your session" screen. The cache makes a
 // session ready almost instantly; this brief, deliberate pause makes it feel
 // personally composed rather than pulled off a shelf.
-const MIN_GENERATING_MS = 4500;
+const MIN_GENERATING_MS = 6000;
 
 // ---------------------------------------------------------------------------
 // One audio engine for the whole session. Both the synthesized soundscape and
@@ -947,8 +947,8 @@ export default function Home() {
     // generating screen for a short beat so it feels personally composed, not
     // pulled off a shelf.
     const started = Date.now();
-    const stepA = window.setTimeout(() => setGenStep(1), 1500);
-    const stepB = window.setTimeout(() => setGenStep(2), 3000);
+    const stepA = window.setTimeout(() => setGenStep(1), 2000);
+    const stepB = window.setTimeout(() => setGenStep(2), 4000);
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
@@ -1038,13 +1038,23 @@ export default function Home() {
     setScreen("setup");
   }
 
-  const inhale = elapsed % 14 < 7;
-  const breathCue = !playing ? "Paused" : inhale ? "Breathe in" : "Breathe out";
+  // 7s in, a 1s hold at the top, 7s out (a 15s cycle).
+  const breathPhase =
+    elapsed % 15 < 7 ? "in" : elapsed % 15 < 8 ? "hold" : "out";
+  const breathCue = !playing
+    ? "Paused"
+    : breathPhase === "in"
+      ? "Breathe in"
+      : breathPhase === "hold"
+        ? "Hold"
+        : "Breathe out";
   const breathSub = !playing
     ? "Tap play to continue"
-    : inhale
+    : breathPhase === "in"
       ? "Slowly, through the nose"
-      : "Slowly, through the mouth";
+      : breathPhase === "hold"
+        ? "Gently, for a moment"
+        : "Slowly, through the mouth";
 
   const moodOn = trayOpen || screen === "player";
 
@@ -1069,7 +1079,11 @@ export default function Home() {
             </div>
           </div>
           <div className="steps">
-            {["Reading the room", "Writing your words", "Finding the voice"].map(
+            {[
+              "Writing the words of your journey",
+              "Gathering your soundscape from ElevenMusic",
+              "Your ElevenLabs guide is preparing to join you",
+            ].map(
               (label, i) => (
                 <div
                   key={label}
