@@ -474,7 +474,9 @@ class AudioEngine {
 
     const target = opts?.gain ?? 0.6;
     const dur = Math.min(opts?.seconds ?? buf.duration, buf.duration);
-    const fadeIn = 0.12;
+    // Snappy onset so the audition is audible almost immediately on tap, with a
+    // gentle tail so it doesn't cut off harshly.
+    const fadeIn = 0.04;
     const fadeOut = 0.4;
     const gain = ctx.createGain();
     const src2 = ctx.createBufferSource();
@@ -1387,12 +1389,16 @@ export default function Home() {
                   </div>
                 )}
               </div>
-              {voice !== "none" && guide && (
-                <div className="guide">
-                  <span className="gname">{guide.name}</span>
-                  <span className="gblurb">{guide.blurb}</span>
-                </div>
-              )}
+              {/* Always rendered so the tray height stays fixed; when "None"
+                  is selected it's simply an empty reserved line. */}
+              <div className="guide" aria-hidden={voice === "none" || !guide}>
+                {voice !== "none" && guide && (
+                  <>
+                    <span className="gname">{guide.name}</span>
+                    <span className="gblurb">{guide.blurb}</span>
+                  </>
+                )}
+              </div>
             </div>
 
             <div className="opt">

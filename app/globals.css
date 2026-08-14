@@ -386,12 +386,14 @@ button {
   justify-content: space-between;
   gap: 12px;
 }
-/* The named guide for the chosen voice + accent. */
+/* The named guide for the chosen voice + accent. Height is reserved so the
+   tray doesn't shift when "None" empties it. */
 .guide {
   display: flex;
   align-items: baseline;
   gap: 8px;
   margin-top: 12px;
+  min-height: 20px;
 }
 .guide .gname {
   color: var(--ink-1);
