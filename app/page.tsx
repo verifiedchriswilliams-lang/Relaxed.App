@@ -474,9 +474,9 @@ class AudioEngine {
 
     const target = opts?.gain ?? 0.6;
     const dur = Math.min(opts?.seconds ?? buf.duration, buf.duration);
-    // Snappy onset so the audition is audible almost immediately on tap, with a
-    // gentle tail so it doesn't cut off harshly.
-    const fadeIn = 0.04;
+    // Near-instant onset so the audition registers the moment you tap (a hair
+    // of fade avoids a click), with a gentle tail so it doesn't cut off harshly.
+    const fadeIn = 0.02;
     const fadeOut = 0.4;
     const gain = ctx.createGain();
     const src2 = ctx.createBufferSource();
@@ -751,6 +751,11 @@ export default function Home() {
   const [duration, setDuration] = useState<Duration>(10);
   const [voice, setVoice] = useState<VoiceChoice>("female");
   const [accent, setAccent] = useState<Accent>("us");
+  // Whether the user has picked a voice this tray-open. Starts false so nothing
+  // is highlighted on open — the first tap both selects and plays a preview,
+  // instead of a silent pre-selection. `voice` keeps a valid value underneath
+  // so Begin still works if they never touch it.
+  const [voicePicked, setVoicePicked] = useState(false);
   const [soundscape, setSoundscape] = useState<Soundscape>("rain");
   const [soundTab, setSoundTab] = useState<SoundCat>("nature");
   const [saveDefault, setSaveDefault] = useState(false);
@@ -939,6 +944,7 @@ export default function Home() {
   function chooseIntention(id: ContextId) {
     setContext(id);
     setError(null);
+    setVoicePicked(false); // open with no voice highlighted (preview on first tap)
     setTrayOpen(true);
   }
 
@@ -1337,8 +1343,9 @@ export default function Home() {
               <div className="voicerow">
                 <div className="seg seg3">
                   <button
-                    className={voice === "female" ? "on" : ""}
+                    className={voicePicked && voice === "female" ? "on" : ""}
                     onClick={() => {
+                      setVoicePicked(true);
                       setVoice("female");
                       previewVoice("female", accent);
                     }}
@@ -1346,8 +1353,9 @@ export default function Home() {
                     Her
                   </button>
                   <button
-                    className={voice === "male" ? "on" : ""}
+                    className={voicePicked && voice === "male" ? "on" : ""}
                     onClick={() => {
+                      setVoicePicked(true);
                       setVoice("male");
                       previewVoice("male", accent);
                     }}
@@ -1355,8 +1363,9 @@ export default function Home() {
                     Him
                   </button>
                   <button
-                    className={voice === "none" ? "on" : ""}
+                    className={voicePicked && voice === "none" ? "on" : ""}
                     onClick={() => {
+                      setVoicePicked(true);
                       setVoice("none");
                       engineRef.current.stopPreview();
                     }}
@@ -1364,7 +1373,7 @@ export default function Home() {
                     None
                   </button>
                 </div>
-                {voice !== "none" && (
+                {voicePicked && voice !== "none" && (
                   <div className="flags">
                     <button
                       className={`flagbtn ${accent === "us" ? "on" : ""}`}
@@ -1391,8 +1400,11 @@ export default function Home() {
               </div>
               {/* Always rendered so the tray height stays fixed; when "None"
                   is selected it's simply an empty reserved line. */}
-              <div className="guide" aria-hidden={voice === "none" || !guide}>
-                {voice !== "none" && guide && (
+              <div
+                className="guide"
+                aria-hidden={!voicePicked || voice === "none" || !guide}
+              >
+                {voicePicked && voice !== "none" && guide && (
                   <>
                     <span className="gname">{guide.name}</span>
                     <span className="gblurb">{guide.blurb}</span>
