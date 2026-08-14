@@ -43,27 +43,79 @@ interface Prefs {
 const PREFS_KEY = "elevenmind.prefs.v1";
 
 // ---------------------------------------------------------------------------
-// Asset-free ambient engine: synthesizes soundscapes with the Web Audio API,
-// so there are no audio files to license or ship. Layered *under* the voice.
+// One audio engine for the whole session. Both the synthesized soundscape and
+// the spoken voice play through a single Web Audio context, so on mobile they
+// coexist (a separate <audio> element fights Web Audio for the phone's single
+// audio channel — muting the soundscape and glitching playback speed), ignore
+// the iOS silent switch, and play at the correct speed. The context is unlocked
+// inside the Begin tap to satisfy mobile autoplay rules.
 // ---------------------------------------------------------------------------
-class Ambient {
+class AudioEngine {
   ctx: AudioContext | null = null;
-  master: GainNode | null = null;
-  nodes: AudioNode[] = [];
+  ambientMaster: GainNode | null = null;
+  ambientNodes: AudioNode[] = [];
+  voiceSrc: AudioBufferSourceNode | null = null;
+  onVoiceEnded: (() => void) | null = null;
 
-  start(kind: Soundscape) {
-    this.stop();
+  private ensureCtx(): AudioContext {
+    if (!this.ctx) {
+      const Ctx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
+      this.ctx = new Ctx();
+    }
+    return this.ctx;
+  }
+
+  // Call synchronously inside a user gesture (the Begin tap) to unlock audio.
+  unlock() {
+    const ctx = this.ensureCtx();
+    ctx.resume().catch(() => {});
+    try {
+      const b = ctx.createBuffer(1, 1, 22050);
+      const s = ctx.createBufferSource();
+      s.buffer = b;
+      s.connect(ctx.destination);
+      s.start(0);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // Decode and play the spoken voice through the shared context.
+  async playVoice(dataUri: string | null) {
+    if (!dataUri) return;
+    const ctx = this.ensureCtx();
+    await ctx.resume().catch(() => {});
+    try {
+      const arr = await (await fetch(dataUri)).arrayBuffer();
+      const buffer = await new Promise<AudioBuffer>((resolve, reject) => {
+        // Modern browsers return a Promise; older Safari uses callbacks.
+        const ret = ctx.decodeAudioData(arr, resolve, reject);
+        if (ret && typeof (ret as Promise<AudioBuffer>).then === "function") {
+          (ret as Promise<AudioBuffer>).then(resolve, reject);
+        }
+      });
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(ctx.destination);
+      src.onended = () => this.onVoiceEnded?.();
+      src.start(0);
+      this.voiceSrc = src;
+    } catch {
+      /* decode failed — the read-along + soundscape still carry the session */
+    }
+  }
+
+  startAmbient(kind: Soundscape) {
+    this.stopAmbient();
     if (kind === "silence") return;
-    const Ctx =
-      window.AudioContext ||
-      (window as unknown as { webkitAudioContext: typeof AudioContext })
-        .webkitAudioContext;
-    const ctx = new Ctx();
-    this.ctx = ctx;
+    const ctx = this.ensureCtx();
     const master = ctx.createGain();
     master.gain.value = 0;
     master.connect(ctx.destination);
-    this.master = master;
+    this.ambientMaster = master;
 
     if (kind === "drone") {
       [110, 164.81, 220].forEach((f, i) => {
@@ -74,7 +126,7 @@ class Ambient {
         g.gain.value = i === 0 ? 0.5 : 0.22;
         osc.connect(g).connect(master);
         osc.start();
-        this.nodes.push(osc, g);
+        this.ambientNodes.push(osc, g);
       });
     } else {
       // Brown noise → filter it into "rain" (brighter) or "ocean" (rolling swell)
@@ -83,17 +135,17 @@ class Ambient {
       filter.type = "lowpass";
       filter.frequency.value = kind === "rain" ? 1600 : 520;
       noise.connect(filter).connect(master);
-      this.nodes.push(noise, filter);
+      this.ambientNodes.push(noise, filter);
 
       if (kind === "ocean") {
-        // Slow LFO on the filter cutoff → the sound of waves breathing in and out
+        // Slow LFO on the filter cutoff → waves breathing in and out
         const lfo = ctx.createOscillator();
         lfo.frequency.value = 0.08;
         const lfoGain = ctx.createGain();
         lfoGain.gain.value = 340;
         lfo.connect(lfoGain).connect(filter.frequency);
         lfo.start();
-        this.nodes.push(lfo, lfoGain);
+        this.ambientNodes.push(lfo, lfoGain);
       }
     }
 
@@ -102,18 +154,24 @@ class Ambient {
     master.gain.linearRampToValueAtTime(target, ctx.currentTime + 3);
   }
 
-  fadeOut(seconds = 6) {
-    if (this.ctx && this.master) {
+  suspend() {
+    this.ctx?.suspend().catch(() => {});
+  }
+  resume() {
+    this.ctx?.resume().catch(() => {});
+  }
+
+  fadeOutAmbient(seconds = 6) {
+    if (this.ctx && this.ambientMaster) {
       const now = this.ctx.currentTime;
-      this.master.gain.cancelScheduledValues(now);
-      this.master.gain.setValueAtTime(this.master.gain.value, now);
-      this.master.gain.linearRampToValueAtTime(0, now + seconds);
-      window.setTimeout(() => this.stop(), seconds * 1000 + 200);
+      this.ambientMaster.gain.cancelScheduledValues(now);
+      this.ambientMaster.gain.setValueAtTime(this.ambientMaster.gain.value, now);
+      this.ambientMaster.gain.linearRampToValueAtTime(0, now + seconds);
     }
   }
 
-  stop() {
-    this.nodes.forEach((n) => {
+  private stopAmbient() {
+    this.ambientNodes.forEach((n) => {
       try {
         if ("stop" in n && typeof (n as OscillatorNode).stop === "function") {
           (n as OscillatorNode).stop();
@@ -123,12 +181,22 @@ class Ambient {
         /* already stopped */
       }
     });
-    this.nodes = [];
+    this.ambientNodes = [];
+    this.ambientMaster = null;
+  }
+
+  stop() {
+    try {
+      this.voiceSrc?.stop();
+    } catch {
+      /* already stopped */
+    }
+    this.voiceSrc = null;
+    this.stopAmbient();
     if (this.ctx) {
       this.ctx.close().catch(() => {});
       this.ctx = null;
     }
-    this.master = null;
   }
 
   private brownNoise(ctx: AudioContext): AudioBufferSourceNode {
@@ -150,13 +218,6 @@ class Ambient {
 }
 
 type Screen = "setup" | "generating" | "player";
-
-// A minimal silent clip used to "unlock" the <audio> element inside the Begin
-// tap. Mobile browsers (esp. iOS Safari) only allow audio to play if it was
-// started by a user gesture; the real voice starts seconds later, after the
-// async generation, so we prime the element now and reuse it then.
-const SILENT_CLIP =
-  "data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQIAAAAAAA==";
 
 function greetingFor(): string {
   const h = new Date().getHours();
@@ -188,8 +249,7 @@ export default function Home() {
   const [elapsed, setElapsed] = useState(0);
   const [showTranscript, setShowTranscript] = useState(true);
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const ambientRef = useRef<Ambient>(new Ambient());
+  const engineRef = useRef<AudioEngine>(new AudioEngine());
   const endTimerRef = useRef<number | null>(null);
   const tickRef = useRef<number | null>(null);
 
@@ -216,7 +276,7 @@ export default function Home() {
 
   useEffect(() => {
     return () => {
-      ambientRef.current.stop();
+      engineRef.current.stop();
       if (endTimerRef.current) window.clearTimeout(endTimerRef.current);
       if (tickRef.current) window.clearInterval(tickRef.current);
     };
@@ -245,22 +305,9 @@ export default function Home() {
   }
 
   async function begin() {
-    // Unlock the audio element within this tap so mobile browsers will let the
-    // voice play once it's ready (seconds from now, after generation).
-    const el = audioRef.current;
-    if (el) {
-      try {
-        el.src = SILENT_CLIP;
-        const p = el.play();
-        if (p)
-          p.then(() => {
-            el.pause();
-            el.currentTime = 0;
-          }).catch(() => {});
-      } catch {
-        /* ignore */
-      }
-    }
+    // Unlock the audio engine within this tap so mobile browsers will let the
+    // voice + soundscape play once ready (seconds from now, after generation).
+    engineRef.current.unlock();
 
     setError(null);
     persistPrefs();
@@ -289,43 +336,37 @@ export default function Home() {
   }
 
   function startPlayback(audio: string | null) {
-    ambientRef.current.start(soundscape);
+    const eng = engineRef.current;
+    // When the voice finishes, let the soundscape ease out.
+    eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
+    eng.startAmbient(soundscape);
+    eng.playVoice(audio);
     setPlaying(true);
     setElapsed(0);
     startTick();
 
-    if (audio && audioRef.current) {
-      audioRef.current.src = audio;
-      audioRef.current.play().catch(() => {});
-    }
-
-    // Fade the ambient out around the requested duration.
+    // Fade the soundscape out around the requested duration.
     if (endTimerRef.current) window.clearTimeout(endTimerRef.current);
     endTimerRef.current = window.setTimeout(
-      () => ambientRef.current.fadeOut(8),
+      () => eng.fadeOutAmbient(8),
       totalSecs * 1000
     );
   }
 
   function togglePlay() {
-    const a = audioRef.current;
     if (playing) {
-      a?.pause();
-      ambientRef.current.ctx?.suspend();
+      engineRef.current.suspend();
       stopTick();
       setPlaying(false);
     } else {
-      a?.play().catch(() => {});
-      ambientRef.current.ctx?.resume();
+      engineRef.current.resume();
       startTick();
       setPlaying(true);
     }
   }
 
   function end() {
-    audioRef.current?.pause();
-    if (audioRef.current) audioRef.current.currentTime = 0;
-    ambientRef.current.stop();
+    engineRef.current.stop();
     if (endTimerRef.current) window.clearTimeout(endTimerRef.current);
     stopTick();
     setPlaying(false);
@@ -611,12 +652,7 @@ export default function Home() {
     );
   }
 
-  return (
-    <>
-      {content}
-      <audio ref={audioRef} onEnded={() => ambientRef.current.fadeOut(8)} />
-    </>
-  );
+  return <>{content}</>;
 }
 
 // Strip <break/> tags so the read-along text is human-readable.
