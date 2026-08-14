@@ -20,6 +20,9 @@ export interface SessionContext {
   tagline: string;
   // The session disc gradient (CSS radial-gradient value).
   art: string;
+  // A single accent color pulled from the disc, used for the soft glow that
+  // sits behind the orb and tints the Begin button on the dark night UI.
+  glow: string;
   // Guidance handed to the script writer for this context.
   intent: string;
 }
@@ -34,16 +37,18 @@ const DISC = {
     "radial-gradient(circle at 50% 50%, #e8eee6 0%, #8fbfa6 20%, #eaf1ea 36%, #3f7a68 62%, #cfe0d6 82%, #79ab97 100%)",
   relax:
     "radial-gradient(circle at 50% 50%, #f3ece2 0%, #f0b98a 20%, #f7ece0 36%, #d97d4a 62%, #f2ddc9 82%, #e79f6c 100%)",
-  stress:
-    "radial-gradient(circle at 50% 50%, #f2e6e4 0%, #dc9a94 20%, #f5e9e7 36%, #a94f48 62%, #e8cbc7 82%, #c9756d 100%)",
+  // Breathe: a calm teal, not the old alarm-red (which read as a warning).
+  breathe:
+    "radial-gradient(circle at 50% 50%, #e3eeed 0%, #92c6c6 20%, #e7f2f1 36%, #2f7178 62%, #c4dedd 82%, #5fa6a8 100%)",
 } as const;
 
 export const CONTEXTS: SessionContext[] = [
   {
     id: "meditation",
-    label: "Meditation",
+    label: "Meditate",
     tagline: "Presence and awareness",
     art: DISC.meditation,
+    glow: "#8f8fc0",
     intent:
       "A classic mindfulness sit, in the plainspoken spirit of MBSR. Anchor attention on the " +
       "physical feeling of the breath and the body: the rise and fall, the weight of the body in " +
@@ -57,6 +62,7 @@ export const CONTEXTS: SessionContext[] = [
     label: "Sleep",
     tagline: "Drift off gently",
     art: DISC.sleep,
+    glow: "#6b6aa2",
     intent:
       "A wind-down for bed. Slow, low, and unhurried, with quiet permission to let the day be " +
       "finished. Guide a gentle head-to-toe softening of the face, the jaw, the shoulders, the hands, " +
@@ -70,6 +76,7 @@ export const CONTEXTS: SessionContext[] = [
     label: "Flow",
     tagline: "Focus and deep work",
     art: DISC.flow,
+    glow: "#5c9683",
     intent:
       "A short primer before focused work or study. Briefly settle the body, then let the mental " +
       "clutter settle too, the swirl of to-dos sinking like sediment until the water is clear. Take a " +
@@ -82,6 +89,7 @@ export const CONTEXTS: SessionContext[] = [
     label: "Relax",
     tagline: "Unwind and soften",
     art: DISC.relax,
+    glow: "#e0965f",
     intent:
       "A gentle decompression for a wound-up body and mind. In the simple spirit of 'breathing in, I " +
       "settle; breathing out, I ease,' guide slow breaths that loosen the jaw, drop the shoulders, and " +
@@ -91,11 +99,13 @@ export const CONTEXTS: SessionContext[] = [
   },
   {
     id: "stress-relief",
-    label: "Stress Relief",
-    tagline: "Reset and steady",
-    art: DISC.stress,
+    label: "Breathe",
+    tagline: "Steady your breath",
+    art: DISC.breathe,
+    glow: "#63a9ad",
     intent:
-      "A steadying reset for an anxious, activated, or overwhelmed moment. Begin by grounding through " +
+      "A steadying reset for an anxious, activated, or overwhelmed moment, with the breath as the main " +
+      "anchor throughout. Begin by grounding through " +
       "the senses, the feet on the floor, the seat beneath, a few sounds that can be heard, to come " +
       "out of the spinning head and back into the body. Lengthen the exhales to help the nervous " +
       "system settle. Then, gently, meet whatever is here instead of fighting it: quietly name the " +
@@ -111,7 +121,7 @@ export function getContext(id: string): SessionContext | undefined {
 
 // Duration presets offered in the UI. The generator itself handles any value in
 // the 3 to 30 range via duration bands (below), so these are just convenient doses.
-export const DURATIONS = [3, 5, 10, 20, 30] as const;
+export const DURATIONS = [5, 10, 15, 20, 30] as const;
 export type Duration = (typeof DURATIONS)[number];
 
 export type VoiceChoice = "female" | "male";
