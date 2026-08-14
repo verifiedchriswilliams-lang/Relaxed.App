@@ -1,8 +1,19 @@
 /node_modules
 /.next
 /out
+.vercel
 .env
 .env.local
 .DS_Store
 *.tsbuildinfo
 next-env.d.ts
+
+# Large audio lives in Vercel Blob, not git (see docs/blob-migration.md).
+# Beds, the voice cache, and voice previews are uploaded by the workflows;
+# only the manifest (lib/voiceCacheManifest.json) is tracked.
+/public/sounds/*.mp3
+/public/sounds/**/*.mp3
+/public/voice-cache/*.mp3
+/public/voice-previews/*.mp3
+# No audio belongs at the repo root.
+/*.mp3
