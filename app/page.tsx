@@ -50,11 +50,21 @@ const PREFS_KEY = "elevenmind.prefs.v1";
 // the iOS silent switch, and play at the correct speed. The context is unlocked
 // inside the Begin tap to satisfy mobile autoplay rules.
 // ---------------------------------------------------------------------------
+// A slight, deliberate slowdown applied to every voiced segment for a calmer,
+// more spacious cadence than the raw TTS. Web Audio playback is clock-locked, so
+// this rate is exact and constant (it cannot drift or accelerate).
+const VOICE_RATE = 0.92;
+
+// Soundscape sits UNDER the voice as background, not beside it. The voice plays
+// at full level straight to the destination; these are the ambient ceilings, so
+// e.g. 0.3 means the rain/ocean bed tops out around a third of the voice.
+const AMBIENT_LEVEL = { drone: 0.12, noise: 0.3 } as const;
+
 class AudioEngine {
   ctx: AudioContext | null = null;
   ambientMaster: GainNode | null = null;
   ambientNodes: AudioNode[] = [];
-  voiceSrc: AudioBufferSourceNode | null = null;
+  voiceSegs: AudioBufferSourceNode[] = [];
   onVoiceEnded: (() => void) | null = null;
 
   private ensureCtx(): AudioContext {
@@ -83,29 +93,66 @@ class AudioEngine {
     }
   }
 
-  // Decode and play the spoken voice through the shared context.
-  async playVoice(dataUri: string | null) {
-    if (!dataUri) return;
+  private decode(ctx: AudioContext, arr: ArrayBuffer): Promise<AudioBuffer> {
+    return new Promise<AudioBuffer>((resolve, reject) => {
+      // Modern browsers return a Promise; older Safari uses callbacks.
+      const ret = ctx.decodeAudioData(arr, resolve, reject);
+      if (ret && typeof (ret as Promise<AudioBuffer>).then === "function") {
+        (ret as Promise<AudioBuffer>).then(resolve, reject);
+      }
+    });
+  }
+
+  // Play the spoken session as a sequence of segments, each followed by a real
+  // silence, all scheduled on the AudioContext's own clock. This is what spreads
+  // the guidance across the full session: the pauses are held here on the client
+  // (ElevenLabs can't render long/stacked silences reliably), so a 3-minute sit
+  // actually lasts the whole 3 minutes instead of the voice finishing early.
+  async playSegments(
+    segments: { audio: string | null; pauseAfter: number }[]
+  ) {
+    if (!segments?.length) return;
     const ctx = this.ensureCtx();
     await ctx.resume().catch(() => {});
-    try {
-      const arr = await (await fetch(dataUri)).arrayBuffer();
-      const buffer = await new Promise<AudioBuffer>((resolve, reject) => {
-        // Modern browsers return a Promise; older Safari uses callbacks.
-        const ret = ctx.decodeAudioData(arr, resolve, reject);
-        if (ret && typeof (ret as Promise<AudioBuffer>).then === "function") {
-          (ret as Promise<AudioBuffer>).then(resolve, reject);
+
+    // Decode every segment's audio up front so scheduling has no gaps.
+    const decoded = await Promise.all(
+      segments.map(async (s) => {
+        if (!s.audio) return { buffer: null, pauseAfter: s.pauseAfter };
+        try {
+          const arr = await (await fetch(s.audio)).arrayBuffer();
+          return { buffer: await this.decode(ctx, arr), pauseAfter: s.pauseAfter };
+        } catch {
+          return { buffer: null, pauseAfter: s.pauseAfter };
         }
-      });
-      const src = ctx.createBufferSource();
-      src.buffer = buffer;
-      src.connect(ctx.destination);
-      src.onended = () => this.onVoiceEnded?.();
-      src.start(0);
-      this.voiceSrc = src;
-    } catch {
-      /* decode failed; the read-along + soundscape still carry the session */
+      })
+    );
+
+    // The user may have ended the session while we were decoding.
+    if (!this.ctx) return;
+
+    let t = ctx.currentTime + 0.15; // brief lead-in
+    let lastSrc: AudioBufferSourceNode | null = null;
+    for (const d of decoded) {
+      if (d.buffer) {
+        try {
+          const src = ctx.createBufferSource();
+          src.buffer = d.buffer;
+          src.playbackRate.value = VOICE_RATE;
+          src.connect(ctx.destination);
+          src.start(t);
+          this.voiceSegs.push(src);
+          lastSrc = src;
+          t += d.buffer.duration / VOICE_RATE;
+        } catch {
+          /* context closed mid-schedule; stop placing segments */
+          return;
+        }
+      }
+      t += d.pauseAfter;
     }
+    // Fire onVoiceEnded when the last spoken segment finishes.
+    if (lastSrc) lastSrc.onended = () => this.onVoiceEnded?.();
   }
 
   startAmbient(kind: Soundscape) {
@@ -149,8 +196,8 @@ class AudioEngine {
       }
     }
 
-    // Gentle fade-in
-    const target = kind === "drone" ? 0.16 : 0.5;
+    // Gentle fade-in to a level that sits under the voice as background.
+    const target = kind === "drone" ? AMBIENT_LEVEL.drone : AMBIENT_LEVEL.noise;
     master.gain.linearRampToValueAtTime(target, ctx.currentTime + 3);
   }
 
@@ -186,12 +233,15 @@ class AudioEngine {
   }
 
   stop() {
-    try {
-      this.voiceSrc?.stop();
-    } catch {
-      /* already stopped */
-    }
-    this.voiceSrc = null;
+    this.voiceSegs.forEach((s) => {
+      try {
+        s.onended = null;
+        s.stop();
+      } catch {
+        /* already stopped or not yet started */
+      }
+    });
+    this.voiceSegs = [];
     this.stopAmbient();
     if (this.ctx) {
       this.ctx.close().catch(() => {});
@@ -328,19 +378,23 @@ export default function Home() {
       setNote(typeof data.note === "string" ? data.note : "");
       setIsPreview(Boolean(data.mock));
       setScreen("player");
-      startPlayback(data.audio as string | null);
+      startPlayback(
+        Array.isArray(data.segments) ? data.segments : []
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
       setScreen("setup");
     }
   }
 
-  function startPlayback(audio: string | null) {
+  function startPlayback(
+    segments: { audio: string | null; pauseAfter: number }[]
+  ) {
     const eng = engineRef.current;
     // When the voice finishes, let the soundscape ease out.
     eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
     eng.startAmbient(soundscape);
-    eng.playVoice(audio);
+    eng.playSegments(segments);
     setPlaying(true);
     setElapsed(0);
     startTick();

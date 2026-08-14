@@ -6,9 +6,9 @@ import {
   SCRIPT_SYSTEM_PROMPT,
 } from "@/lib/contexts";
 
-// Keep this on the Node runtime so the ElevenLabs binary response streams cleanly.
+// Node runtime so the ElevenLabs binary responses decode cleanly.
 export const runtime = "nodejs";
-export const maxDuration = 60; // seconds; script + voice generation can take a while
+export const maxDuration = 60; // seconds; script + per-segment voice can take a while
 
 interface GenerateBody {
   name?: string;
@@ -26,6 +26,9 @@ const MOCK_SCRIPT =
   `<break time="2s" /> and a long breath out. <break time="3s" /> ` +
   `There is nothing to do here but breathe. <break time="3s" /> ` +
   `(This is a preview. Add your ElevenLabs key to hear it spoken aloud.)`;
+
+// Cap on ElevenLabs calls per session, to stay within the function time budget.
+const MAX_SEGMENTS = 20;
 
 // API keys pasted into a dashboard can pick up invisible characters (e.g. the
 // U+2028 line separator), which break HTTP header encoding with a "cannot
@@ -72,16 +75,77 @@ async function writeScript(
   return text || MOCK_SCRIPT;
 }
 
-async function synthesizeVoice(
-  script: string,
-  voice: "female" | "male"
-): Promise<string | null> {
-  const key = cleanKey(process.env.ELEVENLABS_API_KEY);
-  if (!key) return null; // mock mode; client shows the script without audio
+// ---------------------------------------------------------------------------
+// Pacing. ElevenLabs caps a rendered <break> at ~3s and renders long / stacked
+// pauses unreliably, so a whole meditation baked into one clip bunches up and
+// finishes far too early. Instead we split the script at its <break> tags into
+// speakable segments plus the pause (seconds) that should follow each, voice
+// each segment separately, and let the CLIENT place the real silences on its
+// own clock. That spreads the guidance across the full session duration.
+// ---------------------------------------------------------------------------
+interface Segment {
+  text: string;
+  pauseAfter: number;
+}
 
-  // Built-in ElevenLabs premade voices, used unless a valid custom voice ID is
-  // configured. Guard against a mis-pasted API key (or other junk) landing in
-  // the voice-ID env var: a real voice ID is a short token, never an "sk_" key.
+function splitIntoSegments(script: string): Segment[] {
+  const tokens = script.split(/(<break\s+time="[\d.]+s"\s*\/?>)/gi);
+  const segs: Segment[] = [];
+  let cur = "";
+  for (const tok of tokens) {
+    const m = tok.match(/^<break\s+time="([\d.]+)s"\s*\/?>$/i);
+    if (m) {
+      const pause = parseFloat(m[1]) || 0;
+      if (cur.trim()) {
+        segs.push({ text: cur.trim(), pauseAfter: pause });
+        cur = "";
+      } else if (segs.length) {
+        // Consecutive break tags (a long stacked silence) merge into one pause.
+        segs[segs.length - 1].pauseAfter += pause;
+      }
+      // A break before any speech is dropped (no awkward opening silence).
+    } else {
+      cur += tok;
+    }
+  }
+  if (cur.trim()) segs.push({ text: cur.trim(), pauseAfter: 0 });
+  return segs;
+}
+
+// Keep the number of TTS calls bounded by merging the shortest adjacent pairs.
+function mergeToMax(segs: Segment[], max: number): Segment[] {
+  const out = segs.map((s) => ({ ...s }));
+  while (out.length > max) {
+    let idx = 0;
+    let best = Infinity;
+    for (let i = 0; i < out.length - 1; i++) {
+      const len = out[i].text.length + out[i + 1].text.length;
+      if (len < best) {
+        best = len;
+        idx = i;
+      }
+    }
+    out.splice(idx, 2, {
+      text: `${out[idx].text} ${out[idx + 1].text}`,
+      pauseAfter: out[idx + 1].pauseAfter,
+    });
+  }
+  return out;
+}
+
+interface VoiceConfig {
+  key: string;
+  voiceId: string;
+  speed: number;
+  stability: number;
+}
+
+function voiceConfig(voice: "female" | "male"): VoiceConfig | null {
+  const key = cleanKey(process.env.ELEVENLABS_API_KEY);
+  if (!key) return null;
+
+  // Built-in premade voices; guard against a mis-pasted API key in the voice-ID
+  // env var (a real voice ID is a short token, never an "sk_" key).
   const DEFAULT_VOICE =
     voice === "male" ? "pNInz6obpgDQGcFmaJgB" : "21m00Tcm4TlvDq8ikWAM";
   const configured = cleanKey(
@@ -93,35 +157,43 @@ async function synthesizeVoice(
     !!configured && !configured.startsWith("sk_") && configured.length <= 40;
   const voiceId = looksLikeVoiceId ? (configured as string) : DEFAULT_VOICE;
 
-  // Delivery tuned for meditation: slower speaking rate and a steadier, calmer
-  // tone. Both are env-tunable so they can be dialed in by ear.
   const clamp = (v: number, lo: number, hi: number) =>
     Math.min(hi, Math.max(lo, v));
-  const speed = clamp(Number(process.env.ELEVENLABS_SPEED ?? 0.8) || 0.8, 0.7, 1.2);
+  const speed = clamp(
+    Number(process.env.ELEVENLABS_SPEED ?? 0.8) || 0.8,
+    0.7,
+    1.2
+  );
   const stability = clamp(
     Number(process.env.ELEVENLABS_STABILITY ?? 0.85) || 0.85,
     0,
     1
   );
+  return { key, voiceId, speed, stability };
+}
 
+async function synthesizeSegment(
+  text: string,
+  cfg: VoiceConfig
+): Promise<string> {
   const res = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${cfg.voiceId}`,
     {
       method: "POST",
       headers: {
-        "xi-api-key": key,
+        "xi-api-key": cfg.key,
         "Content-Type": "application/json",
         Accept: "audio/mpeg",
       },
       body: JSON.stringify({
-        text: script,
+        text,
         model_id: "eleven_multilingual_v2",
         voice_settings: {
-          stability,
+          stability: cfg.stability,
           similarity_boost: 0.75,
           style: 0.0,
           use_speaker_boost: true,
-          speed, // < 1.0 slows the voice; the biggest lever for a calm pace
+          speed: cfg.speed,
         },
       }),
     }
@@ -136,6 +208,11 @@ async function synthesizeVoice(
   return `data:audio/mpeg;base64,${buf.toString("base64")}`;
 }
 
+interface OutSegment {
+  audio: string | null; // data: URL, or null if this segment's voice failed
+  pauseAfter: number; // seconds of real silence to hold after this segment
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as GenerateBody;
@@ -144,12 +221,12 @@ export async function POST(req: NextRequest) {
     const durationMin = Number(body.durationMin) || 5;
     const voice = body.voice === "male" ? "male" : "female";
 
-    const hasVoiceKey = Boolean(cleanKey(process.env.ELEVENLABS_API_KEY));
+    const cfg = voiceConfig(voice);
 
-    // Graceful degradation: a session should never dead-end on a red error.
-    // If Claude can't write (no credit, outage, rate limit) we fall back to a
-    // calm sample script; if ElevenLabs can't speak, we return the written
-    // session to read along with. The soundscape + breathing visual always play.
+    // Graceful degradation: a session should never dead-end on a red error. If
+    // Claude can't write, fall back to a sample script; if ElevenLabs can't
+    // speak, return the written session to read along with. The soundscape and
+    // breathing visual always play.
     let script: string;
     let scriptFailed = false;
     try {
@@ -160,16 +237,38 @@ export async function POST(req: NextRequest) {
       scriptFailed = true;
     }
 
-    let audio: string | null = null;
+    let segments: OutSegment[] = [];
     let voiceFailed = false;
-    if (!scriptFailed) {
+
+    if (!scriptFailed && cfg) {
+      const speak = mergeToMax(splitIntoSegments(script), MAX_SEGMENTS);
       try {
-        audio = await synthesizeVoice(script, voice);
+        // Sequential to respect free-tier concurrency limits.
+        for (const s of speak) {
+          let audio: string | null = null;
+          try {
+            audio = await synthesizeSegment(s.text, cfg);
+          } catch (err) {
+            console.error("[generate] segment synthesis failed:", err);
+            // If the very first segment fails (bad key, quota, etc.), give up on
+            // voice entirely and fall back to read-along.
+            if (segments.length === 0) {
+              voiceFailed = true;
+              segments = [];
+              break;
+            }
+            // Otherwise keep the pause, drop just this segment's audio.
+          }
+          segments.push({ audio, pauseAfter: s.pauseAfter });
+        }
       } catch (err) {
-        console.error("[generate] voice synthesis failed, read-along only:", err);
+        console.error("[generate] voice synthesis failed:", err);
         voiceFailed = true;
+        segments = [];
       }
     }
+
+    const hasVoice = segments.some((s) => s.audio);
 
     let note: string | undefined;
     if (scriptFailed) {
@@ -178,15 +277,14 @@ export async function POST(req: NextRequest) {
     } else if (voiceFailed) {
       note =
         "The voice is unavailable right now, so here's your session to read along with.";
-    } else if (audio === null && !hasVoiceKey) {
-      note =
-        "Preview mode. Add your ElevenLabs key to hear this spoken aloud.";
+    } else if (!cfg) {
+      note = "Preview mode. Add your ElevenLabs key to hear this spoken aloud.";
     }
 
     return NextResponse.json({
       script,
-      audio, // data: URL, or null when there is no spoken audio
-      mock: audio === null,
+      segments, // [{ audio, pauseAfter }] scheduled with real silences by the client
+      mock: !hasVoice,
       note,
       durationMin,
     });
