@@ -97,8 +97,8 @@ const SOUNDSCAPES: SoundDef[] = [
 // a common target, both capped so peaks never exceed the ceiling (no clipping).
 // Measured RMS/peak in dBFS; all tunable by ear from here.
 const VOICE_TARGET = -24; // where all voices land
-const BED_UNDER_VOICE = -34; // beds sit ~10 dB below the voice during a session
-const BED_SOLO = -20; // louder for a no-voice, sounds-only session
+const BED_UNDER_VOICE = -33; // beds sit ~9 dB below the voice (~10% louder than -34)
+const BED_SOLO = -19; // louder for a no-voice, sounds-only session (~10% up)
 const PEAK_CEIL = -1.5; // never let a peak go above this
 
 // Measured over 28 lines per voice. `trim` is a small perceptual adjustment on
@@ -144,7 +144,7 @@ const VOICE_RATE = 1.0;
 // Minimum time to hold the "composing your session" screen. The cache makes a
 // session ready almost instantly; this brief, deliberate pause makes it feel
 // personally composed rather than pulled off a shelf.
-const MIN_GENERATING_MS = 7500;
+const MIN_GENERATING_MS = 8500;
 
 // ---------------------------------------------------------------------------
 // One audio engine for the whole session. Both the synthesized soundscape and
@@ -1515,7 +1515,9 @@ export default function Home() {
               <span className="dot" />
               Begin Session
             </button>
-            <div className="tray-hint">Tap outside to go back</div>
+            <button className="goback" onClick={() => setTrayOpen(false)}>
+              Go back
+            </button>
           </div>
         </>
       )}

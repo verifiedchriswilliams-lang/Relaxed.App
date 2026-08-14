@@ -434,6 +434,24 @@ button {
 }
 .seg3 button {
   padding: 8px 15px;
+  position: relative;
+}
+/* Hairline dividers so Her / Him / None read as three distinct segments.
+   The divider is hidden next to the selected one (iOS segmented-control style),
+   and only shows between two unselected segments. */
+.seg3 button + button::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 24%;
+  bottom: 24%;
+  width: 1px;
+  background: var(--glass-line);
+  transition: opacity 0.16s ease;
+}
+.seg3 button.on::before,
+.seg3 button.on + button::before {
+  opacity: 0;
 }
 
 .flags {
@@ -690,11 +708,24 @@ button {
   box-shadow: 0 0 14px -2px var(--cta-glow, rgba(255, 255, 255, 0.6)),
     inset 0 0 0 1px rgba(255, 255, 255, 0.28);
 }
-.tray-hint {
-  text-align: center;
-  font-size: 12.5px;
+/* A real, tappable "Go back" link under Begin — easier to hit on mobile than
+   tapping the small area outside the tray. */
+.goback {
+  display: block;
+  margin: 14px auto 0;
+  background: none;
+  border: 0;
   color: var(--ink-2);
-  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 8px 18px;
+  cursor: pointer;
+  transition: color 0.16s ease;
+}
+.goback:hover {
+  color: var(--ink-1);
 }
 .err {
   margin-top: 14px;
