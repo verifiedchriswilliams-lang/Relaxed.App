@@ -51,7 +51,7 @@ const VOICES = {
   "female-uk":
     clean(process.env.ELEVENLABS_VOICE_FEMALE_UK) ||
     clean(process.env.ELEVENLABS_VOICE_FEMALE) ||
-    "zA6D7RyKdc2EClouEMkP",
+    "bgU7lBMo69PNEOWHFqxM",
   "male-uk":
     clean(process.env.ELEVENLABS_VOICE_MALE_UK) ||
     clean(process.env.ELEVENLABS_VOICE_MALE) ||

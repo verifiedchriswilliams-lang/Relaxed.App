@@ -67,7 +67,7 @@ npm run dev
 |------|------|----------|
 | Her · US | — | `7AvtJrjTNyBhBxEvNPIZ` |
 | Him · US | — | `6bPfTtSpgxgD0GeBVfqu` |
-| Her · UK | Almee | `zA6D7RyKdc2EClouEMkP` |
+| Her · UK | — | `bgU7lBMo69PNEOWHFqxM` |
 | Him · UK | Theo | `UmQN7jS1Ee8B1czsUtQh` |
 
 The user picks Her/Him and a US or UK accent in the tray; the app sends both to `/api/generate`, which resolves the right voice. Each slot can be overridden with `ELEVENLABS_VOICE_{FEMALE,MALE}_{US,UK}`. These voices live in a private ElevenLabs collection, so the account's own API key must be the one in use for them to resolve; otherwise ElevenLabs falls back to a preset voice.

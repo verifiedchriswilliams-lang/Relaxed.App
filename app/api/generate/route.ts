@@ -61,7 +61,7 @@ type Accent = "us" | "uk";
 const VOICE_TABLE: Record<string, { envs: string[]; def: string }> = {
   "female-uk": {
     envs: ["ELEVENLABS_VOICE_FEMALE_UK", "ELEVENLABS_VOICE_FEMALE"],
-    def: "zA6D7RyKdc2EClouEMkP", // Almee
+    def: "bgU7lBMo69PNEOWHFqxM",
   },
   "male-uk": {
     envs: ["ELEVENLABS_VOICE_MALE_UK", "ELEVENLABS_VOICE_MALE"],
