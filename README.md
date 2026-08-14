@@ -109,8 +109,7 @@ lib/
 
 ## Roadmap
 
-- **Voice previews.** When the user taps Her / Him, play a short cached clip of that voice saying something brief ("Hello, I'm ready for your session whenever you are") so they can hear each voice while choosing. Cache one small file per voice rather than calling ElevenLabs on every tap.
-- **Soundscape / music previews.** Same idea for the soundscape picker: a short taste of rain / ocean / drone (and later, ElevenLabs music beds) as the user selects, so they know what they're choosing before the session starts.
+- **Voice + soundscape previews — shipped.** Tapping a soundscape auditions a few seconds of that bed (level-matched, fades in/out); tapping Her / Him (or switching accent) plays a short greeting clip of that voice. Soundscape previews reuse the existing beds. Voice greetings are one small cached clip per voice slot — generate them with `npm run build:previews` (or the **Build voice cache** Action, which now builds previews too); the UI stays silent for a voice until its clip exists.
 - Claude Design pass on the UI (`globals.css` + `page.tsx`).
 - Decide on accounts + saved/favorite sessions.
 - Later: Capacitor/native wrapper for the App Store.

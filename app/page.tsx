@@ -162,6 +162,13 @@ class AudioEngine {
   // offset (seconds) from that. Lets the transcript follow along with the voice.
   playStartTime = 0;
   lineStarts: number[] = [];
+  // Short audition clips (voice greetings, soundscape beds) played while the
+  // user is choosing in the tray. Independent of the session buses so a preview
+  // can be started/stopped freely; decoded buffers are cached per source.
+  private previewSource: AudioBufferSourceNode | null = null;
+  private previewGain: GainNode | null = null;
+  private previewToken = 0;
+  private previewCache = new Map<string, AudioBuffer>();
 
   private ensureCtx(): AudioContext {
     if (!this.ctx) {
@@ -440,6 +447,96 @@ class AudioEngine {
     this.ambientMaster = null;
   }
 
+  // Audition a clip while choosing (a voice greeting, or a taste of a bed).
+  // seconds caps the length (beds); omit to play a whole clip (voice). Called
+  // from a tap, so the context unlocks. Any prior preview is faded out first.
+  async preview(src: string, opts?: { seconds?: number; gain?: number }) {
+    const ctx = this.ensureCtx();
+    await ctx.resume().catch(() => {});
+    const token = ++this.previewToken;
+    this.stopPreview();
+    let buf = this.previewCache.get(src);
+    if (!buf) {
+      try {
+        const arr = await (await fetch(src)).arrayBuffer();
+        buf = await this.decode(ctx, arr);
+        this.previewCache.set(src, buf);
+      } catch {
+        return; // clip missing/undecodable (e.g. not generated yet) — stay quiet
+      }
+    }
+    // Superseded by a newer tap, or the engine was torn down, while decoding.
+    if (token !== this.previewToken || this.ctx !== ctx) return;
+
+    const target = opts?.gain ?? 0.6;
+    const dur = Math.min(opts?.seconds ?? buf.duration, buf.duration);
+    const fadeIn = 0.12;
+    const fadeOut = 0.4;
+    const gain = ctx.createGain();
+    const src2 = ctx.createBufferSource();
+    src2.buffer = buf;
+    src2.connect(gain);
+    gain.connect(ctx.destination);
+
+    const now = ctx.currentTime;
+    const end = now + Math.max(dur, fadeIn + fadeOut);
+    gain.gain.setValueAtTime(0, now);
+    gain.gain.linearRampToValueAtTime(target, now + fadeIn);
+    gain.gain.setValueAtTime(target, Math.max(now + fadeIn, end - fadeOut));
+    gain.gain.linearRampToValueAtTime(0, end);
+    src2.start(now);
+    src2.stop(end + 0.05);
+    src2.onended = () => {
+      if (this.previewSource === src2) {
+        this.previewSource = null;
+        this.previewGain = null;
+      }
+      try {
+        src2.disconnect();
+        gain.disconnect();
+      } catch {
+        /* already gone */
+      }
+    };
+    this.previewSource = src2;
+    this.previewGain = gain;
+  }
+
+  stopPreview() {
+    this.previewToken++; // supersede any decode still in flight
+    const s = this.previewSource;
+    const g = this.previewGain;
+    this.previewSource = null;
+    this.previewGain = null;
+    if (this.ctx && g) {
+      const now = this.ctx.currentTime;
+      try {
+        g.gain.cancelScheduledValues(now);
+        g.gain.setValueAtTime(g.gain.value, now);
+        g.gain.linearRampToValueAtTime(0, now + 0.1);
+      } catch {
+        /* ignore */
+      }
+    }
+    if (s) {
+      try {
+        s.onended = null;
+        s.stop((this.ctx?.currentTime ?? 0) + 0.12);
+      } catch {
+        /* already stopped/ended */
+      }
+      const dead = { s, g };
+      setTimeout(() => {
+        try {
+          dead.s.disconnect();
+          dead.g?.disconnect();
+        } catch {
+          /* already gone */
+        }
+      }, 200);
+    }
+  }
+
   stop() {
     this.voiceSegs.forEach((s) => {
       try {
@@ -452,6 +549,10 @@ class AudioEngine {
     this.voiceSegs = [];
     this.lineStarts = [];
     this.stopAmbient();
+    this.stopPreview();
+    // Decoded buffers are bound to this context; drop them so a fresh context
+    // re-decodes rather than reusing buffers from a closed context.
+    this.previewCache.clear();
     if (this.ctx) {
       this.ctx.close().catch(() => {});
       this.ctx = null;
@@ -691,6 +792,36 @@ export default function Home() {
     wakeLockRef.current = null;
   }
 
+  // Tray auditions. Voice greetings are short cached clips per voice slot;
+  // soundscape previews play a few seconds of the real bed, level-matched. Both
+  // fail silently if the asset isn't there yet (e.g. clips not generated).
+  function previewVoice(v: VoiceChoice, a: Accent) {
+    if (v === "none") {
+      engineRef.current.stopPreview();
+      return;
+    }
+    engineRef.current.preview(asset(`/voice-previews/${v}-${a}.mp3`), {
+      gain: 0.85,
+    });
+  }
+  function previewSound(id: Soundscape) {
+    const def = soundDef(id);
+    if (!def || def.soon || !def.src) {
+      engineRef.current.stopPreview();
+      return;
+    }
+    const gain =
+      def.rms != null && def.peak != null
+        ? normGain(def.rms, def.peak, BED_SOLO)
+        : 0.7;
+    engineRef.current.preview(asset(def.src), { seconds: 6, gain });
+  }
+
+  // Silence any audition the moment the tray closes (scrim tap, begin, etc.).
+  useEffect(() => {
+    if (!trayOpen) engineRef.current.stopPreview();
+  }, [trayOpen]);
+
   const selected = getContext(context) ?? CONTEXTS[0];
   const soundLabel =
     SOUNDSCAPES.find((s) => s.id === soundscape)?.label ?? "Off";
@@ -800,7 +931,8 @@ export default function Home() {
 
   async function begin() {
     // Unlock the audio engine within this tap so mobile browsers will let the
-    // voice + soundscape play once ready.
+    // voice + soundscape play once ready. Stop any tray audition first.
+    engineRef.current.stopPreview();
     engineRef.current.unlock();
 
     setError(null);
@@ -1193,19 +1325,28 @@ export default function Home() {
                 <div className="seg seg3">
                   <button
                     className={voice === "female" ? "on" : ""}
-                    onClick={() => setVoice("female")}
+                    onClick={() => {
+                      setVoice("female");
+                      previewVoice("female", accent);
+                    }}
                   >
                     Her
                   </button>
                   <button
                     className={voice === "male" ? "on" : ""}
-                    onClick={() => setVoice("male")}
+                    onClick={() => {
+                      setVoice("male");
+                      previewVoice("male", accent);
+                    }}
                   >
                     Him
                   </button>
                   <button
                     className={voice === "none" ? "on" : ""}
-                    onClick={() => setVoice("none")}
+                    onClick={() => {
+                      setVoice("none");
+                      engineRef.current.stopPreview();
+                    }}
                   >
                     None
                   </button>
@@ -1214,14 +1355,20 @@ export default function Home() {
                   <div className="flags">
                     <button
                       className={`flagbtn ${accent === "us" ? "on" : ""}`}
-                      onClick={() => setAccent("us")}
+                      onClick={() => {
+                        setAccent("us");
+                        previewVoice(voice, "us");
+                      }}
                       aria-label="American accent"
                     >
                       🇺🇸
                     </button>
                     <button
                       className={`flagbtn ${accent === "uk" ? "on" : ""}`}
-                      onClick={() => setAccent("uk")}
+                      onClick={() => {
+                        setAccent("uk");
+                        previewVoice(voice, "uk");
+                      }}
                       aria-label="British accent"
                     >
                       🇬🇧
@@ -1256,7 +1403,10 @@ export default function Home() {
               <div className="rail">
                 <button
                   className={`chip ${soundscape === "silence" ? "on" : ""}`}
-                  onClick={() => setSoundscape("silence")}
+                  onClick={() => {
+                    setSoundscape("silence");
+                    engineRef.current.stopPreview();
+                  }}
                 >
                   Off
                 </button>
@@ -1267,7 +1417,11 @@ export default function Home() {
                     className={`chip ${soundscape === s.id ? "on" : ""} ${
                       s.soon ? "soon" : ""
                     }`}
-                    onClick={() => !s.soon && setSoundscape(s.id)}
+                    onClick={() => {
+                      if (s.soon) return;
+                      setSoundscape(s.id);
+                      previewSound(s.id);
+                    }}
                   >
                     {s.label}
                     {s.soon && <span className="soon-tag">soon</span>}

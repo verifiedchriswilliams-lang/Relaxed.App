@@ -45,6 +45,16 @@ jobs:
           BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
         run: node scripts/build-voice-cache.mjs ${{ github.event.inputs.voices }}
 
+      - name: Build the voice previews
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_FEMALE_US: ${{ secrets.ELEVENLABS_VOICE_FEMALE_US }}
+          ELEVENLABS_VOICE_MALE_US: ${{ secrets.ELEVENLABS_VOICE_MALE_US }}
+          ELEVENLABS_VOICE_FEMALE_UK: ${{ secrets.ELEVENLABS_VOICE_FEMALE_UK }}
+          ELEVENLABS_VOICE_MALE_UK: ${{ secrets.ELEVENLABS_VOICE_MALE_UK }}
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        run: node scripts/build-voice-previews.mjs ${{ github.event.inputs.voices }}
+
       - name: Commit the results
         run: |
           git config user.name "github-actions[bot]"
@@ -52,6 +62,7 @@ jobs:
           # Manifest always; MP3s only if they're still tracked (pre-migration).
           git add lib/voiceCacheManifest.json
           git add public/voice-cache 2>/dev/null || true
+          git add public/voice-previews 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "No changes to commit (cache already up to date)."
           else
