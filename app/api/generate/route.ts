@@ -8,7 +8,9 @@ import {
 
 // Node runtime so the ElevenLabs binary responses decode cleanly.
 export const runtime = "nodejs";
-export const maxDuration = 60; // seconds; script + per-segment voice can take a while
+// Long (20-30 min) sessions need headroom for the script + many voice segments.
+// Capped to the plan's real limit by Vercel (Hobby 60s, Pro/Fluid up to 300s).
+export const maxDuration = 300;
 
 interface GenerateBody {
   name?: string;
@@ -37,6 +39,20 @@ const MAX_SEGMENTS = 20;
 const SILENCE_SCALE = Math.min(
   2,
   Math.max(1, Number(process.env.SILENCE_SCALE ?? 1.25) || 1.25)
+);
+
+// Voice audio is returned inline (base64) in the JSON response, which Vercel
+// caps at ~4.5MB. At the default 128kbps a 20-30 min session's speech blows past
+// that and the request fails. A compact 32kbps/22kHz mono MP3 is plenty for a
+// calm spoken voice over a soundscape and keeps even long sessions well under
+// the cap. Overridable via env if we later move audio out of the JSON payload.
+const OUTPUT_FORMAT = process.env.ELEVENLABS_OUTPUT_FORMAT || "mp3_22050_32";
+
+// How many ElevenLabs calls to run at once. Long sessions have many segments;
+// doing them sequentially overruns the function timeout, so fan them out.
+const TTS_CONCURRENCY = Math.min(
+  6,
+  Math.max(1, Number(process.env.TTS_CONCURRENCY ?? 4) || 4)
 );
 
 // API keys pasted into a dashboard can pick up invisible characters (e.g. the
@@ -214,7 +230,7 @@ async function synthesizeSegment(
   cfg: VoiceConfig
 ): Promise<string> {
   const res = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${cfg.voiceId}`,
+    `https://api.elevenlabs.io/v1/text-to-speech/${cfg.voiceId}?output_format=${OUTPUT_FORMAT}`,
     {
       method: "POST",
       headers: {
@@ -280,27 +296,34 @@ export async function POST(req: NextRequest) {
 
     if (!scriptFailed && cfg) {
       const speak = mergeToMax(splitIntoSegments(script), MAX_SEGMENTS);
-      try {
-        // Sequential to respect free-tier concurrency limits.
-        for (const s of speak) {
-          let audio: string | null = null;
+      // Synthesize segments with bounded concurrency so long sessions (many
+      // segments) finish inside the function timeout. Order is preserved.
+      const audios: (string | null)[] = new Array(speak.length).fill(null);
+      let next = 0;
+      const worker = async () => {
+        for (;;) {
+          const i = next++;
+          if (i >= speak.length) return;
           try {
-            audio = await synthesizeSegment(s.text, cfg);
+            audios[i] = await synthesizeSegment(speak[i].text, cfg);
           } catch (err) {
             console.error("[generate] segment synthesis failed:", err);
-            // If the very first segment fails (bad key, quota, etc.), give up on
-            // voice entirely and fall back to read-along.
-            if (segments.length === 0) {
-              voiceFailed = true;
-              segments = [];
-              break;
-            }
-            // Otherwise keep the pause, drop just this segment's audio.
+            audios[i] = null; // keep the pause, drop just this segment's audio
           }
-          segments.push({ audio, pauseAfter: s.pauseAfter * SILENCE_SCALE });
         }
-      } catch (err) {
-        console.error("[generate] voice synthesis failed:", err);
+      };
+      await Promise.all(
+        Array.from({ length: Math.min(TTS_CONCURRENCY, speak.length) }, worker)
+      );
+
+      segments = speak.map((s, i) => ({
+        audio: audios[i],
+        pauseAfter: s.pauseAfter * SILENCE_SCALE,
+      }));
+
+      // If not a single segment came back, treat voice as unavailable and fall
+      // back to read-along rather than playing silent gaps.
+      if (!segments.some((s) => s.audio)) {
         voiceFailed = true;
         segments = [];
       }
