@@ -102,7 +102,7 @@ const PEAK_CEIL = -1.5; // never let a peak go above this
 const VOICE_STATS: Record<string, { rms: number; peak: number }> = {
   "female-us": { rms: -18.0, peak: -3.4 },
   "male-us": { rms: -26.8, peak: -9.8 },
-  "female-uk": { rms: -30.6, peak: -9.7 },
+  "female-uk": { rms: -15.2, peak: -2.2 },
   "male-uk": { rms: -24.9, peak: -8.5 },
 };
 
