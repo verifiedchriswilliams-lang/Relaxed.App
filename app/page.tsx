@@ -1323,7 +1323,8 @@ export default function Home() {
 
   return (
     <>
-      <SkyCanvas />
+      <div className="photo-sky" />
+      <div className="photo-scrim" />
       <div
         className={`mood-glow ${moodOn ? "on" : ""}`}
         style={{ "--gc": selected.glow } as React.CSSProperties}
