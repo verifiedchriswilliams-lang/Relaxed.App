@@ -26,13 +26,47 @@ function Wordmark() {
   );
 }
 
-type Soundscape = "silence" | "rain" | "ocean" | "drone";
-const SOUNDSCAPES: { id: Soundscape; label: string }[] = [
-  { id: "silence", label: "Off" },
-  { id: "rain", label: "Rain" },
-  { id: "ocean", label: "Ocean" },
-  { id: "drone", label: "Drone" },
+// Soundscapes synthesized live in the browser (no audio files). Recorded beds
+// (thunderstorm, windchimes, piano, LoFi, singing bowls, fire, forest, ...) are
+// coming via ElevenLabs generation and will slot into these same categories.
+type Soundscape =
+  | "silence"
+  | "rain"
+  | "ocean"
+  | "wind"
+  | "drone"
+  | "pad432"
+  | "pad"
+  | "brown"
+  | "pink"
+  | "white"
+  | "binaural"
+  | "delta"
+  | "theta";
+type SoundCat = "nature" | "ambient" | "focus";
+
+const SOUND_CATS: { id: SoundCat; label: string }[] = [
+  { id: "nature", label: "Nature" },
+  { id: "ambient", label: "Ambient" },
+  { id: "focus", label: "Focus" },
 ];
+const SOUNDSCAPES: { id: Soundscape; label: string; cat: SoundCat }[] = [
+  { id: "rain", label: "Rain", cat: "nature" },
+  { id: "ocean", label: "Ocean", cat: "nature" },
+  { id: "wind", label: "Wind", cat: "nature" },
+  { id: "drone", label: "Drone", cat: "ambient" },
+  { id: "pad432", label: "432 Hz", cat: "ambient" },
+  { id: "pad", label: "Ambient Pad", cat: "ambient" },
+  { id: "brown", label: "Brown Noise", cat: "focus" },
+  { id: "pink", label: "Pink Noise", cat: "focus" },
+  { id: "white", label: "White Noise", cat: "focus" },
+  { id: "binaural", label: "Binaural", cat: "focus" },
+  { id: "delta", label: "Delta 3.2Hz", cat: "focus" },
+  { id: "theta", label: "Theta", cat: "focus" },
+];
+function catOf(id: Soundscape): SoundCat {
+  return SOUNDSCAPES.find((s) => s.id === id)?.cat ?? "nature";
+}
 
 type Accent = "us" | "uk";
 
@@ -46,8 +80,6 @@ const PREFS_KEY = "elevenmind.prefs.v1";
 
 // Constant, exact playback speed for voiced segments (Web Audio is clock-locked).
 const VOICE_RATE = 1.0;
-// The soundscape sits under the voice as background, not beside it.
-const AMBIENT_LEVEL = { drone: 0.12, noise: 0.3 } as const;
 
 // ---------------------------------------------------------------------------
 // One audio engine for the whole session. Both the synthesized soundscape and
@@ -157,37 +189,121 @@ class AudioEngine {
     master.connect(ctx.destination);
     this.ambientMaster = master;
 
-    if (kind === "drone") {
-      [110, 164.81, 220].forEach((f, i) => {
+    // Background ceilings: noise beds sit around a third of the voice; sustained
+    // tones and binaural beats run quieter still (they fatigue faster).
+    let target = 0.3;
+    const push = (...n: AudioNode[]) => this.ambientNodes.push(...n);
+
+    // A looping noise source, optionally shaped by a filter with a slow swell.
+    const noiseBed = (
+      source: AudioBufferSourceNode,
+      filterType: BiquadFilterType | null,
+      freq: number,
+      swell?: { rate: number; depth: number }
+    ) => {
+      if (filterType) {
+        const f = ctx.createBiquadFilter();
+        f.type = filterType;
+        f.frequency.value = freq;
+        source.connect(f).connect(master);
+        push(source, f);
+        if (swell) {
+          const lfo = ctx.createOscillator();
+          lfo.frequency.value = swell.rate;
+          const lg = ctx.createGain();
+          lg.gain.value = swell.depth;
+          lfo.connect(lg).connect(f.frequency);
+          lfo.start();
+          push(lfo, lg);
+        }
+      } else {
+        source.connect(master);
+        push(source);
+      }
+    };
+
+    // A soft chord of sine partials (drone / pad / 432 Hz).
+    const tones = (freqs: number[], gains: number[], level: number) => {
+      target = level;
+      freqs.forEach((fr, i) => {
         const osc = ctx.createOscillator();
         osc.type = "sine";
-        osc.frequency.value = f;
-        const g = ctx.createGain();
-        g.gain.value = i === 0 ? 0.5 : 0.22;
-        osc.connect(g).connect(master);
+        osc.frequency.value = fr;
+        const gain = ctx.createGain();
+        gain.gain.value = gains[i] ?? 0.25;
+        osc.connect(gain).connect(master);
         osc.start();
-        this.ambientNodes.push(osc, g);
+        push(osc, gain);
       });
-    } else {
-      const noise = this.brownNoise(ctx);
-      const filter = ctx.createBiquadFilter();
-      filter.type = "lowpass";
-      filter.frequency.value = kind === "rain" ? 1600 : 520;
-      noise.connect(filter).connect(master);
-      this.ambientNodes.push(noise, filter);
+    };
 
-      if (kind === "ocean") {
-        const lfo = ctx.createOscillator();
-        lfo.frequency.value = 0.08;
-        const lfoGain = ctx.createGain();
-        lfoGain.gain.value = 340;
-        lfo.connect(lfoGain).connect(filter.frequency);
-        lfo.start();
-        this.ambientNodes.push(lfo, lfoGain);
-      }
+    // Two carriers a few Hz apart, panned hard left/right: the ear hears the
+    // difference as a beat. Needs headphones to work as intended.
+    const binaural = (beat: number, carrier: number) => {
+      target = 0.16;
+      const side = (freq: number, pan: number) => {
+        const osc = ctx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        const gain = ctx.createGain();
+        gain.gain.value = 0.5;
+        osc.connect(gain);
+        let out: AudioNode = gain;
+        if (typeof ctx.createStereoPanner === "function") {
+          const p = ctx.createStereoPanner();
+          p.pan.value = pan;
+          gain.connect(p);
+          out = p;
+          push(p);
+        }
+        out.connect(master);
+        osc.start();
+        push(osc, gain);
+      };
+      side(carrier, -1);
+      side(carrier + beat, 1);
+    };
+
+    switch (kind) {
+      case "rain":
+        noiseBed(this.brownNoise(ctx), "lowpass", 1600);
+        break;
+      case "ocean":
+        noiseBed(this.brownNoise(ctx), "lowpass", 520, { rate: 0.08, depth: 340 });
+        break;
+      case "wind":
+        target = 0.26;
+        noiseBed(this.brownNoise(ctx), "bandpass", 500, { rate: 0.05, depth: 320 });
+        break;
+      case "brown":
+        noiseBed(this.brownNoise(ctx), null, 0);
+        break;
+      case "pink":
+        noiseBed(this.pinkNoise(ctx), null, 0);
+        break;
+      case "white":
+        noiseBed(this.whiteNoise(ctx), "lowpass", 8000);
+        break;
+      case "drone":
+        tones([110, 164.81, 220], [0.5, 0.22, 0.22], 0.12);
+        break;
+      case "pad432":
+        tones([216, 432, 648], [0.5, 0.28, 0.16], 0.11);
+        break;
+      case "pad":
+        tones([130.81, 164.81, 196.0], [0.4, 0.3, 0.3], 0.12);
+        break;
+      case "binaural":
+        binaural(10, 200);
+        break;
+      case "delta":
+        binaural(3.2, 100);
+        break;
+      case "theta":
+        binaural(6, 200);
+        break;
     }
 
-    const target = kind === "drone" ? AMBIENT_LEVEL.drone : AMBIENT_LEVEL.noise;
     master.gain.linearRampToValueAtTime(target, ctx.currentTime + 3);
   }
 
@@ -248,6 +364,42 @@ class AudioEngine {
       const white = Math.random() * 2 - 1;
       last = (last + 0.02 * white) / 1.02;
       data[i] = last * 3.5;
+    }
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    src.loop = true;
+    src.start();
+    return src;
+  }
+
+  private whiteNoise(ctx: AudioContext): AudioBufferSourceNode {
+    const size = 2 * ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, size, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < size; i++) data[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    src.loop = true;
+    src.start();
+    return src;
+  }
+
+  // Pink noise (equal energy per octave) via the Paul Kellet approximation.
+  private pinkNoise(ctx: AudioContext): AudioBufferSourceNode {
+    const size = 2 * ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, size, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    let b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
+    for (let i = 0; i < size; i++) {
+      const white = Math.random() * 2 - 1;
+      b0 = 0.99886 * b0 + white * 0.0555179;
+      b1 = 0.99332 * b1 + white * 0.0750759;
+      b2 = 0.969 * b2 + white * 0.153852;
+      b3 = 0.8665 * b3 + white * 0.3104856;
+      b4 = 0.55 * b4 + white * 0.5329522;
+      b5 = -0.7616 * b5 - white * 0.016898;
+      data[i] = (b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362) * 0.11;
+      b6 = white * 0.115926;
     }
     const src = ctx.createBufferSource();
     src.buffer = buffer;
@@ -545,6 +697,7 @@ export default function Home() {
   const [voice, setVoice] = useState<VoiceChoice>("female");
   const [accent, setAccent] = useState<Accent>("us");
   const [soundscape, setSoundscape] = useState<Soundscape>("rain");
+  const [soundTab, setSoundTab] = useState<SoundCat>("nature");
   const [saveDefault, setSaveDefault] = useState(false);
   const [trayOpen, setTrayOpen] = useState(false);
 
@@ -573,7 +726,10 @@ export default function Home() {
         if (p.name) setName(p.name);
         if (p.voice) setVoice(p.voice);
         if (p.accent) setAccent(p.accent);
-        if (p.soundscape) setSoundscape(p.soundscape);
+        if (p.soundscape) {
+          setSoundscape(p.soundscape);
+          setSoundTab(catOf(p.soundscape));
+        }
         setSaveDefault(true);
       }
     } catch {
@@ -975,8 +1131,25 @@ export default function Home() {
 
             <div className="opt">
               <div className="ol">Soundscape</div>
+              <div className="soundtabs">
+                {SOUND_CATS.map((t) => (
+                  <button
+                    key={t.id}
+                    className={soundTab === t.id ? "on" : ""}
+                    onClick={() => setSoundTab(t.id)}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
               <div className="rail">
-                {SOUNDSCAPES.map((s) => (
+                <button
+                  className={`chip ${soundscape === "silence" ? "on" : ""}`}
+                  onClick={() => setSoundscape("silence")}
+                >
+                  Off
+                </button>
+                {SOUNDSCAPES.filter((s) => s.cat === soundTab).map((s) => (
                   <button
                     key={s.id}
                     className={`chip ${soundscape === s.id ? "on" : ""}`}
@@ -986,6 +1159,9 @@ export default function Home() {
                   </button>
                 ))}
               </div>
+              {soundTab === "focus" && (
+                <div className="sound-hint">Best with headphones</div>
+              )}
             </div>
 
             <div className="remember">
