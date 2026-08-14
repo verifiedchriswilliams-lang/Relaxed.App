@@ -1306,6 +1306,10 @@ export default function Home() {
         <div className="footnote">
           Every session personalized for you.
           <br />
+          <span className="credit">
+            Voiced by <b>ElevenLabs</b> · scored with <b>ElevenMusic</b>
+          </span>
+          <br />
           Not medical or therapeutic advice.
         </div>
       </main>

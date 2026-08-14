@@ -300,6 +300,16 @@ button {
   max-width: 34ch;
   margin: 0 auto;
 }
+/* Credit line — slightly brighter than the disclaimer, brand names emphasized. */
+.footnote .credit {
+  display: inline-block;
+  margin: 3px 0;
+  color: var(--ink-1);
+}
+.footnote .credit b {
+  font-weight: 700;
+  color: rgba(245, 246, 252, 0.82);
+}
 
 /* ---------------------------------------------------------------- tray */
 .scrim {
