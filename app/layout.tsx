@@ -12,19 +12,19 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://elevenmind.io"),
   title: "ElevenMind — Personalized Mindfulness",
   description:
-    "Personalized mindfulness, composed on demand. Every session is made for you, from your name, the time you have, and the state you want to reach, voiced aloud over a calming soundscape.",
+    "The way out is in. ElevenMind writes you a mindfulness session in the moment, from your name, the time you have, and the state you want to reach, and speaks it aloud over a calming soundscape.",
   openGraph: {
     type: "website",
     siteName: "ElevenMind",
     url: "/",
     title: "ElevenMind — Personalized Mindfulness",
     description:
-      "Personalized mindfulness, composed on demand. Every session made for you, voiced aloud over a calming soundscape.",
+      "The way out is in. A mindfulness session composed for you in the moment, voiced aloud over a calming soundscape.",
   },
   twitter: {
     card: "summary_large_image",
     title: "ElevenMind — Personalized Mindfulness",
-    description: "Personalized mindfulness, composed on demand.",
+    description: "The way out is in.",
   },
 };
 
