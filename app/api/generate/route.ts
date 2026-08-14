@@ -93,6 +93,17 @@ async function synthesizeVoice(
     !!configured && !configured.startsWith("sk_") && configured.length <= 40;
   const voiceId = looksLikeVoiceId ? (configured as string) : DEFAULT_VOICE;
 
+  // Delivery tuned for meditation: slower speaking rate and a steadier, calmer
+  // tone. Both are env-tunable so they can be dialed in by ear.
+  const clamp = (v: number, lo: number, hi: number) =>
+    Math.min(hi, Math.max(lo, v));
+  const speed = clamp(Number(process.env.ELEVENLABS_SPEED ?? 0.8) || 0.8, 0.7, 1.2);
+  const stability = clamp(
+    Number(process.env.ELEVENLABS_STABILITY ?? 0.85) || 0.85,
+    0,
+    1
+  );
+
   const res = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
     {
@@ -106,10 +117,11 @@ async function synthesizeVoice(
         text: script,
         model_id: "eleven_multilingual_v2",
         voice_settings: {
-          stability: 0.5,
+          stability,
           similarity_boost: 0.75,
           style: 0.0,
           use_speaker_boost: true,
+          speed, // < 1.0 slows the voice; the biggest lever for a calm pace
         },
       }),
     }
