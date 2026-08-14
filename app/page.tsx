@@ -829,6 +829,33 @@ export default function Home() {
   const endTimerRef = useRef<number | null>(null);
   const tickRef = useRef<number | null>(null);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  // Keep the phone from auto-sleeping during a session (which suspends browser
+  // audio and kills playback). Foreground only; the OS releases it on lock, so
+  // we re-request when the tab becomes visible again. True background/locked
+  // playback (a phone in your pocket) needs the native app.
+  async function acquireWakeLock() {
+    try {
+      const wl = navigator.wakeLock;
+      if (wl && !wakeLockRef.current) {
+        wakeLockRef.current = await wl.request("screen");
+        wakeLockRef.current.addEventListener("release", () => {
+          wakeLockRef.current = null;
+        });
+      }
+    } catch {
+      /* unsupported or denied; the session simply behaves as before */
+    }
+  }
+  function releaseWakeLock() {
+    try {
+      wakeLockRef.current?.release();
+    } catch {
+      /* already released */
+    }
+    wakeLockRef.current = null;
+  }
 
   const selected = getContext(context) ?? CONTEXTS[0];
   const soundLabel =
@@ -858,10 +885,29 @@ export default function Home() {
     const engine = engineRef.current;
     return () => {
       engine.stop();
+      releaseWakeLock();
       if (endTimerRef.current) window.clearTimeout(endTimerRef.current);
       if (tickRef.current) window.clearInterval(tickRef.current);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // The OS drops the wake lock when the tab is hidden (e.g. a brief lock); grab
+  // it again when the user returns while a session is still playing.
+  useEffect(() => {
+    function onVis() {
+      if (
+        document.visibilityState === "visible" &&
+        playing &&
+        screen === "player"
+      ) {
+        acquireWakeLock();
+      }
+    }
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playing, screen]);
 
   // Karaoke: follow the spoken line on the player screen, synced to the audio
   // clock so it stays exact and pauses when the session pauses.
@@ -1009,6 +1055,7 @@ export default function Home() {
     setPlaying(true);
     setElapsed(0);
     startTick();
+    acquireWakeLock();
 
     if (endTimerRef.current) window.clearTimeout(endTimerRef.current);
     endTimerRef.current = window.setTimeout(
@@ -1022,10 +1069,12 @@ export default function Home() {
       engineRef.current.suspend();
       stopTick();
       setPlaying(false);
+      releaseWakeLock();
     } else {
       engineRef.current.resume();
       startTick();
       setPlaying(true);
+      acquireWakeLock();
     }
   }
 
@@ -1033,6 +1082,7 @@ export default function Home() {
     engineRef.current.stop();
     if (endTimerRef.current) window.clearTimeout(endTimerRef.current);
     stopTick();
+    releaseWakeLock();
     setPlaying(false);
     setElapsed(0);
     setScreen("setup");

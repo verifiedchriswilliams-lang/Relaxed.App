@@ -9,9 +9,23 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "ElevenMind: guided sessions, composed on demand",
+  metadataBase: new URL("https://elevenmind.io"),
+  title: "ElevenMind — Personalized Mindfulness",
   description:
-    "Personalized mindfulness. Every session is written fresh for you, from your name, the time you have, and the state you want to reach, then voiced aloud.",
+    "Personalized mindfulness, composed on demand. Every session is made for you, from your name, the time you have, and the state you want to reach, voiced aloud over a calming soundscape.",
+  openGraph: {
+    type: "website",
+    siteName: "ElevenMind",
+    url: "/",
+    title: "ElevenMind — Personalized Mindfulness",
+    description:
+      "Personalized mindfulness, composed on demand. Every session made for you, voiced aloud over a calming soundscape.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ElevenMind — Personalized Mindfulness",
+    description: "Personalized mindfulness, composed on demand.",
+  },
 };
 
 export const viewport: Viewport = {
