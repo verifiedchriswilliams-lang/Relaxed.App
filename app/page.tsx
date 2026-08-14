@@ -42,7 +42,7 @@ type Soundscape =
   | "piano"
   | "lofi"
   | "bowls"
-  | "strings"
+  | "harp"
   | "brown"
   | "pad432"
   | "binaural"
@@ -67,24 +67,25 @@ interface SoundDef {
   soon?: boolean; // asset not added yet; shown but disabled
 }
 const SOUNDSCAPES: SoundDef[] = [
-  // Nature — Rain/Ocean/Wind synthesized today; the rest are ElevenLabs beds.
-  { id: "rain", label: "Rain", cat: "nature" },
-  { id: "ocean", label: "Ocean Waves", cat: "nature" },
-  { id: "wind", label: "Wind", cat: "nature" },
-  { id: "thunder", label: "Thunderstorm", cat: "nature", src: "/sounds/nature/thunderstorm.mp3", soon: true },
-  { id: "windchimes", label: "Windchimes", cat: "nature", src: "/sounds/nature/windchimes.mp3", soon: true },
-  // Music — Ambient is a synthesized pad today; the rest are ElevenLabs beds.
-  { id: "pad", label: "Ambient", cat: "music" },
-  { id: "piano", label: "Piano", cat: "music", src: "/sounds/music/piano.mp3", soon: true },
-  { id: "lofi", label: "LoFi", cat: "music", src: "/sounds/music/lofi.mp3", soon: true },
-  { id: "bowls", label: "Singing Bowls", cat: "music", src: "/sounds/music/singing-bowls.mp3", soon: true },
-  { id: "strings", label: "Strings", cat: "music", src: "/sounds/music/strings.mp3", soon: true },
-  // Frequencies — all synthesized live in the browser.
+  // Nature — ElevenLabs recordings (looping).
+  { id: "rain", label: "Rain", cat: "nature", src: "/sounds/Rain.mp3" },
+  { id: "ocean", label: "Ocean Waves", cat: "nature", src: "/sounds/Ocean.mp3" },
+  { id: "wind", label: "Wind", cat: "nature", src: "/sounds/Wind.mp3" },
+  { id: "thunder", label: "Thunderstorm", cat: "nature", src: "/sounds/Thunderstorm.mp3" },
+  { id: "windchimes", label: "Windchimes", cat: "nature", src: "/sounds/WindChimes.mp3" },
+  // Music — ElevenLabs recordings. Singing Bowls + Harp await their upload.
+  { id: "pad", label: "Ambient", cat: "music", src: "/sounds/Ambient.mp3" },
+  { id: "piano", label: "Piano", cat: "music", src: "/sounds/Piano.mp3" },
+  { id: "lofi", label: "LoFi", cat: "music", src: "/sounds/LoFi.mp3" },
+  { id: "bowls", label: "Singing Bowls", cat: "music", src: "/sounds/SingingBowl.mp3", soon: true },
+  { id: "harp", label: "Harp", cat: "music", src: "/sounds/Harp.mp3", soon: true },
+  // Frequencies — Binaural/Delta/Theta are recordings; Brown Noise + 432 Hz
+  // stay synthesized until their files are uploaded.
   { id: "brown", label: "Brown Noise", cat: "frequencies" },
   { id: "pad432", label: "432 Hz", cat: "frequencies" },
-  { id: "binaural", label: "Binaural", cat: "frequencies" },
-  { id: "delta", label: "Delta 3.2Hz", cat: "frequencies" },
-  { id: "theta", label: "Theta", cat: "frequencies" },
+  { id: "binaural", label: "Binaural", cat: "frequencies", src: "/sounds/Binaural.mp3" },
+  { id: "delta", label: "Delta", cat: "frequencies", src: "/sounds/Delta.mp3" },
+  { id: "theta", label: "Theta", cat: "frequencies", src: "/sounds/Theta.mp3" },
 ];
 function catOf(id: Soundscape): SoundCat {
   return SOUNDSCAPES.find((s) => s.id === id)?.cat ?? "nature";
@@ -205,7 +206,7 @@ class AudioEngine {
     if (lastSrc) lastSrc.onended = () => this.onVoiceEnded?.();
   }
 
-  startAmbient(kind: Soundscape, src?: string) {
+  startAmbient(kind: Soundscape, src?: string, level?: number) {
     this.stopAmbient();
     if (kind === "silence") return;
     const ctx = this.ensureCtx();
@@ -217,7 +218,7 @@ class AudioEngine {
     // A hosted looping bed (ElevenLabs nature/music track).
     if (src) {
       this.startFile(ctx, src, master);
-      master.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 3);
+      master.gain.linearRampToValueAtTime(level ?? 0.4, ctx.currentTime + 3);
       return;
     }
 
@@ -336,7 +337,7 @@ class AudioEngine {
         break;
     }
 
-    master.gain.linearRampToValueAtTime(target, ctx.currentTime + 3);
+    master.gain.linearRampToValueAtTime(level ?? target, ctx.currentTime + 3);
   }
 
   suspend() {
@@ -881,7 +882,11 @@ export default function Home() {
     const eng = engineRef.current;
     eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
     const def = soundDef(soundscape);
-    eng.startAmbient(soundscape, def && !def.soon ? def.src : undefined);
+    const src = def && !def.soon ? def.src : undefined;
+    // With no narration, the soundscape is the whole experience, so bring a
+    // recorded bed forward instead of keeping it in the background.
+    const level = voice === "none" && src ? 0.85 : undefined;
+    eng.startAmbient(soundscape, src, level);
     eng.playSegments(segments);
     setPlaying(true);
     setElapsed(0);
