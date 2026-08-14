@@ -452,10 +452,13 @@ class AudioEngine {
   // seconds caps the length (beds); omit to play a whole clip (voice). Called
   // from a tap, so the context unlocks. Any prior preview is faded out first.
   async preview(src: string, opts?: { seconds?: number; gain?: number }) {
+    // Fade out any current preview first (this bumps the token counter), THEN
+    // claim our token — otherwise stopPreview would invalidate our own token
+    // and the guard below would bail before playback.
+    this.stopPreview();
     const ctx = this.ensureCtx();
     await ctx.resume().catch(() => {});
     const token = ++this.previewToken;
-    this.stopPreview();
     let buf = this.previewCache.get(src);
     if (!buf) {
       try {
