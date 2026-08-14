@@ -1190,11 +1190,6 @@ export default function Home() {
                   </div>
                 )}
               </div>
-              {voice === "none" && (
-                <div className="sound-hint">
-                  Sounds only, no spoken guidance.
-                </div>
-              )}
             </div>
 
             <div className="opt">
