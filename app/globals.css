@@ -804,6 +804,11 @@ button {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.25);
 }
+/* ElevenLabs / ElevenMusic names glow a touch brighter than their step. */
+.step b {
+  font-weight: 700;
+  color: #fff;
+}
 .step.done {
   color: var(--ink-1);
 }

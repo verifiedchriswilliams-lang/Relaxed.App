@@ -952,6 +952,25 @@ export default function Home() {
     }
   }
 
+  // Advance the per-state variant counter (persisted on the device) so each
+  // successive session of a state cycles to the next script variant rather than
+  // a random pick that can repeat.
+  function nextVariantSeq(id: ContextId): number {
+    try {
+      const key = "em_variant_seq";
+      const map = JSON.parse(localStorage.getItem(key) || "{}") as Record<
+        string,
+        number
+      >;
+      const next = (map[id] ?? -1) + 1;
+      map[id] = next;
+      localStorage.setItem(key, JSON.stringify(map));
+      return next;
+    } catch {
+      return Math.floor(Math.random() * 1000);
+    }
+  }
+
   function chooseIntention(id: ContextId) {
     setContext(id);
     setError(null);
@@ -1003,6 +1022,7 @@ export default function Home() {
           durationMin: duration,
           voice,
           accent,
+          variantSeq: nextVariantSeq(context),
         }),
       });
       const data = await res.json();
@@ -1131,22 +1151,24 @@ export default function Home() {
           </div>
           <div className="steps">
             {[
-              "Crafting your journey",
-              "Gathering your soundscape from ElevenMusic",
-              "Your ElevenLabs voice is preparing to guide you",
-            ].map(
-              (label, i) => (
-                <div
-                  key={label}
-                  className={`step ${i < genStep ? "done" : ""} ${
-                    i === genStep ? "active" : ""
-                  }`}
-                >
-                  <div className="dot" />
-                  <div>{label}</div>
-                </div>
-              )
-            )}
+              <>Crafting your journey</>,
+              <>
+                Scoring your soundscape with <b>ElevenMusic</b>
+              </>,
+              <>
+                Giving it voice with <b>ElevenLabs</b>
+              </>,
+            ].map((label, i) => (
+              <div
+                key={i}
+                className={`step ${i < genStep ? "done" : ""} ${
+                  i === genStep ? "active" : ""
+                }`}
+              >
+                <div className="dot" />
+                <div>{label}</div>
+              </div>
+            ))}
           </div>
           <div className="gen-foot">
             No progress bar. Settle in, and find a position you can hold for{" "}

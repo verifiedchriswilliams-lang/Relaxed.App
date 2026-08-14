@@ -157,8 +157,15 @@ export async function POST(req: NextRequest) {
     const accent: Accent = body.accent === "uk" ? "uk" : "us";
     const who = name.trim() || "friend";
 
-    // Pick a variant to rotate for freshness (harmless when there is only one).
-    const variant = Math.floor(Math.random() * variantCount(contextId));
+    // Rotate variants for freshness. The client sends an incrementing per-state
+    // sequence (persisted on the device), so consecutive sessions of the same
+    // state always advance to the next variant instead of a random pick that can
+    // repeat. Falls back to random if no sequence is provided.
+    const count = variantCount(contextId);
+    const seq = Number((body as { variantSeq?: number }).variantSeq);
+    const variant = Number.isFinite(seq)
+      ? ((seq % count) + count) % count
+      : Math.floor(Math.random() * count);
     const lines: ResolvedLine[] = assembleSession(contextId, durationMin, variant);
     const transcript = sessionTranscript(lines, name);
 
