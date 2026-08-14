@@ -56,25 +56,34 @@ const VOICES = {
     "UmQN7jS1Ee8B1czsUtQh",
 };
 
-// Each voice introduces *itself* — a distinct line with its own warmth and
-// personality, so choosing a voice feels like choosing a guide, not a setting.
-// Override a single slot with VOICE_PREVIEW_TEXT_<SLOT> (e.g.
-// VOICE_PREVIEW_TEXT_FEMALE_UK), or all of them with VOICE_PREVIEW_TEXT.
-const PREVIEW_TEXTS = {
+// Each voice introduces *itself* by name — a distinct line with its own warmth
+// and personality, so choosing a voice feels like choosing a guide, not a
+// setting. Names come from lib/voices.json (shared with the app, so the name
+// heard here always matches the name shown in the tray). Override a single slot
+// with VOICE_PREVIEW_TEXT_<SLOT>, or all of them with VOICE_PREVIEW_TEXT.
+const GUIDES = JSON.parse(
+  fs.readFileSync(path.join(ROOT, "lib", "voices.json"), "utf8")
+);
+const PREVIEW_TEMPLATES = {
   "female-us":
-    "Hey — I'm really glad you're here. Let's take a breath together, and let everything else fall away.",
+    "Hi, I'm {name}. I'm really glad you're here — let's take a breath together, and let everything else fall away.",
   "male-us":
-    "Take your time settling in. I'm right here with you — we'll go slow, and we'll go easy.",
+    "Hey, I'm {name}. Take your time settling in — we'll go slow, and we'll go easy, together.",
   "female-uk":
-    "Whenever you're ready, come and sit with me. We'll let the day grow quiet, and simply breathe.",
+    "Hello, I'm {name}. Whenever you're ready, come and sit with me, and we'll let the day grow quiet.",
   "male-uk":
-    "There's nothing to do now but rest. Stay with me, and let each breath carry you a little deeper.",
+    "I'm {name}. There's nothing to do but rest — stay with me, and let each breath carry you a little deeper.",
 };
-const previewText = (slot) =>
-  process.env[`VOICE_PREVIEW_TEXT_${slot.toUpperCase().replace(/-/g, "_")}`] ||
-  process.env.VOICE_PREVIEW_TEXT ||
-  PREVIEW_TEXTS[slot] ||
-  "Hi. Whenever you're ready, we'll begin — together.";
+const previewText = (slot) => {
+  const override =
+    process.env[`VOICE_PREVIEW_TEXT_${slot.toUpperCase().replace(/-/g, "_")}`] ||
+    process.env.VOICE_PREVIEW_TEXT;
+  if (override) return override;
+  const name = GUIDES[slot]?.name ?? "";
+  const tmpl =
+    PREVIEW_TEMPLATES[slot] || "Hi, I'm {name}. Whenever you're ready, we'll begin.";
+  return tmpl.replace(/\{name\}/g, name);
+};
 
 const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
 let blobPut = null;

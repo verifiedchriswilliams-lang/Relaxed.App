@@ -10,6 +10,7 @@ import {
   type VoiceChoice,
 } from "@/lib/contexts";
 import { asset } from "@/lib/assets";
+import GUIDES from "@/lib/voices.json";
 
 // ElevenMind wordmark: the family bar glyph, then Eleven (700) + Mind (400).
 function Wordmark() {
@@ -826,6 +827,13 @@ export default function Home() {
   const soundLabel =
     SOUNDSCAPES.find((s) => s.id === soundscape)?.label ?? "Off";
   const totalSecs = duration * 60;
+  // The named guide for the current voice + accent (null when "None").
+  const guide =
+    voice !== "none"
+      ? (GUIDES as Record<string, { name: string; blurb: string }>)[
+          `${voice}-${accent}`
+        ]
+      : null;
 
   useEffect(() => {
     try {
@@ -1376,6 +1384,12 @@ export default function Home() {
                   </div>
                 )}
               </div>
+              {voice !== "none" && guide && (
+                <div className="guide">
+                  <span className="gname">{guide.name}</span>
+                  <span className="gblurb">{guide.blurb}</span>
+                </div>
+              )}
             </div>
 
             <div className="opt">

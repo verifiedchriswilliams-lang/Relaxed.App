@@ -1,0 +1,6 @@
+{
+  "female-us": { "name": "Charlie", "blurb": "warm & open" },
+  "male-us": { "name": "James", "blurb": "grounded & steady" },
+  "female-uk": { "name": "Mila", "blurb": "serene & gentle" },
+  "male-uk": { "name": "Hunter", "blurb": "calm & deep" }
+}
