@@ -99,11 +99,18 @@ const BED_UNDER_VOICE = -34; // beds sit ~10 dB below the voice during a session
 const BED_SOLO = -20; // louder for a no-voice, sounds-only session
 const PEAK_CEIL = -1.5; // never let a peak go above this
 
-const VOICE_STATS: Record<string, { rms: number; peak: number }> = {
-  "female-us": { rms: -18.0, peak: -3.4 },
-  "male-us": { rms: -26.8, peak: -9.8 },
-  "female-uk": { rms: -15.2, peak: -2.2 },
-  "male-uk": { rms: -24.9, peak: -8.5 },
+// Measured over 28 lines per voice. `trim` is a small perceptual adjustment on
+// top of RMS matching: a compressed / dense voice sounds louder than its RMS
+// suggests, so we aim it a little lower. (female-uk has the lowest crest factor,
+// so she reads loudest at equal RMS and needs the most trim.)
+const VOICE_STATS: Record<
+  string,
+  { rms: number; peak: number; trim?: number }
+> = {
+  "female-us": { rms: -18.5, peak: -1.6 },
+  "male-us": { rms: -25.1, peak: -5.1 },
+  "female-uk": { rms: -14.8, peak: -1.3, trim: -3.5 },
+  "male-uk": { rms: -24.5, peak: -4.3 },
 };
 
 // Linear gain to move a signal (rms/peak dBFS) toward a target loudness, capped
@@ -1036,9 +1043,12 @@ export default function Home() {
     const eng = engineRef.current;
     eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
 
-    // Normalize this voice to the common target so all four sound equally loud.
+    // Normalize this voice to the common target so all four sound equally loud
+    // (plus a small per-voice perceptual trim).
     const vs = VOICE_STATS[`${voice}-${accent}`];
-    eng.voiceGainValue = vs ? normGain(vs.rms, vs.peak, VOICE_TARGET) : 1;
+    eng.voiceGainValue = vs
+      ? normGain(vs.rms, vs.peak, VOICE_TARGET + (vs.trim ?? 0))
+      : 1;
 
     // Normalize the bed to a common level: quiet under the voice, louder solo.
     const def = soundDef(soundscape);
