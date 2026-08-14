@@ -1,4 +1,4 @@
-/* ElevenMind — neutral-cool UI. Six grays and nothing else; every drop of
+/* ElevenMind neutral-cool UI. Six grays and nothing else; every drop of
    colour arrives as session artwork (the discs). Manrope at every size,
    Title Case headings, tracked-uppercase labels. Light setup/generating,
    dark player. 4pt grid. */
@@ -237,6 +237,69 @@ body {
 }
 .card.active .cname {
   font-weight: 600;
+}
+
+/* ---------- Intention picker (five equal cards) ---------- */
+.ask {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.intentions {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.intention {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  cursor: pointer;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  transition: border-color 0.18s var(--ease-enter),
+    background 0.18s var(--ease-enter), transform 0.1s var(--ease-enter);
+}
+.intention:hover {
+  border-color: var(--line-strong);
+}
+.intention:active {
+  transform: scale(0.99);
+}
+.intention.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+}
+.intention .thumb {
+  width: 46px;
+  height: 46px;
+  flex: none;
+  border-radius: 12px;
+}
+.itext {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.iname {
+  font-size: 16px;
+  font-weight: 600;
+}
+.itag {
+  font-size: 13px;
+  color: var(--sub);
+}
+.intention.active .itag {
+  color: rgba(250, 250, 250, 0.7);
 }
 
 /* ---------- Pills / chips ---------- */

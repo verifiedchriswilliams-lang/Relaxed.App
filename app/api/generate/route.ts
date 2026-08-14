@@ -8,7 +8,7 @@ import {
 
 // Keep this on the Node runtime so the ElevenLabs binary response streams cleanly.
 export const runtime = "nodejs";
-export const maxDuration = 60; // seconds — script + voice generation can take a while
+export const maxDuration = 60; // seconds; script + voice generation can take a while
 
 interface GenerateBody {
   name?: string;
@@ -25,7 +25,7 @@ const MOCK_SCRIPT =
   `let your eyes gently close. <break time="3s" /> Take a slow breath in... ` +
   `<break time="2s" /> and a long breath out. <break time="3s" /> ` +
   `There is nothing to do here but breathe. <break time="3s" /> ` +
-  `(This is a preview — add your ElevenLabs key to hear it spoken aloud.)`;
+  `(This is a preview. Add your ElevenLabs key to hear it spoken aloud.)`;
 
 // API keys pasted into a dashboard can pick up invisible characters (e.g. the
 // U+2028 line separator), which break HTTP header encoding with a "cannot
@@ -77,7 +77,7 @@ async function synthesizeVoice(
   voice: "female" | "male"
 ): Promise<string | null> {
   const key = cleanKey(process.env.ELEVENLABS_API_KEY);
-  if (!key) return null; // mock mode — client will show the script without audio
+  if (!key) return null; // mock mode; client shows the script without audio
 
   // Built-in ElevenLabs premade voices, used unless a valid custom voice ID is
   // configured. Guard against a mis-pasted API key (or other junk) landing in
@@ -177,10 +177,10 @@ export async function POST(req: NextRequest) {
         "We couldn't compose a fresh session just now, so here's a sample one. Please try again in a moment.";
     } else if (voiceFailed) {
       note =
-        "The voice is unavailable right now — here's your session to read along with.";
+        "The voice is unavailable right now, so here's your session to read along with.";
     } else if (audio === null && !hasVoiceKey) {
       note =
-        "Preview mode — add your ElevenLabs key to hear this spoken aloud.";
+        "Preview mode. Add your ElevenLabs key to hear this spoken aloud.";
     }
 
     return NextResponse.json({

@@ -46,7 +46,7 @@ const PREFS_KEY = "elevenmind.prefs.v1";
 // One audio engine for the whole session. Both the synthesized soundscape and
 // the spoken voice play through a single Web Audio context, so on mobile they
 // coexist (a separate <audio> element fights Web Audio for the phone's single
-// audio channel — muting the soundscape and glitching playback speed), ignore
+// audio channel, muting the soundscape and glitching playback speed), ignore
 // the iOS silent switch, and play at the correct speed. The context is unlocked
 // inside the Begin tap to satisfy mobile autoplay rules.
 // ---------------------------------------------------------------------------
@@ -104,7 +104,7 @@ class AudioEngine {
       src.start(0);
       this.voiceSrc = src;
     } catch {
-      /* decode failed — the read-along + soundscape still carry the session */
+      /* decode failed; the read-along + soundscape still carry the session */
     }
   }
 
@@ -422,7 +422,7 @@ export default function Home() {
             </div>
           </div>
           <div className="gen-foot">
-            No progress bar. Settle in — find a position you can hold for{" "}
+            No progress bar. Settle in, and find a position you can hold for{" "}
             {duration} minutes.
           </div>
         </div>
@@ -513,8 +513,6 @@ export default function Home() {
     );
   } else {
     // ---- Setup ----
-    const top3 = CONTEXTS.slice(0, 3);
-    const bottom2 = CONTEXTS.slice(3);
     content = (
       <main className="wrap">
         <div className="top">
@@ -543,32 +541,21 @@ export default function Home() {
       </div>
 
       <div className="section">
-        <div className="label">Session</div>
-        <div className="sessions">
-          <div className="session-row">
-            {top3.map((c) => (
-              <button
-                key={c.id}
-                className={`card tall ${context === c.id ? "active" : ""}`}
-                onClick={() => setContext(c.id)}
-              >
-                <div className="thumb disc" style={{ background: c.art }} />
-                <div className="cname">{c.label}</div>
-              </button>
-            ))}
-          </div>
-          <div className="session-row">
-            {bottom2.map((c) => (
-              <button
-                key={c.id}
-                className={`card wide ${context === c.id ? "active" : ""}`}
-                onClick={() => setContext(c.id)}
-              >
-                <div className="thumb disc" style={{ background: c.art }} />
-                <div className="cname">{c.label}</div>
-              </button>
-            ))}
-          </div>
+        <div className="ask">What&rsquo;s your intention?</div>
+        <div className="intentions">
+          {CONTEXTS.map((c) => (
+            <button
+              key={c.id}
+              className={`intention ${context === c.id ? "active" : ""}`}
+              onClick={() => setContext(c.id)}
+            >
+              <div className="thumb disc" style={{ background: c.art }} />
+              <div className="itext">
+                <div className="iname">{c.label}</div>
+                <div className="itag">{c.tagline}</div>
+              </div>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -659,6 +646,7 @@ export default function Home() {
 function cleanScript(s: string): string {
   return s
     .replace(/<break[^>]*\/?>/g, "\n")
+    .replace(/\s*—\s*/g, ", ") // no em dashes in the read-along
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }

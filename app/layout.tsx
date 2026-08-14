@@ -9,9 +9,9 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "ElevenMind — guided sessions, composed on demand",
+  title: "ElevenMind: guided sessions, composed on demand",
   description:
-    "Personalized mindfulness. Every session is written fresh for you — your name, the time you have, the state you want to reach — then voiced aloud.",
+    "Personalized mindfulness. Every session is written fresh for you, from your name, the time you have, and the state you want to reach, then voiced aloud.",
 };
 
 export const viewport: Viewport = {
