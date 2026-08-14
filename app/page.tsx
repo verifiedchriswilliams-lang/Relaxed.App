@@ -77,12 +77,11 @@ const SOUNDSCAPES: SoundDef[] = [
   { id: "pad", label: "Ambient", cat: "music", src: "/sounds/Ambient.mp3" },
   { id: "piano", label: "Piano", cat: "music", src: "/sounds/Piano.mp3" },
   { id: "lofi", label: "LoFi", cat: "music", src: "/sounds/LoFi.mp3" },
-  { id: "bowls", label: "Singing Bowls", cat: "music", src: "/sounds/SingingBowl.mp3", soon: true },
-  { id: "harp", label: "Harp", cat: "music", src: "/sounds/Harp.mp3", soon: true },
-  // Frequencies — Binaural/Delta/Theta are recordings; Brown Noise + 432 Hz
-  // stay synthesized until their files are uploaded.
-  { id: "brown", label: "Brown Noise", cat: "frequencies" },
-  { id: "pad432", label: "432 Hz", cat: "frequencies" },
+  { id: "bowls", label: "Singing Bowls", cat: "music", src: "/sounds/Singing-Bowl.mp3" },
+  { id: "harp", label: "Harp", cat: "music", src: "/sounds/Harp.mp3" },
+  // Frequencies — all ElevenLabs recordings now.
+  { id: "brown", label: "Brown Noise", cat: "frequencies", src: "/sounds/BrownNoise.mp3" },
+  { id: "pad432", label: "432 Hz", cat: "frequencies", src: "/sounds/432Hz.mp3" },
   { id: "binaural", label: "Binaural", cat: "frequencies", src: "/sounds/Binaural.mp3" },
   { id: "delta", label: "Delta", cat: "frequencies", src: "/sounds/Delta.mp3" },
   { id: "theta", label: "Theta", cat: "frequencies", src: "/sounds/Theta.mp3" },
