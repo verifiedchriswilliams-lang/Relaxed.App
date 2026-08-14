@@ -1,0 +1,97 @@
+{
+  "meditation": [
+    [
+      { "text": "Hello, and welcome, {name}.", "pause": 3, "name": true },
+      { "text": "Let's take this time just for you.", "pause": 4 },
+      { "text": "Find a position you can hold with ease, and when you are ready, let your eyes close.", "pause": 6 },
+      { "text": "There is nothing to fix here, and nowhere else to be.", "pause": 6 },
+      { "text": "Begin to notice the breath, just as it is.", "pause": 7 },
+      { "text": "You do not need to change it. Simply follow it.", "pause": 8 },
+      { "text": "Feel the cool air as it enters, and the warm air as it leaves.", "pause": 7, "from": 1 },
+      { "text": "Feel the weight of your body, held by the chair or the floor.", "pause": 8, "from": 2 },
+      { "text": "When the mind wanders, and it will, that is not a mistake.", "pause": 6 },
+      { "text": "Gently notice where it went, and come back to the breath.", "pause": 9 },
+      { "text": "The breath in.", "pause": 5, "from": 1 },
+      { "text": "And the breath out.", "pause": 9, "from": 1 },
+      { "text": "Each time you return is the practice.", "pause": 10, "from": 2 },
+      { "text": "Rest here, with nothing to do but breathe.", "pause": 12, "from": 3 },
+      { "text": "Let the quiet hold you.", "pause": 14, "from": 4 },
+      { "text": "In a moment, we will close.", "pause": 5 },
+      { "text": "Let the breath find its own rhythm again.", "pause": 6 },
+      { "text": "And whenever you are ready, {name}, let your eyes open.", "pause": 3, "name": true }
+    ]
+  ],
+  "sleep": [
+    [
+      { "text": "Rest easy, {name}.", "pause": 3, "name": true },
+      { "text": "The day is finished. There is nothing left to do.", "pause": 6 },
+      { "text": "Let your body sink into the bed, and let it hold your weight.", "pause": 7 },
+      { "text": "Take one slow breath in, and a long breath out.", "pause": 8 },
+      { "text": "Soften your face. Let the jaw be loose.", "pause": 8 },
+      { "text": "Let the shoulders drop, and grow heavy.", "pause": 9, "from": 1 },
+      { "text": "Feel your arms, and your hands, giving their weight to the bed.", "pause": 10, "from": 2 },
+      { "text": "And your legs, heavy, and still.", "pause": 10, "from": 2 },
+      { "text": "Nothing to hold. Nothing to carry.", "pause": 9 },
+      { "text": "Each breath out, a little heavier.", "pause": 11, "from": 1 },
+      { "text": "It is alright to drift. You do not need to stay with my voice.", "pause": 12, "from": 3 },
+      { "text": "Let the thoughts come and go, like distant traffic.", "pause": 12, "from": 2 },
+      { "text": "There is nowhere to be but here, and here is soft.", "pause": 14, "from": 4 },
+      { "text": "Let it all grow quiet.", "pause": 16, "from": 3 },
+      { "text": "Rest now, {name}.", "pause": 8, "name": true }
+    ]
+  ],
+  "flow": [
+    [
+      { "text": "Alright, {name}. Let's get ready to begin.", "pause": 3, "name": true },
+      { "text": "Sit tall, and let your shoulders settle.", "pause": 5 },
+      { "text": "Take a slow breath in, and let it go.", "pause": 6 },
+      { "text": "Let the noise of the day begin to settle, like sediment sinking in still water.", "pause": 8 },
+      { "text": "One more breath, deeper this time.", "pause": 6 },
+      { "text": "As you breathe out, let the clutter go with it.", "pause": 8, "from": 1 },
+      { "text": "The water is clearing. The mind is settling.", "pause": 8, "from": 2 },
+      { "text": "Bring to mind the one thing you are here to do.", "pause": 9 },
+      { "text": "Hold it simply, without pressure. Just a clear intention.", "pause": 10, "from": 2 },
+      { "text": "Calm, and awake. Relaxed, and sharp.", "pause": 8, "from": 1 },
+      { "text": "Let your attention gather to a single point.", "pause": 10, "from": 3 },
+      { "text": "Steady, and ready.", "pause": 8, "from": 3 },
+      { "text": "Take one last easy breath.", "pause": 5 },
+      { "text": "And when you are ready, {name}, open your eyes, and begin.", "pause": 3, "name": true }
+    ]
+  ],
+  "relax": [
+    [
+      { "text": "Welcome, {name}. Let's take a moment to unwind.", "pause": 3, "name": true },
+      { "text": "Settle in, and let yourself arrive.", "pause": 5 },
+      { "text": "Breathing in, feel yourself settle. Breathing out, feel yourself ease.", "pause": 8 },
+      { "text": "Let the jaw unclench, and the shoulders drop.", "pause": 8 },
+      { "text": "Let your hands rest open.", "pause": 7 },
+      { "text": "There is nothing to chase right now.", "pause": 8, "from": 1 },
+      { "text": "This moment, just as it is, is enough.", "pause": 9, "from": 1 },
+      { "text": "Feel the breath moving slowly, like a tide.", "pause": 10, "from": 2 },
+      { "text": "With each breath out, let a little more tension go.", "pause": 11, "from": 2 },
+      { "text": "Warm, and unhurried. Nowhere to be.", "pause": 12, "from": 3 },
+      { "text": "Let the whole body soften into ease.", "pause": 14, "from": 4 },
+      { "text": "Stay here as long as you like.", "pause": 10, "from": 3 },
+      { "text": "And carry a little of this ease with you, {name}, when you return.", "pause": 4, "name": true }
+    ]
+  ],
+  "stress-relief": [
+    [
+      { "text": "It's okay, {name}. Let's steady this together.", "pause": 3, "name": true },
+      { "text": "Feel your feet on the floor, and the seat beneath you.", "pause": 6 },
+      { "text": "You are here, and you are safe enough, right now.", "pause": 7 },
+      { "text": "Let's lengthen the breath. In, slowly.", "pause": 5 },
+      { "text": "And out, longer than the breath in.", "pause": 8 },
+      { "text": "Again. In.", "pause": 4, "from": 1 },
+      { "text": "And a long, slow breath out.", "pause": 9, "from": 1 },
+      { "text": "Notice a few sounds around you, near and far.", "pause": 9, "from": 2 },
+      { "text": "You do not have to push the feeling away.", "pause": 9 },
+      { "text": "Just let it be here, and let it move through, like weather.", "pause": 11, "from": 2 },
+      { "text": "It will pass. It always has.", "pause": 10, "from": 1 },
+      { "text": "Meet it with a little kindness, the way you would a friend.", "pause": 12, "from": 3 },
+      { "text": "Steadier now. The breath, long and slow.", "pause": 12, "from": 3 },
+      { "text": "Let the ground hold you.", "pause": 14, "from": 4 },
+      { "text": "You've moved through hard moments before, {name}. You can move through this one.", "pause": 5, "name": true }
+    ]
+  ]
+}

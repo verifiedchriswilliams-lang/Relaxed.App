@@ -2,12 +2,13 @@
   "name": "relaxed-app",
   "version": "0.1.0",
   "private": true,
-  "description": "relaxed.app — AI-personalized mindfulness sessions (Next.js + ElevenLabs + Claude)",
+  "description": "relaxed.app \u2014 AI-personalized mindfulness sessions (Next.js + ElevenLabs + Claude)",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "build:voices": "node scripts/build-voice-cache.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
