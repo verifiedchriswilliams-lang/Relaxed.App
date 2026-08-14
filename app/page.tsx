@@ -65,27 +65,53 @@ interface SoundDef {
   cat: SoundCat;
   src?: string; // looping audio file (ElevenLabs); absent => synthesized
   soon?: boolean; // asset not added yet; shown but disabled
+  // Measured loudness of the file (dBFS): integrated RMS and true peak. Used to
+  // normalize every bed to the same perceived level without clipping.
+  rms?: number;
+  peak?: number;
 }
 const SOUNDSCAPES: SoundDef[] = [
   // Nature — ElevenLabs recordings (looping).
-  { id: "rain", label: "Rain", cat: "nature", src: "/sounds/Rain.mp3" },
-  { id: "ocean", label: "Ocean Waves", cat: "nature", src: "/sounds/Ocean.mp3" },
-  { id: "wind", label: "Wind", cat: "nature", src: "/sounds/Wind.mp3" },
-  { id: "thunder", label: "Thunderstorm", cat: "nature", src: "/sounds/Thunderstorm.mp3" },
-  { id: "windchimes", label: "Windchimes", cat: "nature", src: "/sounds/WindChimes.mp3" },
-  // Music — ElevenLabs recordings. Singing Bowls + Harp await their upload.
-  { id: "pad", label: "Ambient", cat: "music", src: "/sounds/Ambient.mp3" },
-  { id: "piano", label: "Piano", cat: "music", src: "/sounds/Piano.mp3" },
-  { id: "lofi", label: "LoFi", cat: "music", src: "/sounds/LoFi.mp3" },
-  { id: "bowls", label: "Singing Bowls", cat: "music", src: "/sounds/Singing-Bowl.mp3" },
-  { id: "harp", label: "Harp", cat: "music", src: "/sounds/Harp.mp3" },
+  { id: "rain", label: "Rain", cat: "nature", src: "/sounds/Rain.mp3", rms: -42.5, peak: -14.4 },
+  { id: "ocean", label: "Ocean Waves", cat: "nature", src: "/sounds/Ocean.mp3", rms: -25.1, peak: -5.3 },
+  { id: "wind", label: "Wind", cat: "nature", src: "/sounds/Wind.mp3", rms: -43.4, peak: -24.0 },
+  { id: "thunder", label: "Thunderstorm", cat: "nature", src: "/sounds/Thunderstorm.mp3", rms: -37.9, peak: -14.5 },
+  { id: "windchimes", label: "Windchimes", cat: "nature", src: "/sounds/WindChimes.mp3", rms: -32.4, peak: -16.5 },
+  // Music — ElevenLabs recordings.
+  { id: "pad", label: "Ambient", cat: "music", src: "/sounds/Ambient.mp3", rms: -21.7, peak: -10.4 },
+  { id: "piano", label: "Piano", cat: "music", src: "/sounds/Piano.mp3", rms: -36.2, peak: -13.1 },
+  { id: "lofi", label: "LoFi", cat: "music", src: "/sounds/LoFi.mp3", rms: -16.1, peak: -0.1 },
+  { id: "bowls", label: "Singing Bowls", cat: "music", src: "/sounds/Singing-Bowl.mp3", rms: -14.6, peak: -0.4 },
+  { id: "harp", label: "Harp", cat: "music", src: "/sounds/Harp.mp3", rms: -17.4, peak: -0.4 },
   // Frequencies — all ElevenLabs recordings now.
-  { id: "brown", label: "Brown Noise", cat: "frequencies", src: "/sounds/BrownNoise.mp3" },
-  { id: "pad432", label: "432 Hz", cat: "frequencies", src: "/sounds/432Hz.mp3" },
-  { id: "binaural", label: "Binaural", cat: "frequencies", src: "/sounds/Binaural.mp3" },
-  { id: "delta", label: "Delta", cat: "frequencies", src: "/sounds/Delta.mp3" },
-  { id: "theta", label: "Theta", cat: "frequencies", src: "/sounds/Theta.mp3" },
+  { id: "brown", label: "Brown Noise", cat: "frequencies", src: "/sounds/BrownNoise.mp3", rms: -37.0, peak: -18.8 },
+  { id: "pad432", label: "432 Hz", cat: "frequencies", src: "/sounds/432Hz.mp3", rms: -16.8, peak: -2.4 },
+  { id: "binaural", label: "Binaural", cat: "frequencies", src: "/sounds/Binaural.mp3", rms: -15.9, peak: -2.7 },
+  { id: "delta", label: "Delta", cat: "frequencies", src: "/sounds/Delta.mp3", rms: -12.7, peak: -0.2 },
+  { id: "theta", label: "Theta", cat: "frequencies", src: "/sounds/Theta.mp3", rms: -17.2, peak: -2.8 },
 ];
+
+// Loudness normalization. Bring every bed to a common target and every voice to
+// a common target, both capped so peaks never exceed the ceiling (no clipping).
+// Measured RMS/peak in dBFS; all tunable by ear from here.
+const VOICE_TARGET = -24; // where all voices land
+const BED_UNDER_VOICE = -34; // beds sit ~10 dB below the voice during a session
+const BED_SOLO = -20; // louder for a no-voice, sounds-only session
+const PEAK_CEIL = -1.5; // never let a peak go above this
+
+const VOICE_STATS: Record<string, { rms: number; peak: number }> = {
+  "female-us": { rms: -18.0, peak: -3.4 },
+  "male-us": { rms: -26.8, peak: -9.8 },
+  "female-uk": { rms: -30.6, peak: -9.7 },
+  "male-uk": { rms: -24.9, peak: -8.5 },
+};
+
+// Linear gain to move a signal (rms/peak dBFS) toward a target loudness, capped
+// so the peak stays under the ceiling.
+function normGain(rms: number, peak: number, targetRms: number): number {
+  const db = Math.min(targetRms - rms, PEAK_CEIL - peak);
+  return Math.pow(10, db / 20);
+}
 function catOf(id: Soundscape): SoundCat {
   return SOUNDSCAPES.find((s) => s.id === id)?.cat ?? "nature";
 }
@@ -117,6 +143,7 @@ class AudioEngine {
   ambientMaster: GainNode | null = null;
   ambientNodes: AudioNode[] = [];
   voiceSegs: AudioBufferSourceNode[] = [];
+  voiceGainValue = 1; // per-voice loudness normalization, set before playSegments
   onVoiceEnded: (() => void) | null = null;
 
   private ensureCtx(): AudioContext {
@@ -183,6 +210,13 @@ class AudioEngine {
 
     if (!this.ctx) return; // ended while decoding
 
+    // Per-voice normalization: all segments run through one gain node so every
+    // voice lands at the same loudness.
+    const voiceBus = ctx.createGain();
+    voiceBus.gain.value = this.voiceGainValue;
+    voiceBus.connect(ctx.destination);
+    this.ambientNodes.push(voiceBus);
+
     let t = ctx.currentTime + 0.15;
     let lastSrc: AudioBufferSourceNode | null = null;
     for (const d of decoded) {
@@ -191,7 +225,7 @@ class AudioEngine {
           const src = ctx.createBufferSource();
           src.buffer = d.buffer;
           src.playbackRate.value = VOICE_RATE;
-          src.connect(ctx.destination);
+          src.connect(voiceBus);
           src.start(t);
           this.voiceSegs.push(src);
           lastSrc = src;
@@ -880,11 +914,21 @@ export default function Home() {
   ) {
     const eng = engineRef.current;
     eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
+
+    // Normalize this voice to the common target so all four sound equally loud.
+    const vs = VOICE_STATS[`${voice}-${accent}`];
+    eng.voiceGainValue = vs ? normGain(vs.rms, vs.peak, VOICE_TARGET) : 1;
+
+    // Normalize the bed to a common level: quiet under the voice, louder solo.
     const def = soundDef(soundscape);
     const src = def && !def.soon ? def.src : undefined;
-    // With no narration, the soundscape is the whole experience, so bring a
-    // recorded bed forward instead of keeping it in the background.
-    const level = voice === "none" && src ? 0.85 : undefined;
+    let level: number | undefined;
+    if (src && def?.rms != null && def?.peak != null) {
+      const target = voice === "none" ? BED_SOLO : BED_UNDER_VOICE;
+      level = normGain(def.rms, def.peak, target);
+    } else if (src) {
+      level = voice === "none" ? 0.85 : 0.4;
+    }
     eng.startAmbient(soundscape, src, level);
     eng.playSegments(segments);
     setPlaying(true);
