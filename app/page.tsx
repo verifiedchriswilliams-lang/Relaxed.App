@@ -756,6 +756,9 @@ export default function Home() {
   // instead of a silent pre-selection. `voice` keeps a valid value underneath
   // so Begin still works if they never touch it.
   const [voicePicked, setVoicePicked] = useState(false);
+  // Same idea for the soundscape: nothing highlighted on open, so the first tap
+  // selects and previews. `soundscape` keeps a valid default underneath.
+  const [soundPicked, setSoundPicked] = useState(false);
   const [soundscape, setSoundscape] = useState<Soundscape>("rain");
   const [soundTab, setSoundTab] = useState<SoundCat>("nature");
   const [saveDefault, setSaveDefault] = useState(false);
@@ -945,6 +948,8 @@ export default function Home() {
     setContext(id);
     setError(null);
     setVoicePicked(false); // open with no voice highlighted (preview on first tap)
+    setSoundPicked(false); // ...and no soundscape highlighted either
+    setSoundTab("nature"); // always open on the first category
     setTrayOpen(true);
   }
 
@@ -1437,8 +1442,11 @@ export default function Home() {
               </div>
               <div className="rail">
                 <button
-                  className={`chip ${soundscape === "silence" ? "on" : ""}`}
+                  className={`chip ${
+                    soundPicked && soundscape === "silence" ? "on" : ""
+                  }`}
                   onClick={() => {
+                    setSoundPicked(true);
                     setSoundscape("silence");
                     engineRef.current.stopPreview();
                   }}
@@ -1449,11 +1457,12 @@ export default function Home() {
                   <button
                     key={s.id}
                     disabled={s.soon}
-                    className={`chip ${soundscape === s.id ? "on" : ""} ${
-                      s.soon ? "soon" : ""
-                    }`}
+                    className={`chip ${
+                      soundPicked && soundscape === s.id ? "on" : ""
+                    } ${s.soon ? "soon" : ""}`}
                     onClick={() => {
                       if (s.soon) return;
+                      setSoundPicked(true);
                       setSoundscape(s.id);
                       previewSound(s.id);
                     }}
@@ -1463,9 +1472,11 @@ export default function Home() {
                   </button>
                 ))}
               </div>
-              {soundTab === "frequencies" && (
-                <div className="sound-hint">Best with headphones</div>
-              )}
+              {/* Always rendered so switching to Frequencies doesn't shift the
+                  tray; it's just an empty reserved line for other tabs. */}
+              <div className="sound-hint" aria-hidden={soundTab !== "frequencies"}>
+                {soundTab === "frequencies" ? "Best with headphones" : ""}
+              </div>
             </div>
 
             <div className="remember">
