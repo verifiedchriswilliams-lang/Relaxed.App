@@ -451,7 +451,10 @@ class AudioEngine {
   // Audition a clip while choosing (a voice greeting, or a taste of a bed).
   // seconds caps the length (beds); omit to play a whole clip (voice). Called
   // from a tap, so the context unlocks. Any prior preview is faded out first.
-  async preview(src: string, opts?: { seconds?: number; gain?: number }) {
+  async preview(
+    src: string,
+    opts?: { seconds?: number; gain?: number; offset?: number }
+  ) {
     // Fade out any current preview first (this bumps the token counter), THEN
     // claim our token — otherwise stopPreview would invalidate our own token
     // and the guard below would bail before playback.
@@ -473,7 +476,11 @@ class AudioEngine {
     if (token !== this.previewToken || this.ctx !== ctx) return;
 
     const target = opts?.gain ?? 0.6;
-    const dur = Math.min(opts?.seconds ?? buf.duration, buf.duration);
+    // Start a little way into the file: many beds ramp in from ~1-2s of near
+    // silence, and an audition should be audible immediately, not after dead
+    // air. Clamp so we never seek past the end.
+    const offset = Math.min(Math.max(opts?.offset ?? 0, 0), Math.max(0, buf.duration - 1));
+    const dur = Math.min(opts?.seconds ?? buf.duration, buf.duration - offset);
     // Near-instant onset so the audition registers the moment you tap (a hair
     // of fade avoids a click), with a gentle tail so it doesn't cut off harshly.
     const fadeIn = 0.02;
@@ -490,7 +497,7 @@ class AudioEngine {
     gain.gain.linearRampToValueAtTime(target, now + fadeIn);
     gain.gain.setValueAtTime(target, Math.max(now + fadeIn, end - fadeOut));
     gain.gain.linearRampToValueAtTime(0, end);
-    src2.start(now);
+    src2.start(now, offset);
     src2.stop(end + 0.05);
     src2.onended = () => {
       if (this.previewSource === src2) {
@@ -828,7 +835,8 @@ export default function Home() {
       def.rms != null && def.peak != null
         ? normGain(def.rms, def.peak, BED_SOLO)
         : 0.7;
-    engineRef.current.preview(asset(def.src), { seconds: 6, gain });
+    // Skip past the bed's fade-in intro so the audition is audible at once.
+    engineRef.current.preview(asset(def.src), { seconds: 6, gain, offset: 2.5 });
   }
 
   // Silence any audition the moment the tray closes (scrim tap, begin, etc.).
