@@ -1,0 +1,55 @@
+name: Build voice cache
+
+# Pre-voices the common session lines with ElevenLabs and commits the audio +
+# manifest back to the repo. Runs on GitHub's servers (which can reach
+# ElevenLabs), so you don't need anything installed locally. Trigger it manually
+# from the Actions tab. Requires a repository secret named ELEVENLABS_API_KEY.
+
+on:
+  workflow_dispatch:
+    inputs:
+      voices:
+        description: "Which voices (space separated), or blank for all four"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-voice-cache
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Build the voice cache
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          ELEVENLABS_VOICE_FEMALE_US: ${{ secrets.ELEVENLABS_VOICE_FEMALE_US }}
+          ELEVENLABS_VOICE_MALE_US: ${{ secrets.ELEVENLABS_VOICE_MALE_US }}
+          ELEVENLABS_VOICE_FEMALE_UK: ${{ secrets.ELEVENLABS_VOICE_FEMALE_UK }}
+          ELEVENLABS_VOICE_MALE_UK: ${{ secrets.ELEVENLABS_VOICE_MALE_UK }}
+        run: node scripts/build-voice-cache.mjs ${{ github.event.inputs.voices }}
+
+      - name: Commit the results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/voice-cache lib/voiceCacheManifest.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit (cache already up to date)."
+          else
+            git commit -m "Build voice cache [skip ci]"
+            git push
+          fi
