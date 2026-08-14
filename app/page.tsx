@@ -132,6 +132,11 @@ const PREFS_KEY = "elevenmind.prefs.v1";
 // Constant, exact playback speed for voiced segments (Web Audio is clock-locked).
 const VOICE_RATE = 1.0;
 
+// Minimum time to hold the "composing your session" screen. The cache makes a
+// session ready almost instantly; this brief, deliberate pause makes it feel
+// personally composed rather than pulled off a shelf.
+const MIN_GENERATING_MS = 4500;
+
 // ---------------------------------------------------------------------------
 // One audio engine for the whole session. Both the synthesized soundscape and
 // the spoken voice play through a single Web Audio context, so on mobile they
@@ -145,6 +150,10 @@ class AudioEngine {
   voiceSegs: AudioBufferSourceNode[] = [];
   voiceGainValue = 1; // per-voice loudness normalization, set before playSegments
   onVoiceEnded: (() => void) | null = null;
+  // Karaoke sync: the AudioContext time the voice began, and each line's start
+  // offset (seconds) from that. Lets the transcript follow along with the voice.
+  playStartTime = 0;
+  lineStarts: number[] = [];
 
   private ensureCtx(): AudioContext {
     if (!this.ctx) {
@@ -217,9 +226,14 @@ class AudioEngine {
     voiceBus.connect(ctx.destination);
     this.ambientNodes.push(voiceBus);
 
-    let t = ctx.currentTime + 0.15;
+    this.playStartTime = ctx.currentTime + 0.15;
+    this.lineStarts = [];
+    let t = this.playStartTime;
     let lastSrc: AudioBufferSourceNode | null = null;
     for (const d of decoded) {
+      // Each line's start offset, whether or not it has audio (so the read-along
+      // still follows along in preview / read-along mode).
+      this.lineStarts.push(t - this.playStartTime);
       if (d.buffer) {
         try {
           const src = ctx.createBufferSource();
@@ -237,6 +251,20 @@ class AudioEngine {
       t += d.pauseAfter;
     }
     if (lastSrc) lastSrc.onended = () => this.onVoiceEnded?.();
+  }
+
+  // Which line is being spoken right now (or just spoken, during its pause).
+  // -1 before the first line. Pause-aware: a suspended context freezes its
+  // clock, so this holds while paused.
+  activeLineIndex(): number {
+    if (!this.ctx || !this.lineStarts.length) return -1;
+    const off = this.ctx.currentTime - this.playStartTime;
+    let idx = -1;
+    for (let i = 0; i < this.lineStarts.length; i++) {
+      if (this.lineStarts[i] <= off) idx = i;
+      else break;
+    }
+    return idx;
   }
 
   startAmbient(kind: Soundscape, src?: string, level?: number) {
@@ -414,6 +442,7 @@ class AudioEngine {
       }
     });
     this.voiceSegs = [];
+    this.lineStarts = [];
     this.stopAmbient();
     if (this.ctx) {
       this.ctx.close().catch(() => {});
@@ -793,10 +822,13 @@ export default function Home() {
   const [playing, setPlaying] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [showTranscript, setShowTranscript] = useState(true);
+  const [genStep, setGenStep] = useState(0);
+  const [activeLine, setActiveLine] = useState(-1);
 
   const engineRef = useRef<AudioEngine>(new AudioEngine());
   const endTimerRef = useRef<number | null>(null);
   const tickRef = useRef<number | null>(null);
+  const transcriptRef = useRef<HTMLDivElement | null>(null);
 
   const selected = getContext(context) ?? CONTEXTS[0];
   const soundLabel =
@@ -830,6 +862,33 @@ export default function Home() {
       if (tickRef.current) window.clearInterval(tickRef.current);
     };
   }, []);
+
+  // Karaoke: follow the spoken line on the player screen, synced to the audio
+  // clock so it stays exact and pauses when the session pauses.
+  useEffect(() => {
+    if (screen !== "player") {
+      setActiveLine(-1);
+      return;
+    }
+    let raf = 0;
+    const tick = () => {
+      const idx = engineRef.current.activeLineIndex();
+      setActiveLine((prev) => (prev === idx ? prev : idx));
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [screen]);
+
+  // Keep the active line centered in the transcript, so the reader never scrolls.
+  useEffect(() => {
+    const c = transcriptRef.current;
+    if (!c || activeLine < 0) return;
+    const el = c.querySelector<HTMLElement>(`[data-line="${activeLine}"]`);
+    if (!el) return;
+    const top = el.offsetTop - c.clientHeight / 2 + el.clientHeight / 2;
+    c.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  }, [activeLine, showTranscript]);
 
   function startTick() {
     if (tickRef.current) window.clearInterval(tickRef.current);
@@ -882,6 +941,14 @@ export default function Home() {
     }
 
     setScreen("generating");
+    setGenStep(0);
+    // Walk the "composing" steps so it reads as real work being done. Thanks to
+    // the cache the session is usually ready almost instantly, but we hold the
+    // generating screen for a short beat so it feels personally composed, not
+    // pulled off a shelf.
+    const started = Date.now();
+    const stepA = window.setTimeout(() => setGenStep(1), 1500);
+    const stepB = window.setTimeout(() => setGenStep(2), 3000);
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
@@ -901,9 +968,17 @@ export default function Home() {
       setScript(data.script || "");
       setNote(typeof data.note === "string" ? data.note : "");
       setIsPreview(Boolean(data.mock));
+
+      const wait = MIN_GENERATING_MS - (Date.now() - started);
+      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+      window.clearTimeout(stepA);
+      window.clearTimeout(stepB);
+      setGenStep(2);
       setScreen("player");
       startPlayback(Array.isArray(data.segments) ? data.segments : []);
     } catch (e) {
+      window.clearTimeout(stepA);
+      window.clearTimeout(stepB);
       setError(e instanceof Error ? e.message : "Something went wrong.");
       setScreen("setup");
     }
@@ -963,7 +1038,7 @@ export default function Home() {
     setScreen("setup");
   }
 
-  const inhale = elapsed % 9 < 4;
+  const inhale = elapsed % 14 < 7;
   const breathCue = !playing ? "Paused" : inhale ? "Breathe in" : "Breathe out";
   const breathSub = !playing
     ? "Tap play to continue"
@@ -994,18 +1069,19 @@ export default function Home() {
             </div>
           </div>
           <div className="steps">
-            <div className="step done">
-              <div className="dot" />
-              <div>Reading the room</div>
-            </div>
-            <div className="step active">
-              <div className="dot" />
-              <div>Writing your words</div>
-            </div>
-            <div className="step">
-              <div className="dot" />
-              <div>Finding the voice</div>
-            </div>
+            {["Reading the room", "Writing your words", "Finding the voice"].map(
+              (label, i) => (
+                <div
+                  key={label}
+                  className={`step ${i < genStep ? "done" : ""} ${
+                    i === genStep ? "active" : ""
+                  }`}
+                >
+                  <div className="dot" />
+                  <div>{label}</div>
+                </div>
+              )
+            )}
           </div>
           <div className="gen-foot">
             No progress bar. Settle in, and find a position you can hold for{" "}
@@ -1086,7 +1162,19 @@ export default function Home() {
                 </button>
               </div>
               {note && <div className="preview">{note}</div>}
-              <div className="body">{cleanScript(script)}</div>
+              <div className="body" ref={transcriptRef}>
+                {transcriptLines(script).map((ln, i) => (
+                  <p
+                    key={i}
+                    data-line={i}
+                    className={`tline ${
+                      i === activeLine ? "active" : i < activeLine ? "past" : ""
+                    }`}
+                  >
+                    {ln}
+                  </p>
+                ))}
+              </div>
             </div>
           )}
           {!showTranscript && (
@@ -1151,8 +1239,9 @@ export default function Home() {
         </div>
 
         <div className="footnote">
-          Every session is written fresh for you. Not medical or therapeutic
-          advice.
+          Every session personalized for you.
+          <br />
+          Not medical or therapeutic advice.
         </div>
       </main>
     );
@@ -1324,11 +1413,9 @@ export default function Home() {
   );
 }
 
-// Strip <break/> tags so the read-along text is human-readable.
-function cleanScript(s: string): string {
-  return s
-    .replace(/<break[^>]*\/?>/g, "\n")
-    .replace(/\s*—\s*/g, ", ") // no em dashes in the read-along
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
+// One transcript line per spoken line, aligned 1:1 with the audio segments so
+// the karaoke highlight can follow along. (No em dashes in the read-along.)
+function transcriptLines(s: string): string[] {
+  if (!s) return [];
+  return s.split("\n").map((l) => l.replace(/\s*—\s*/g, ", ").trim());
 }

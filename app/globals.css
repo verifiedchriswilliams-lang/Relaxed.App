@@ -742,7 +742,7 @@ button {
     0 0 60px -10px var(--pg, rgba(255, 255, 255, 0.2));
 }
 .play-orb .disc.breathe {
-  animation: breathe 9s var(--ease-out) infinite;
+  animation: breathe 14s ease-in-out infinite;
 }
 .play-orb .ring {
   position: absolute;
@@ -759,7 +759,7 @@ button {
   color: var(--ink-0);
 }
 .breath .cue.pulse {
-  animation: cuepulse 9s ease-in-out infinite;
+  animation: cuepulse 14s ease-in-out infinite;
 }
 .breath .sub {
   margin-top: 6px;
@@ -863,12 +863,43 @@ button {
   margin-bottom: 10px;
 }
 .transcript .body {
+  position: relative;
   font-size: 15px;
-  line-height: 1.7;
-  color: var(--ink-1);
-  white-space: pre-wrap;
-  max-height: 30vh;
+  line-height: 1.6;
+  max-height: 34vh;
   overflow-y: auto;
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 18%,
+    #000 82%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 18%,
+    #000 82%,
+    transparent 100%
+  );
+}
+.transcript .body::-webkit-scrollbar {
+  display: none;
+}
+/* Karaoke lines: upcoming dim, spoken past medium, the current line bright. */
+.tline {
+  margin: 0;
+  padding: 5px 0;
+  color: var(--ink-2);
+  transition: color 0.35s ease, opacity 0.35s ease, transform 0.35s ease;
+}
+.tline.past {
+  color: var(--ink-1);
+}
+.tline.active {
+  color: var(--ink-0);
+  font-weight: 600;
 }
 .show-transcript {
   display: block;
@@ -887,7 +918,7 @@ button {
   100% {
     transform: scale(0.9);
   }
-  44% {
+  50% {
     transform: scale(1.06);
   }
 }
