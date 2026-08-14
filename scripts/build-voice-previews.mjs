@@ -56,9 +56,24 @@ const VOICES = {
     "UmQN7jS1Ee8B1czsUtQh",
 };
 
-// Short, warm, on-brand — a couple of seconds so the user hears the tone.
-const PREVIEW_TEXT =
+// Each voice introduces *itself* — a distinct line with its own warmth and
+// personality, so choosing a voice feels like choosing a guide, not a setting.
+// Override a single slot with VOICE_PREVIEW_TEXT_<SLOT> (e.g.
+// VOICE_PREVIEW_TEXT_FEMALE_UK), or all of them with VOICE_PREVIEW_TEXT.
+const PREVIEW_TEXTS = {
+  "female-us":
+    "Hey — I'm really glad you're here. Let's take a breath together, and let everything else fall away.",
+  "male-us":
+    "Take your time settling in. I'm right here with you — we'll go slow, and we'll go easy.",
+  "female-uk":
+    "Whenever you're ready, come and sit with me. We'll let the day grow quiet, and simply breathe.",
+  "male-uk":
+    "There's nothing to do now but rest. Stay with me, and let each breath carry you a little deeper.",
+};
+const previewText = (slot) =>
+  process.env[`VOICE_PREVIEW_TEXT_${slot.toUpperCase().replace(/-/g, "_")}`] ||
   process.env.VOICE_PREVIEW_TEXT ||
+  PREVIEW_TEXTS[slot] ||
   "Hi. Whenever you're ready, we'll begin — together.";
 
 const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
@@ -111,7 +126,7 @@ let failed = 0;
 for (const slot of slots) {
   const voiceId = VOICES[slot];
   try {
-    const buf = await synth(voiceId, PREVIEW_TEXT);
+    const buf = await synth(voiceId, previewText(slot));
     fs.writeFileSync(path.join(OUT_DIR, `${slot}.mp3`), buf);
     if (blobPut) {
       await blobPut(`voice-previews/${slot}.mp3`, buf, {
