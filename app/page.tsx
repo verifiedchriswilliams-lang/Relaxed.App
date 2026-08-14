@@ -50,10 +50,10 @@ const PREFS_KEY = "elevenmind.prefs.v1";
 // the iOS silent switch, and play at the correct speed. The context is unlocked
 // inside the Begin tap to satisfy mobile autoplay rules.
 // ---------------------------------------------------------------------------
-// A slight, deliberate slowdown applied to every voiced segment for a calmer,
-// more spacious cadence than the raw TTS. Web Audio playback is clock-locked, so
-// this rate is exact and constant (it cannot drift or accelerate).
-const VOICE_RATE = 0.92;
+// Playback rate for voiced segments. 1.0 is the voice's natural speed; the
+// pacing now comes from the client-scheduled silences between segments, not from
+// slowing the words down. Nudge below 1.0 only if a voice reads too briskly.
+const VOICE_RATE = 1.0;
 
 // Soundscape sits UNDER the voice as background, not beside it. The voice plays
 // at full level straight to the destination; these are the ambient ceilings, so

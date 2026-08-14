@@ -160,7 +160,7 @@ function voiceConfig(voice: "female" | "male"): VoiceConfig | null {
   const clamp = (v: number, lo: number, hi: number) =>
     Math.min(hi, Math.max(lo, v));
   const speed = clamp(
-    Number(process.env.ELEVENLABS_SPEED ?? 0.8) || 0.8,
+    Number(process.env.ELEVENLABS_SPEED ?? 1.0) || 1.0,
     0.7,
     1.2
   );
