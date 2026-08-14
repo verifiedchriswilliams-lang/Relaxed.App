@@ -135,7 +135,7 @@ const VOICE_RATE = 1.0;
 // Minimum time to hold the "composing your session" screen. The cache makes a
 // session ready almost instantly; this brief, deliberate pause makes it feel
 // personally composed rather than pulled off a shelf.
-const MIN_GENERATING_MS = 6000;
+const MIN_GENERATING_MS = 7500;
 
 // ---------------------------------------------------------------------------
 // One audio engine for the whole session. Both the synthesized soundscape and
@@ -1038,9 +1038,9 @@ export default function Home() {
     setScreen("setup");
   }
 
-  // 7s in, a 1s hold at the top, 7s out (a 15s cycle).
+  // 6s in, a 2.5s hold at the top, 6s out (a 14.5s cycle).
   const breathPhase =
-    elapsed % 15 < 7 ? "in" : elapsed % 15 < 8 ? "hold" : "out";
+    elapsed % 14.5 < 6 ? "in" : elapsed % 14.5 < 8.5 ? "hold" : "out";
   const breathCue = !playing
     ? "Paused"
     : breathPhase === "in"

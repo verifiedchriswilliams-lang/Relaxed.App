@@ -742,7 +742,7 @@ button {
     0 0 60px -10px var(--pg, rgba(255, 255, 255, 0.2));
 }
 .play-orb .disc.breathe {
-  animation: breathe 15s ease-in-out infinite;
+  animation: breathe 14.5s ease-in-out infinite;
 }
 .play-orb .ring {
   position: absolute;
@@ -759,7 +759,7 @@ button {
   color: var(--ink-0);
 }
 .breath .cue.pulse {
-  animation: cuepulse 15s ease-in-out infinite;
+  animation: cuepulse 14.5s ease-in-out infinite;
 }
 .breath .sub {
   margin-top: 6px;
@@ -918,8 +918,8 @@ button {
   100% {
     transform: scale(0.9);
   }
-  47%,
-  53% {
+  41%,
+  59% {
     transform: scale(1.06);
   }
 }
