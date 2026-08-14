@@ -124,7 +124,7 @@ export function getContext(id: string): SessionContext | undefined {
 export const DURATIONS = [5, 10, 15, 20, 30] as const;
 export type Duration = (typeof DURATIONS)[number];
 
-export type VoiceChoice = "female" | "male";
+export type VoiceChoice = "female" | "male" | "none";
 
 // ---------------------------------------------------------------------------
 // Expand / contract engine.
@@ -150,44 +150,44 @@ export const DURATION_BANDS: DurationBand[] = [
     maxMinutes: 4,
     guidance:
       "One clean pass through the arc. A brief welcome, settle onto a single anchor (the breath), " +
-      "a small handful of returns to it, and a short close. Stillness in 2 to 3 second beats, " +
-      "occasionally two in a row. Compact but never rushed.",
+      "a couple of unhurried returns to it, and a short close. Stillness in 3 to 5 second beats, " +
+      "often two in a row. Spare and roomy, never rushed. Speak little.",
   },
   {
     id: "brief",
     minMinutes: 5,
     maxMinutes: 9,
     guidance:
-      "The full arc, efficiently. Settle the body, establish the anchor, then return to it three or " +
-      "four times with real silence between. Rest stretches of roughly 5 to 10 seconds (stack two or " +
-      "three break tags). Unhurried.",
+      "The full arc, spaciously. Settle the body, establish the anchor, then return to it two or " +
+      "three times with real silence between. Rest stretches of roughly 8 to 14 seconds (stack three " +
+      "or four break tags). Leave long gaps; say only what is needed.",
   },
   {
     id: "medium",
     minMinutes: 10,
     maxMinutes: 14,
     guidance:
-      "Spacious and unhurried. Same few instructions, revisited five or six times, with generous " +
-      "stillness. Rests equivalent to 10 to 20 seconds (several stacked break tags) are welcome. Let " +
-      "each cue land fully before the next.",
+      "Spacious and unhurried. A few instructions, revisited four or five times, with generous " +
+      "stillness. Rests equivalent to 15 to 25 seconds (several stacked break tags) are welcome. Let " +
+      "each cue land fully, then let the silence stretch well past comfortable before the next.",
   },
   {
     id: "long",
     minMinutes: 15,
     maxMinutes: 20,
     guidance:
-      "Very spacious. Long stretches of silence, the equivalent of 20 to 40 seconds (many stacked " +
+      "Very spacious. Long stretches of silence, the equivalent of 25 to 45 seconds (many stacked " +
       "break tags) between cues. Return to the same simple anchor again and again; introduce no new " +
-      "concepts to fill the time. The silence is the practice.",
+      "concepts to fill the time. The silence is the practice, and it should dominate.",
   },
   {
     id: "deep",
     minMinutes: 21,
     maxMinutes: 30,
     guidance:
-      "The most spacious of all. Extended, restful silences and the same handful of gentle cues " +
-      "spread across the whole session, with nowhere to rush and nothing to add. Long, quiet gaps are " +
-      "expected; the words are sparse islands in a lot of stillness.",
+      "The most spacious of all. Extended, restful silences (40 seconds and more, many stacked break " +
+      "tags) and the same handful of gentle cues spread across the whole session, with nowhere to " +
+      "rush and nothing to add. The words are sparse islands in a great deal of stillness.",
   },
 ];
 
@@ -229,6 +229,8 @@ A real guided sit is mostly silence. You will be given a target length in minute
 - letting each instruction breathe fully before the next,
 - returning to the SAME simple anchor more times as the session grows longer.
 A shorter session is this arc compressed: fewer returns, briefer stillness. A longer session is the SAME arc opened out: the same few instructions, with much longer silence between them. As time grows, word count grows only a little; silence grows a lot. A longer session must never mean more concepts, only more space.
+
+BE SPARE. Aim to actually SPEAK only about a third of the session; the other two thirds are silence. Err on the side of too few words: when in doubt, cut a sentence rather than add one, and give the time back to the pauses. Trust the listener. Say less than feels natural, and let the quiet do the work.
 
 PACING TAGS & DELIVERY
 - Insert pauses with ElevenLabs break tags exactly like this: <break time="2.5s" /> (maximum 3s per tag; place several in a row for longer stillness).

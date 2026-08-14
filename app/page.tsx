@@ -26,46 +26,71 @@ function Wordmark() {
   );
 }
 
-// Soundscapes synthesized live in the browser (no audio files). Recorded beds
-// (thunderstorm, windchimes, piano, LoFi, singing bowls, fire, forest, ...) are
-// coming via ElevenLabs generation and will slot into these same categories.
+// Three soundscape families, five each. The "frequencies" family is synthesized
+// live in the browser (Web Audio, no files). "nature" and "music" beds come from
+// ElevenLabs (catalog loops or generated) and load as looping audio files;
+// options without an asset yet are marked `soon`. `drone`/`pink`/`white` remain
+// in the type for the engine even though they are not currently surfaced.
 type Soundscape =
   | "silence"
   | "rain"
   | "ocean"
   | "wind"
-  | "drone"
-  | "pad432"
+  | "thunder"
+  | "windchimes"
   | "pad"
+  | "piano"
+  | "lofi"
+  | "bowls"
+  | "strings"
   | "brown"
-  | "pink"
-  | "white"
+  | "pad432"
   | "binaural"
   | "delta"
-  | "theta";
-type SoundCat = "nature" | "ambient" | "focus";
+  | "theta"
+  | "drone"
+  | "pink"
+  | "white";
+type SoundCat = "nature" | "music" | "frequencies";
 
 const SOUND_CATS: { id: SoundCat; label: string }[] = [
   { id: "nature", label: "Nature" },
-  { id: "ambient", label: "Ambient" },
-  { id: "focus", label: "Focus" },
+  { id: "music", label: "Music" },
+  { id: "frequencies", label: "Frequencies" },
 ];
-const SOUNDSCAPES: { id: Soundscape; label: string; cat: SoundCat }[] = [
+
+interface SoundDef {
+  id: Soundscape;
+  label: string;
+  cat: SoundCat;
+  src?: string; // looping audio file (ElevenLabs); absent => synthesized
+  soon?: boolean; // asset not added yet; shown but disabled
+}
+const SOUNDSCAPES: SoundDef[] = [
+  // Nature — Rain/Ocean/Wind synthesized today; the rest are ElevenLabs beds.
   { id: "rain", label: "Rain", cat: "nature" },
-  { id: "ocean", label: "Ocean", cat: "nature" },
+  { id: "ocean", label: "Ocean Waves", cat: "nature" },
   { id: "wind", label: "Wind", cat: "nature" },
-  { id: "drone", label: "Drone", cat: "ambient" },
-  { id: "pad432", label: "432 Hz", cat: "ambient" },
-  { id: "pad", label: "Ambient Pad", cat: "ambient" },
-  { id: "brown", label: "Brown Noise", cat: "focus" },
-  { id: "pink", label: "Pink Noise", cat: "focus" },
-  { id: "white", label: "White Noise", cat: "focus" },
-  { id: "binaural", label: "Binaural", cat: "focus" },
-  { id: "delta", label: "Delta 3.2Hz", cat: "focus" },
-  { id: "theta", label: "Theta", cat: "focus" },
+  { id: "thunder", label: "Thunderstorm", cat: "nature", src: "/sounds/nature/thunderstorm.mp3", soon: true },
+  { id: "windchimes", label: "Windchimes", cat: "nature", src: "/sounds/nature/windchimes.mp3", soon: true },
+  // Music — Ambient is a synthesized pad today; the rest are ElevenLabs beds.
+  { id: "pad", label: "Ambient", cat: "music" },
+  { id: "piano", label: "Piano", cat: "music", src: "/sounds/music/piano.mp3", soon: true },
+  { id: "lofi", label: "LoFi", cat: "music", src: "/sounds/music/lofi.mp3", soon: true },
+  { id: "bowls", label: "Singing Bowls", cat: "music", src: "/sounds/music/singing-bowls.mp3", soon: true },
+  { id: "strings", label: "Strings", cat: "music", src: "/sounds/music/strings.mp3", soon: true },
+  // Frequencies — all synthesized live in the browser.
+  { id: "brown", label: "Brown Noise", cat: "frequencies" },
+  { id: "pad432", label: "432 Hz", cat: "frequencies" },
+  { id: "binaural", label: "Binaural", cat: "frequencies" },
+  { id: "delta", label: "Delta 3.2Hz", cat: "frequencies" },
+  { id: "theta", label: "Theta", cat: "frequencies" },
 ];
 function catOf(id: Soundscape): SoundCat {
   return SOUNDSCAPES.find((s) => s.id === id)?.cat ?? "nature";
+}
+function soundDef(id: Soundscape): SoundDef | undefined {
+  return SOUNDSCAPES.find((s) => s.id === id);
 }
 
 type Accent = "us" | "uk";
@@ -180,7 +205,7 @@ class AudioEngine {
     if (lastSrc) lastSrc.onended = () => this.onVoiceEnded?.();
   }
 
-  startAmbient(kind: Soundscape) {
+  startAmbient(kind: Soundscape, src?: string) {
     this.stopAmbient();
     if (kind === "silence") return;
     const ctx = this.ensureCtx();
@@ -188,6 +213,13 @@ class AudioEngine {
     master.gain.value = 0;
     master.connect(ctx.destination);
     this.ambientMaster = master;
+
+    // A hosted looping bed (ElevenLabs nature/music track).
+    if (src) {
+      this.startFile(ctx, src, master);
+      master.gain.linearRampToValueAtTime(0.4, ctx.currentTime + 3);
+      return;
+    }
 
     // Background ceilings: noise beds sit around a third of the voice; sustained
     // tones and binaural beats run quieter still (they fatigue faster).
@@ -370,6 +402,25 @@ class AudioEngine {
     src.loop = true;
     src.start();
     return src;
+  }
+
+  // Load a looping audio file (an ElevenLabs bed) into the ambient bus. The file
+  // itself should be a seamless ~60s loop. Async; if it fails, the session (and
+  // breathing visual) continue in silence.
+  private async startFile(ctx: AudioContext, src: string, master: GainNode) {
+    try {
+      const arr = await (await fetch(src)).arrayBuffer();
+      const buf = await this.decode(ctx, arr);
+      if (this.ambientMaster !== master) return; // changed or stopped meanwhile
+      const s = ctx.createBufferSource();
+      s.buffer = buf;
+      s.loop = true;
+      s.connect(master);
+      s.start();
+      this.ambientNodes.push(s);
+    } catch {
+      /* file missing/undecodable; carry on quietly */
+    }
   }
 
   private whiteNoise(ctx: AudioContext): AudioBufferSourceNode {
@@ -784,6 +835,18 @@ export default function Home() {
     setElapsed(0);
     setShowTranscript(true);
     setTrayOpen(false);
+
+    // No-voice: a pure soundscape session. Skip generation and the voice
+    // entirely; go straight to the player with the soundscape + breathing visual.
+    if (voice === "none") {
+      setScript("");
+      setNote("");
+      setIsPreview(false);
+      setScreen("player");
+      startPlayback([]);
+      return;
+    }
+
     setScreen("generating");
     try {
       const res = await fetch("/api/generate", {
@@ -817,7 +880,8 @@ export default function Home() {
   ) {
     const eng = engineRef.current;
     eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
-    eng.startAmbient(soundscape);
+    const def = soundDef(soundscape);
+    eng.startAmbient(soundscape, def && !def.soon ? def.src : undefined);
     eng.playSegments(segments);
     setPlaying(true);
     setElapsed(0);
@@ -1087,7 +1151,7 @@ export default function Home() {
             <div className="opt">
               <div className="ol">Voice</div>
               <div className="voicerow">
-                <div className="seg">
+                <div className="seg seg3">
                   <button
                     className={voice === "female" ? "on" : ""}
                     onClick={() => setVoice("female")}
@@ -1100,24 +1164,37 @@ export default function Home() {
                   >
                     Him
                   </button>
-                </div>
-                <div className="flags">
                   <button
-                    className={`flagbtn ${accent === "us" ? "on" : ""}`}
-                    onClick={() => setAccent("us")}
-                    aria-label="American accent"
+                    className={voice === "none" ? "on" : ""}
+                    onClick={() => setVoice("none")}
                   >
-                    🇺🇸
-                  </button>
-                  <button
-                    className={`flagbtn ${accent === "uk" ? "on" : ""}`}
-                    onClick={() => setAccent("uk")}
-                    aria-label="British accent"
-                  >
-                    🇬🇧
+                    None
                   </button>
                 </div>
+                {voice !== "none" && (
+                  <div className="flags">
+                    <button
+                      className={`flagbtn ${accent === "us" ? "on" : ""}`}
+                      onClick={() => setAccent("us")}
+                      aria-label="American accent"
+                    >
+                      🇺🇸
+                    </button>
+                    <button
+                      className={`flagbtn ${accent === "uk" ? "on" : ""}`}
+                      onClick={() => setAccent("uk")}
+                      aria-label="British accent"
+                    >
+                      🇬🇧
+                    </button>
+                  </div>
+                )}
               </div>
+              {voice === "none" && (
+                <div className="sound-hint">
+                  Sounds only, no spoken guidance.
+                </div>
+              )}
             </div>
 
             <div className="opt">
@@ -1152,14 +1229,18 @@ export default function Home() {
                 {SOUNDSCAPES.filter((s) => s.cat === soundTab).map((s) => (
                   <button
                     key={s.id}
-                    className={`chip ${soundscape === s.id ? "on" : ""}`}
-                    onClick={() => setSoundscape(s.id)}
+                    disabled={s.soon}
+                    className={`chip ${soundscape === s.id ? "on" : ""} ${
+                      s.soon ? "soon" : ""
+                    }`}
+                    onClick={() => !s.soon && setSoundscape(s.id)}
                   >
                     {s.label}
+                    {s.soon && <span className="soon-tag">soon</span>}
                   </button>
                 ))}
               </div>
-              {soundTab === "focus" && (
+              {soundTab === "frequencies" && (
                 <div className="sound-hint">Best with headphones</div>
               )}
             </div>

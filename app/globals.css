@@ -361,6 +361,9 @@ button {
   background: var(--glass-strong);
   color: #14162a;
 }
+.seg3 button {
+  padding: 8px 15px;
+}
 
 .flags {
   display: inline-flex;
@@ -451,6 +454,19 @@ button {
   background: var(--glass-strong);
   border-color: #fff;
   color: #14162a;
+}
+.chip.soon {
+  opacity: 0.4;
+  cursor: default;
+}
+.chip .soon-tag {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-left: 7px;
+  opacity: 0.8;
+  vertical-align: 1px;
 }
 
 /* duration slider (snaps to stops) */

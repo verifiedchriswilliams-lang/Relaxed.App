@@ -31,6 +31,14 @@ const MOCK_SCRIPT =
 // Cap on ElevenLabs calls per session, to stay within the function time budget.
 const MAX_SEGMENTS = 20;
 
+// Give every scripted pause a little more room so sessions breathe. This scales
+// the silence the writer asked for (via break tags) without touching the words,
+// lowering the share of the session that is spoken. Tunable via env.
+const SILENCE_SCALE = Math.min(
+  2,
+  Math.max(1, Number(process.env.SILENCE_SCALE ?? 1.25) || 1.25)
+);
+
 // API keys pasted into a dashboard can pick up invisible characters (e.g. the
 // U+2028 line separator), which break HTTP header encoding with a "cannot
 // convert argument to a ByteString" error. Real keys are printable ASCII only,
@@ -289,7 +297,7 @@ export async function POST(req: NextRequest) {
             }
             // Otherwise keep the pause, drop just this segment's audio.
           }
-          segments.push({ audio, pauseAfter: s.pauseAfter });
+          segments.push({ audio, pauseAfter: s.pauseAfter * SILENCE_SCALE });
         }
       } catch (err) {
         console.error("[generate] voice synthesis failed:", err);
