@@ -39,6 +39,7 @@ type Accent = "us" | "uk";
 interface Prefs {
   name: string;
   voice: VoiceChoice;
+  accent: Accent;
   soundscape: Soundscape;
 }
 const PREFS_KEY = "elevenmind.prefs.v1";
@@ -542,7 +543,7 @@ export default function Home() {
   const [context, setContext] = useState<ContextId>("meditation");
   const [duration, setDuration] = useState<Duration>(10);
   const [voice, setVoice] = useState<VoiceChoice>("female");
-  const [accent, setAccent] = useState<Accent>("uk");
+  const [accent, setAccent] = useState<Accent>("us");
   const [soundscape, setSoundscape] = useState<Soundscape>("rain");
   const [saveDefault, setSaveDefault] = useState(false);
   const [trayOpen, setTrayOpen] = useState(false);
@@ -571,6 +572,7 @@ export default function Home() {
         const p = JSON.parse(raw) as Prefs;
         if (p.name) setName(p.name);
         if (p.voice) setVoice(p.voice);
+        if (p.accent) setAccent(p.accent);
         if (p.soundscape) setSoundscape(p.soundscape);
         setSaveDefault(true);
       }
@@ -603,7 +605,7 @@ export default function Home() {
 
   function persistPrefs() {
     if (saveDefault) {
-      const prefs: Prefs = { name, voice, soundscape };
+      const prefs: Prefs = { name, voice, accent, soundscape };
       localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
     } else {
       localStorage.removeItem(PREFS_KEY);
@@ -631,7 +633,13 @@ export default function Home() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, context, durationMin: duration, voice }),
+        body: JSON.stringify({
+          name,
+          context,
+          durationMin: duration,
+          voice,
+          accent,
+        }),
       });
       const data = await res.json();
       if (!res.ok)
@@ -939,18 +947,18 @@ export default function Home() {
                 </div>
                 <div className="flags">
                   <button
+                    className={`flagbtn ${accent === "us" ? "on" : ""}`}
+                    onClick={() => setAccent("us")}
+                    aria-label="American accent"
+                  >
+                    🇺🇸
+                  </button>
+                  <button
                     className={`flagbtn ${accent === "uk" ? "on" : ""}`}
                     onClick={() => setAccent("uk")}
                     aria-label="British accent"
                   >
                     🇬🇧
-                  </button>
-                  <button
-                    className="flagbtn soon"
-                    aria-label="American accent (coming soon)"
-                    disabled
-                  >
-                    🇺🇸
                   </button>
                 </div>
               </div>

@@ -15,6 +15,7 @@ interface GenerateBody {
   context?: string;
   durationMin?: number;
   voice?: "female" | "male";
+  accent?: "us" | "uk";
 }
 
 // A short, real sample script used only in mock mode (no ElevenLabs key set),
@@ -140,22 +141,50 @@ interface VoiceConfig {
   stability: number;
 }
 
-function voiceConfig(voice: "female" | "male"): VoiceConfig | null {
+type Gender = "female" | "male";
+type Accent = "us" | "uk";
+
+// Voice IDs per gender + accent. Each slot may be overridden by an env var;
+// otherwise it uses the curated default. The UK slots also fall back to the
+// legacy single-accent vars (ELEVENLABS_VOICE_FEMALE / _MALE) so older setups
+// keep working. A real voice ID is a short token, never an "sk_" key.
+const VOICE_TABLE: Record<string, { envs: string[]; def: string }> = {
+  "female-uk": {
+    envs: ["ELEVENLABS_VOICE_FEMALE_UK", "ELEVENLABS_VOICE_FEMALE"],
+    def: "zA6D7RyKdc2EClouEMkP", // Almee
+  },
+  "male-uk": {
+    envs: ["ELEVENLABS_VOICE_MALE_UK", "ELEVENLABS_VOICE_MALE"],
+    def: "UmQN7jS1Ee8B1czsUtQh", // Theo
+  },
+  "female-us": {
+    envs: ["ELEVENLABS_VOICE_FEMALE_US"],
+    def: "7AvtJrjTNyBhBxEvNPIZ",
+  },
+  "male-us": {
+    envs: ["ELEVENLABS_VOICE_MALE_US"],
+    def: "6bPfTtSpgxgD0GeBVfqu",
+  },
+};
+
+function isVoiceId(v: string | undefined): v is string {
+  return !!v && !v.startsWith("sk_") && v.length <= 40;
+}
+
+function resolveVoiceId(gender: Gender, accent: Accent): string {
+  const row = VOICE_TABLE[`${gender}-${accent}`] ?? VOICE_TABLE[`${gender}-uk`];
+  for (const name of row.envs) {
+    const v = cleanKey(process.env[name]);
+    if (isVoiceId(v)) return v;
+  }
+  return row.def;
+}
+
+function voiceConfig(voice: Gender, accent: Accent): VoiceConfig | null {
   const key = cleanKey(process.env.ELEVENLABS_API_KEY);
   if (!key) return null;
 
-  // Built-in premade voices; guard against a mis-pasted API key in the voice-ID
-  // env var (a real voice ID is a short token, never an "sk_" key).
-  const DEFAULT_VOICE =
-    voice === "male" ? "pNInz6obpgDQGcFmaJgB" : "21m00Tcm4TlvDq8ikWAM";
-  const configured = cleanKey(
-    voice === "male"
-      ? process.env.ELEVENLABS_VOICE_MALE
-      : process.env.ELEVENLABS_VOICE_FEMALE
-  );
-  const looksLikeVoiceId =
-    !!configured && !configured.startsWith("sk_") && configured.length <= 40;
-  const voiceId = looksLikeVoiceId ? (configured as string) : DEFAULT_VOICE;
+  const voiceId = resolveVoiceId(voice, accent);
 
   const clamp = (v: number, lo: number, hi: number) =>
     Math.min(hi, Math.max(lo, v));
@@ -220,8 +249,9 @@ export async function POST(req: NextRequest) {
     const contextId = body.context || "meditation";
     const durationMin = Number(body.durationMin) || 5;
     const voice = body.voice === "male" ? "male" : "female";
+    const accent = body.accent === "uk" ? "uk" : "us";
 
-    const cfg = voiceConfig(voice);
+    const cfg = voiceConfig(voice, accent);
 
     // Graceful degradation: a session should never dead-end on a red error. If
     // Claude can't write, fall back to a sample script; if ElevenLabs can't

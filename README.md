@@ -61,14 +61,16 @@ npm run dev
 3. Paste into `.env.local` as `ELEVENLABS_API_KEY=...`
 4. *(Optional)* Pick your two voices: open the **Voices** library, choose a male and a female voice you like, copy each voice ID, and set `ELEVENLABS_VOICE_MALE` / `ELEVENLABS_VOICE_FEMALE`. The built-in fallbacks are ElevenLabs' free preset voices "Adam" and "Rachel".
 
-**Selected production voices:**
+**Selected production voices** (baked into the app as defaults — no env vars needed, just the API key):
 
 | Slot | Name | Voice ID |
 |------|------|----------|
-| Her (female) | Almee | `zA6D7RyKdc2EClouEMkP` |
-| Him (male) | Theo | `UmQN7jS1Ee8B1czsUtQh` |
+| Her · US | — | `7AvtJrjTNyBhBxEvNPIZ` |
+| Him · US | — | `6bPfTtSpgxgD0GeBVfqu` |
+| Her · UK | Almee | `zA6D7RyKdc2EClouEMkP` |
+| Him · UK | Theo | `UmQN7jS1Ee8B1czsUtQh` |
 
-These are set as env vars in Vercel. They live in a private ElevenLabs collection, so the account's own API key must be the one in use for these IDs to resolve; otherwise the app falls back to Rachel/Adam.
+The user picks Her/Him and a US or UK accent in the tray; the app sends both to `/api/generate`, which resolves the right voice. Each slot can be overridden with `ELEVENLABS_VOICE_{FEMALE,MALE}_{US,UK}`. These voices live in a private ElevenLabs collection, so the account's own API key must be the one in use for them to resolve; otherwise ElevenLabs falls back to a preset voice.
 
 > **Cost note:** meditations are mostly *silence*, so the script uses `<break/>` pause tags rather than paying to synthesize quiet. A 10-minute session is only ~1,000 spoken words. Cheap per session — worth watching as users scale.
 
