@@ -75,7 +75,7 @@ button {
   position: absolute;
   inset: -5%;
   background: url("/aurora.jpg") center 45% / cover no-repeat;
-  animation: drift 70s ease-in-out infinite alternate;
+  animation: drift 42s ease-in-out infinite alternate;
   will-change: transform;
 }
 /* Darken for legibility: keep the aurora glow mid-frame, darken the top
@@ -96,10 +96,10 @@ button {
 }
 @keyframes drift {
   from {
-    transform: scale(1) translate3d(0, 0, 0);
+    transform: scale(1.04) translate3d(-1.4%, 1%, 0);
   }
   to {
-    transform: scale(1.08) translate3d(0, -1.5%, 0);
+    transform: scale(1.13) translate3d(1.8%, -2.4%, 0);
   }
 }
 @media (prefers-reduced-motion: reduce) {
