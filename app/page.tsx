@@ -1080,9 +1080,9 @@ export default function Home() {
           </div>
           <div className="steps">
             {[
-              "Writing the words of your journey",
+              "Crafting your journey",
               "Gathering your soundscape from ElevenMusic",
-              "Your ElevenLabs guide is preparing to join you",
+              "Your ElevenLabs voice is preparing to guide you",
             ].map(
               (label, i) => (
                 <div
