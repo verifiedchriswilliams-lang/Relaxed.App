@@ -64,15 +64,13 @@ const VOICES = {
 const GUIDES = JSON.parse(
   fs.readFileSync(path.join(ROOT, "lib", "voices.json"), "utf8")
 );
+// Pithy and charming — a one-liner with personality, so each guide feels like
+// someone with a wink, not a narrator. {name} is filled from lib/voices.json.
 const PREVIEW_TEMPLATES = {
-  "female-us":
-    "Hi, I'm {name}. I'm really glad you're here — let's take a breath together, and let everything else fall away.",
-  "male-us":
-    "Hey, I'm {name}. Take your time settling in — we'll go slow, and we'll go easy, together.",
-  "female-uk":
-    "Hello, I'm {name}. Whenever you're ready, come and sit with me, and we'll let the day grow quiet.",
-  "male-uk":
-    "I'm {name}. There's nothing to do but rest — stay with me, and let each breath carry you a little deeper.",
+  "female-us": "I'm {name}. I speak, therefore I am.",
+  "male-us": "I'm {name}. I'll do the breathing — you take the credit.",
+  "female-uk": "I'm {name}. Keep calm, and let me carry on.",
+  "male-uk": "I'm {name}. Deep breaths, deeper voice.",
 };
 const previewText = (slot) => {
   const override =
