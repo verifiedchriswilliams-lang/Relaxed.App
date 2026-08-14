@@ -1,0 +1,46 @@
+name: Sync media to Blob
+
+# Uploads the soundscape beds (public/sounds) and the voice cache
+# (public/voice-cache) to the Vercel Blob store. Run it once to migrate the
+# existing audio, and any time you add new beds. Skips files already in Blob
+# unless you tick "force". Runs on GitHub's servers, so nothing local needed.
+#
+# Requires a repository secret: BLOB_READ_WRITE_TOKEN
+#   (Vercel → Storage → your Blob store → ".env.local" tab → copy the token)
+
+on:
+  workflow_dispatch:
+    inputs:
+      dirs:
+        description: "Dirs to sync (space separated), or blank for sounds + voice-cache"
+        required: false
+        default: ""
+      force:
+        description: "Re-upload files even if already in Blob"
+        type: boolean
+        required: false
+        default: false
+
+concurrency:
+  group: sync-blob
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Upload media to Blob
+        env:
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        run: |
+          node scripts/upload-blob.mjs ${{ github.event.inputs.dirs }} \
+            ${{ github.event.inputs.force == 'true' && '--force' || '' }}

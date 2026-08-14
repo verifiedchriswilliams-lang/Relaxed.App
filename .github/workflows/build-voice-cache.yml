@@ -40,13 +40,18 @@ jobs:
           ELEVENLABS_VOICE_MALE_US: ${{ secrets.ELEVENLABS_VOICE_MALE_US }}
           ELEVENLABS_VOICE_FEMALE_UK: ${{ secrets.ELEVENLABS_VOICE_FEMALE_UK }}
           ELEVENLABS_VOICE_MALE_UK: ${{ secrets.ELEVENLABS_VOICE_MALE_UK }}
+          # When set, newly synthesized lines are uploaded to Vercel Blob and
+          # only the manifest is committed (the MP3s no longer live in git).
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
         run: node scripts/build-voice-cache.mjs ${{ github.event.inputs.voices }}
 
       - name: Commit the results
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add public/voice-cache lib/voiceCacheManifest.json
+          # Manifest always; MP3s only if they're still tracked (pre-migration).
+          git add lib/voiceCacheManifest.json
+          git add public/voice-cache 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "No changes to commit (cache already up to date)."
           else

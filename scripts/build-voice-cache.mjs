@@ -14,6 +14,16 @@ import path from "node:path";
 import crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
 
+// Optional Blob upload: when BLOB_READ_WRITE_TOKEN is set, newly synthesized
+// lines are pushed straight to the Vercel Blob store (the app serves the cache
+// from there via NEXT_PUBLIC_BLOB_BASE_URL) instead of relying on committed
+// MP3s. Imported lazily so a plain local build works without the package/token.
+const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
+let blobPut = null;
+if (BLOB_TOKEN) {
+  ({ put: blobPut } = await import("@vercel/blob"));
+}
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 
@@ -150,7 +160,10 @@ for (const vk of voiceKeys) {
   const jobs = lines.map((text) => ({ text, key: cacheKey(voiceId, text) }));
   await run(jobs, 3, async ({ text, key }) => {
     const file = path.join(OUT_DIR, `${key}.mp3`);
-    if (fs.existsSync(file)) {
+    // Skip lines already cached (manifest is the source of truth — the MP3s no
+    // longer live in git, so a fresh CI checkout can't rely on the file being
+    // on disk). Only genuinely new lines are synthesized.
+    if (keys.has(key) || fs.existsSync(file)) {
       keys.add(key);
       skipped++;
       return;
@@ -158,6 +171,15 @@ for (const vk of voiceKeys) {
     try {
       const buf = await synth(voiceId, text);
       fs.writeFileSync(file, buf);
+      if (blobPut) {
+        await blobPut(`voice-cache/${key}.mp3`, buf, {
+          access: "public",
+          token: BLOB_TOKEN,
+          addRandomSuffix: false,
+          allowOverwrite: true,
+          contentType: "audio/mpeg",
+        });
+      }
       keys.add(key);
       made++;
     } catch (e) {
@@ -176,6 +198,9 @@ console.log(
   `\nDone. made ${made}, skipped ${skipped}, failed ${failed}. Manifest has ${keys.size} keys.`
 );
 console.log(
-  "Commit public/voice-cache/*.mp3 and lib/voiceCacheManifest.json, then push."
+  blobPut
+    ? "New lines uploaded to Blob. Commit lib/voiceCacheManifest.json and push."
+    : "Commit public/voice-cache/*.mp3 and lib/voiceCacheManifest.json, then push.\n" +
+        "(Set BLOB_READ_WRITE_TOKEN to upload straight to Vercel Blob instead.)"
 );
 if (failed) process.exit(1);

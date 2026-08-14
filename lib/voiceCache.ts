@@ -8,6 +8,7 @@
 
 import crypto from "node:crypto";
 import manifest from "./voiceCacheManifest.json";
+import { asset } from "./assets";
 
 const KEYS = new Set<string>(
   ((manifest as { keys?: string[] }).keys ?? [])
@@ -22,7 +23,7 @@ export function cacheKey(voiceId: string, text: string): string {
 }
 
 export function cacheUrl(key: string): string {
-  return `/voice-cache/${key}.mp3`;
+  return asset(`/voice-cache/${key}.mp3`);
 }
 
 export function isCached(key: string): boolean {

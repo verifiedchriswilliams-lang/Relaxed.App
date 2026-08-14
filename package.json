@@ -2,7 +2,7 @@
   "name": "relaxed-app",
   "version": "0.1.0",
   "private": true,
-  "description": "relaxed.app \u2014 AI-personalized mindfulness sessions (Next.js + ElevenLabs + Claude)",
+  "description": "relaxed.app — AI-personalized mindfulness sessions (Next.js + ElevenLabs + Claude)",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -20,6 +20,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@vercel/blob": "^2.8.0",
     "typescript": "^5"
   }
 }

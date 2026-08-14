@@ -9,6 +9,7 @@ import {
   type Duration,
   type VoiceChoice,
 } from "@/lib/contexts";
+import { asset } from "@/lib/assets";
 
 // ElevenMind wordmark: the family bar glyph, then Eleven (700) + Mind (400).
 function Wordmark() {
@@ -878,7 +879,7 @@ export default function Home() {
 
     // Normalize the bed to a common level: quiet under the voice, louder solo.
     const def = soundDef(soundscape);
-    const src = def && !def.soon ? def.src : undefined;
+    const src = def && !def.soon ? asset(def.src) : undefined;
     let level: number | undefined;
     if (src && def?.rms != null && def?.peak != null) {
       const target = voice === "none" ? BED_SOLO : BED_UNDER_VOICE;
