@@ -59,7 +59,16 @@ npm run dev
 1. Go to **https://elevenlabs.io** and sign up. The **free tier** gives you monthly characters — plenty for a proof of concept. (For real usage the **Starter/Creator** plan is the one to watch; TTS is billed per character.)
 2. Click your avatar → **Profile + API key** → copy the key.
 3. Paste into `.env.local` as `ELEVENLABS_API_KEY=...`
-4. *(Optional)* Pick your two voices: open the **Voices** library, choose a male and a female voice you like, copy each voice ID, and set `ELEVENLABS_VOICE_MALE` / `ELEVENLABS_VOICE_FEMALE`. The defaults are ElevenLabs' free preset voices "Adam" and "Rachel".
+4. *(Optional)* Pick your two voices: open the **Voices** library, choose a male and a female voice you like, copy each voice ID, and set `ELEVENLABS_VOICE_MALE` / `ELEVENLABS_VOICE_FEMALE`. The built-in fallbacks are ElevenLabs' free preset voices "Adam" and "Rachel".
+
+**Selected production voices:**
+
+| Slot | Name | Voice ID |
+|------|------|----------|
+| Her (female) | Almee | `zA6D7RyKdc2EClouEMkP` |
+| Him (male) | Theo | `UmQN7jS1Ee8B1czsUtQh` |
+
+These are set as env vars in Vercel. They live in a private ElevenLabs collection, so the account's own API key must be the one in use for these IDs to resolve; otherwise the app falls back to Rachel/Adam.
 
 > **Cost note:** meditations are mostly *silence*, so the script uses `<break/>` pause tags rather than paying to synthesize quiet. A 10-minute session is only ~1,000 spoken words. Cheap per session — worth watching as users scale.
 
@@ -96,9 +105,10 @@ lib/
 - **No accounts** — preferences are saved in `localStorage` on the device. Add auth (e.g. Supabase) when you want cross-device + saved sessions.
 - **Generate-then-play** — a session takes ~10–40s to produce. Fine for a POC; streaming/pre-generation is a later optimization.
 
-## Next steps
+## Roadmap
 
+- **Voice previews.** When the user taps Her / Him, play a short cached clip of that voice saying something brief ("Hello, I'm ready for your session whenever you are") so they can hear each voice while choosing. Cache one small file per voice rather than calling ElevenLabs on every tap.
+- **Soundscape / music previews.** Same idea for the soundscape picker: a short taste of rain / ocean / drone (and later, ElevenLabs music beds) as the user selects, so they know what they're choosing before the session starts.
 - Claude Design pass on the UI (`globals.css` + `page.tsx`).
-- Wire the real keys and test on your phone's browser.
 - Decide on accounts + saved/favorite sessions.
 - Later: Capacitor/native wrapper for the App Store.
