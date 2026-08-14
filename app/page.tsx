@@ -151,6 +151,13 @@ class Ambient {
 
 type Screen = "setup" | "generating" | "player";
 
+// A minimal silent clip used to "unlock" the <audio> element inside the Begin
+// tap. Mobile browsers (esp. iOS Safari) only allow audio to play if it was
+// started by a user gesture; the real voice starts seconds later, after the
+// async generation, so we prime the element now and reuse it then.
+const SILENT_CLIP =
+  "data:audio/wav;base64,UklGRiYAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQIAAAAAAA==";
+
 function greetingFor(): string {
   const h = new Date().getHours();
   if (h < 12) return "Good morning";
@@ -238,6 +245,23 @@ export default function Home() {
   }
 
   async function begin() {
+    // Unlock the audio element within this tap so mobile browsers will let the
+    // voice play once it's ready (seconds from now, after generation).
+    const el = audioRef.current;
+    if (el) {
+      try {
+        el.src = SILENT_CLIP;
+        const p = el.play();
+        if (p)
+          p.then(() => {
+            el.pause();
+            el.currentTime = 0;
+          }).catch(() => {});
+      } catch {
+        /* ignore */
+      }
+    }
+
     setError(null);
     persistPrefs();
     setElapsed(0);
@@ -319,9 +343,10 @@ export default function Home() {
       ? "Slowly, through the nose"
       : "Slowly, through the mouth";
 
-  // ---- Generating ----
+  // ---- Screens ----
+  let content: React.ReactNode;
   if (screen === "generating") {
-    return (
+    content = (
       <main className="wrap">
         <div className="top">
           <Wordmark />
@@ -362,11 +387,8 @@ export default function Home() {
         </div>
       </main>
     );
-  }
-
-  // ---- Player (dark) ----
-  if (screen === "player") {
-    return (
+  } else if (screen === "player") {
+    content = (
       <div className="player">
         <main className="wrap">
           <div className="player-top">
@@ -446,22 +468,19 @@ export default function Home() {
             )}
           </div>
         </main>
-        <audio ref={audioRef} onEnded={() => ambientRef.current.fadeOut(8)} />
       </div>
     );
-  }
+  } else {
+    // ---- Setup ----
+    const top3 = CONTEXTS.slice(0, 3);
+    const bottom2 = CONTEXTS.slice(3);
+    content = (
+      <main className="wrap">
+        <div className="top">
+          <Wordmark />
+        </div>
 
-  // ---- Setup ----
-  const top3 = CONTEXTS.slice(0, 3);
-  const bottom2 = CONTEXTS.slice(3);
-
-  return (
-    <main className="wrap">
-      <div className="top">
-        <Wordmark />
-      </div>
-
-      <div className="greeting">
+        <div className="greeting">
         <div className="display">
           {greetingFor()}
           {name.trim() ? `, ${name.trim()}` : ""}
@@ -588,7 +607,15 @@ export default function Home() {
         Every session is written fresh for you. Not medical or therapeutic
         advice.
       </div>
-    </main>
+      </main>
+    );
+  }
+
+  return (
+    <>
+      {content}
+      <audio ref={audioRef} onEnded={() => ambientRef.current.fadeOut(8)} />
+    </>
   );
 }
 
