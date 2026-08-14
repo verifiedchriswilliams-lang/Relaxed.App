@@ -736,7 +736,7 @@ function DurationSlider({
   );
 }
 
-type Screen = "setup" | "generating" | "player";
+type Screen = "setup" | "generating" | "player" | "complete";
 
 function greetingFor(): string {
   const h = new Date().getHours();
@@ -783,6 +783,7 @@ export default function Home() {
 
   const engineRef = useRef<AudioEngine>(new AudioEngine());
   const endTimerRef = useRef<number | null>(null);
+  const completeTimerRef = useRef<number | null>(null);
   const tickRef = useRef<number | null>(null);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
@@ -1079,9 +1080,20 @@ export default function Home() {
     acquireWakeLock();
 
     if (endTimerRef.current) window.clearTimeout(endTimerRef.current);
-    endTimerRef.current = window.setTimeout(
-      () => eng.fadeOutAmbient(8),
-      totalSecs * 1000
+    endTimerRef.current = window.setTimeout(completeSession, totalSecs * 1000);
+  }
+
+  // Reached the chosen duration: wind the sound down and, once it has faded a
+  // little, ease into the closing screen (the audio keeps fading underneath).
+  function completeSession() {
+    engineRef.current.fadeOutAmbient(6);
+    stopTick();
+    setPlaying(false);
+    releaseWakeLock();
+    if (completeTimerRef.current) window.clearTimeout(completeTimerRef.current);
+    completeTimerRef.current = window.setTimeout(
+      () => setScreen("complete"),
+      2200
     );
   }
 
@@ -1102,6 +1114,7 @@ export default function Home() {
   function end() {
     engineRef.current.stop();
     if (endTimerRef.current) window.clearTimeout(endTimerRef.current);
+    if (completeTimerRef.current) window.clearTimeout(completeTimerRef.current);
     stopTick();
     releaseWakeLock();
     setPlaying(false);
@@ -1127,7 +1140,7 @@ export default function Home() {
         ? "Gently, for a moment"
         : "Slowly, through the mouth";
 
-  const moodOn = trayOpen || screen === "player";
+  const moodOn = trayOpen || screen === "player" || screen === "complete";
 
   // ---- Screens ----
   let content: React.ReactNode;
@@ -1272,6 +1285,48 @@ export default function Home() {
               Show transcript
             </button>
           )}
+        </div>
+      </main>
+    );
+  } else if (screen === "complete") {
+    // ---- Closing: a quiet "well done" ----
+    content = (
+      <main className="wrap done-wrap">
+        <div className="done">
+          <div className="done-orb">
+            <div
+              className="disc"
+              style={
+                {
+                  background: selected.art,
+                  "--pg": selected.glow,
+                } as React.CSSProperties
+              }
+            />
+            <div className="ring" />
+          </div>
+          <div className="done-title">
+            Well done{name.trim() ? <>, {name.trim()}</> : ""}.
+          </div>
+          <div className="done-sub">
+            Take a moment before you go. The calm is yours to keep.
+          </div>
+          <button
+            className="done-btn"
+            onClick={end}
+            style={
+              {
+                "--cta-glow": selected.glow,
+                "--cta-disc": selected.art,
+              } as React.CSSProperties
+            }
+          >
+            <span className="dot" />
+            Done
+          </button>
+          <div className="done-credit">
+            Voiced by <b>ElevenLabs</b> · scored with <b>ElevenMusic</b>
+          </div>
         </div>
       </main>
     );
