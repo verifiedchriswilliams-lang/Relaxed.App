@@ -542,7 +542,7 @@ export default function Home() {
   const [context, setContext] = useState<ContextId>("meditation");
   const [duration, setDuration] = useState<Duration>(10);
   const [voice, setVoice] = useState<VoiceChoice>("female");
-  const [accent, setAccent] = useState<Accent>("us");
+  const [accent, setAccent] = useState<Accent>("uk");
   const [soundscape, setSoundscape] = useState<Soundscape>("rain");
   const [saveDefault, setSaveDefault] = useState(false);
   const [trayOpen, setTrayOpen] = useState(false);
@@ -939,18 +939,18 @@ export default function Home() {
                 </div>
                 <div className="flags">
                   <button
-                    className={`flagbtn ${accent === "us" ? "on" : ""}`}
-                    onClick={() => setAccent("us")}
-                    aria-label="American accent"
+                    className={`flagbtn ${accent === "uk" ? "on" : ""}`}
+                    onClick={() => setAccent("uk")}
+                    aria-label="British accent"
                   >
-                    🇺🇸
+                    🇬🇧
                   </button>
                   <button
                     className="flagbtn soon"
-                    aria-label="British accent (coming soon)"
+                    aria-label="American accent (coming soon)"
                     disabled
                   >
-                    🇬🇧
+                    🇺🇸
                   </button>
                 </div>
               </div>
