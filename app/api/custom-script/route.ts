@@ -76,7 +76,7 @@ function buildPrompt(name: string, phrase: string, durationMin: number): string 
     `Session type: Custom, written live for what this person is carrying right now.`,
     `What they typed (a short phrase): "${phrase}"`,
     ``,
-    `Build the whole session around their words. Open by gently acknowledging what they named (paraphrase it warmly, in your own words, do not just repeat it back verbatim), then guide plain, secular breath-and-body mindfulness shaped to that situation, and let the close speak back to it.`,
+    `Build the whole session around their words. Open by gently acknowledging what they named (paraphrase it warmly, in your own words, do not just repeat it back verbatim), then guide plain, secular breath-and-body mindfulness shaped to that situation, and let the close speak back to it. Greet them by name near the start, and make the very last line a warm closing that addresses them by name again.`,
     `SAFETY: If their words suggest they may be in crisis or thinking of harming themselves, keep the session especially gentle and grounding, make no attempt at therapy or advice, and include one soft line that reaching out to someone they trust, or a helpline, is a strong and kind thing to do. Otherwise do not mention helplines. Never diagnose, and never promise an outcome.`,
     `Target length: ${durationMin} minutes`,
     `Pacing for this length: ${band.guidance}`,

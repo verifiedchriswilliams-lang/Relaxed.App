@@ -94,7 +94,7 @@
       { "text": "Heavier, and warmer, and slower.", "pause": 10, "from": 3 },
       { "text": "The thoughts of the day drift off, like clouds thinning at dusk.", "pause": 10, "from": 2 },
       { "text": "Let yourself be carried now, {name}, softly, toward sleep.", "pause": 11, "from": 3, "name": true },
-      { "text": "You are safe. You can let go.", "pause": 6, "name": true }
+      { "text": "You are safe, {name}. You can let go.", "pause": 6, "name": true }
     ],
     [
       { "text": "It is the end of the day, {name}. Time to set it all down.", "pause": 3, "name": true },
@@ -129,7 +129,7 @@
       { "text": "Calm, and alert. Relaxed, and sharp.", "pause": 9, "from": 1 },
       { "text": "Let the eyes open softly, keeping this grounded, ready feeling.", "pause": 8, "from": 3 },
       { "text": "Carry it into the work, {name}. Settled, and clear.", "pause": 6, "from": 3, "name": true },
-      { "text": "When you are ready, begin.", "pause": 3, "name": true }
+      { "text": "When you are ready, {name}, begin.", "pause": 3, "name": true }
     ],
     [
       { "text": "Let's find your focus, {name}.", "pause": 3, "name": true },
@@ -145,7 +145,7 @@
       { "text": "The attention grows quieter, and more precise.", "pause": 9, "from": 2 },
       { "text": "Now let the counting go, and rest in that sharpened, settled state.", "pause": 10, "from": 3 },
       { "text": "This is the focus you will carry into your work, {name}.", "pause": 8, "from": 1, "name": true },
-      { "text": "Open your eyes, and begin, clear and ready.", "pause": 3, "name": true }
+      { "text": "Open your eyes, {name}, and begin, clear and ready.", "pause": 3, "name": true }
     ],
     [
       { "text": "Alright, {name}. Let's get you ready.", "pause": 3, "name": true },

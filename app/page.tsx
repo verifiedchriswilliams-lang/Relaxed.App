@@ -1361,9 +1361,7 @@ export default function Home() {
             {(selected.custom
               ? [
                   <>Reading what you wrote</>,
-                  <>
-                    Writing your session with <b>Claude</b>
-                  </>,
+                  <>Personalizing your session</>,
                   <>
                     Giving it voice with <b>ElevenLabs</b>
                   </>,
