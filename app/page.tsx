@@ -5,6 +5,7 @@ import {
   CONTEXTS,
   DURATIONS,
   getContext,
+  CUSTOM_MAX_CHARS,
   type ContextId,
   type Duration,
   type VoiceChoice,
@@ -766,6 +767,8 @@ export default function Home() {
   // Same idea for the soundscape: nothing highlighted on open, so the first tap
   // selects and previews. `soundscape` keeps a valid default underneath.
   const [soundPicked, setSoundPicked] = useState(false);
+  // Custom: the short phrase the user types for a fully bespoke session.
+  const [customText, setCustomText] = useState("");
   const [soundscape, setSoundscape] = useState<Soundscape>("rain");
   const [soundTab, setSoundTab] = useState<SoundCat>("nature");
   const [saveDefault, setSaveDefault] = useState(false);
@@ -1434,6 +1437,29 @@ export default function Home() {
               </div>
             </div>
 
+            {selected.custom && (
+              <div className="opt">
+                <div className="ol">What&apos;s on your mind?</div>
+                <input
+                  className="custom-input"
+                  type="text"
+                  inputMode="text"
+                  autoComplete="off"
+                  maxLength={CUSTOM_MAX_CHARS}
+                  value={customText}
+                  onChange={(e) =>
+                    setCustomText(e.target.value.replace(/\s+/g, " ").slice(0, CUSTOM_MAX_CHARS))
+                  }
+                  placeholder="e.g. studying for a test"
+                  aria-label="What's on your mind"
+                />
+                <div className="custom-hint">
+                  A few words is perfect. We&apos;ll write a session just for
+                  this.
+                </div>
+              </div>
+            )}
+
             <div className="opt">
               <div className="ol">Voice</div>
               <div className="voicerow">
@@ -1588,6 +1614,7 @@ export default function Home() {
             <button
               className="begin"
               onClick={begin}
+              disabled={selected.custom && !customText.trim()}
               style={
                 {
                   "--cta-glow": selected.glow,

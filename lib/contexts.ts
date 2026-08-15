@@ -12,7 +12,8 @@ export type ContextId =
   | "sleep"
   | "flow"
   | "relax"
-  | "stress-relief";
+  | "stress-relief"
+  | "custom";
 
 export interface SessionContext {
   id: ContextId;
@@ -25,7 +26,28 @@ export interface SessionContext {
   glow: string;
   // Guidance handed to the script writer for this context.
   intent: string;
+  // Custom: the user types a short phrase and the whole script is written live
+  // for it (fully bespoke, generated on demand rather than from a template).
+  custom?: boolean;
 }
+
+// The Custom tile is written live via the APIs, so it launches behind a flag:
+// until it's set, the home screen shows Breathe (stress-relief) instead, so
+// production always has a working fifth tile.
+export const CUSTOM_ENABLED =
+  process.env.NEXT_PUBLIC_ENABLE_CUSTOM === "1";
+
+// A custom phrase is meant to be a few words, not a paragraph: it keeps the
+// prompt tight and the resulting meditation focused.
+export const CUSTOM_MAX_CHARS = 70;
+export const CUSTOM_PLACEHOLDERS = [
+  "studying for a test",
+  "a hard conversation ahead",
+  "recovering from a loss",
+  "can't switch off tonight",
+  "first-day nerves",
+  "worn thin, need a reset",
+];
 
 // Session disc palettes, one per context. Six stops, centred.
 const DISC = {
@@ -40,9 +62,13 @@ const DISC = {
   // Breathe: a calm teal, not the old alarm-red (which read as a warning).
   breathe:
     "radial-gradient(circle at 50% 50%, #e3eeed 0%, #92c6c6 20%, #e7f2f1 36%, #2f7178 62%, #c4dedd 82%, #5fa6a8 100%)",
+  // Custom: a soft violet, distinct from the four presets, signalling "yours."
+  custom:
+    "radial-gradient(circle at 50% 50%, #efe9f6 0%, #b9a6e6 20%, #f0eaf8 36%, #6a4fb0 62%, #dacdef 82%, #9b82d8 100%)",
 } as const;
 
-export const CONTEXTS: SessionContext[] = [
+// All contexts by id (for lookup); the visible five are assembled below.
+const ALL_CONTEXTS: SessionContext[] = [
   {
     id: "meditation",
     label: "Meditate",
@@ -113,10 +139,34 @@ export const CONTEXTS: SessionContext[] = [
       "than resistance. Reassure, plainly and never clinically, that this feeling is temporary and " +
       "survivable, and that they have moved through hard moments before. End steadier than it began.",
   },
+  {
+    id: "custom",
+    label: "Custom",
+    tagline: "Tell us what you need",
+    art: DISC.custom,
+    glow: "#8b6fd0",
+    custom: true,
+    intent:
+      "A fully personal session, written live around a short phrase the person typed about what they " +
+      "are carrying right now. Take their words seriously and build the whole sit around them: open by " +
+      "gently acknowledging what they named, then guide breath-and-body mindfulness shaped to that " +
+      "situation, and close with a line that speaks back to it. Warm, concrete, secular, never " +
+      "clinical. If what they typed is heavy or painful, meet it with extra gentleness and care; never " +
+      "give advice, diagnoses, or promises, only steady, kind presence.",
+  },
+];
+
+// The home screen shows four presets plus the fifth tile, which is Custom when
+// enabled, otherwise Breathe (stress-relief) so production always has five.
+export const CONTEXTS: SessionContext[] = [
+  ...ALL_CONTEXTS.filter((c) =>
+    ["meditation", "sleep", "flow", "relax"].includes(c.id)
+  ),
+  ALL_CONTEXTS.find((c) => c.id === (CUSTOM_ENABLED ? "custom" : "stress-relief"))!,
 ];
 
 export function getContext(id: string): SessionContext | undefined {
-  return CONTEXTS.find((c) => c.id === id);
+  return ALL_CONTEXTS.find((c) => c.id === id);
 }
 
 // Duration presets offered in the UI. The generator itself handles any value in
