@@ -51,8 +51,9 @@ export const CUSTOM_PLACEHOLDERS = [
 
 // Session disc palettes, one per context. Six stops, centred.
 const DISC = {
+  // Meditate: a clear cornflower blue (distinct from sleep's indigo).
   meditation:
-    "radial-gradient(circle at 50% 50%, #efe7dd 0%, #b9b6d8 20%, #efeaf2 36%, #6f6fa8 62%, #d9d3e4 82%, #a9a6cc 100%)",
+    "radial-gradient(circle at 50% 50%, #e7edf8 0%, #86a6e6 20%, #ebf0fa 36%, #37539f 62%, #cdd9f2 82%, #6a89d8 100%)",
   sleep:
     "radial-gradient(circle at 50% 50%, #e6e4ee 0%, #7d7cb4 20%, #ddd9ea 36%, #2f2e5c 62%, #b6b2d2 82%, #55538c 100%)",
   flow:
@@ -62,9 +63,9 @@ const DISC = {
   // Breathe: a calm teal, not the old alarm-red (which read as a warning).
   breathe:
     "radial-gradient(circle at 50% 50%, #e3eeed 0%, #92c6c6 20%, #e7f2f1 36%, #2f7178 62%, #c4dedd 82%, #5fa6a8 100%)",
-  // Custom: a soft violet, distinct from the four presets, signalling "yours."
+  // Make Your Own: a warm magenta / rose, clearly apart from the blues.
   custom:
-    "radial-gradient(circle at 50% 50%, #efe9f6 0%, #b9a6e6 20%, #f0eaf8 36%, #6a4fb0 62%, #dacdef 82%, #9b82d8 100%)",
+    "radial-gradient(circle at 50% 50%, #f7e9f0 0%, #db93bd 20%, #f9ebf3 36%, #a23a76 62%, #efccdf 82%, #cd679f 100%)",
 } as const;
 
 // All contexts by id (for lookup); the visible five are assembled below.
@@ -74,7 +75,7 @@ const ALL_CONTEXTS: SessionContext[] = [
     label: "Meditate",
     tagline: "Presence and awareness",
     art: DISC.meditation,
-    glow: "#8f8fc0",
+    glow: "#6f92da",
     intent:
       "A classic mindfulness sit, in the plainspoken spirit of MBSR. Anchor attention on the " +
       "physical feeling of the breath and the body: the rise and fall, the weight of the body in " +
@@ -144,7 +145,7 @@ const ALL_CONTEXTS: SessionContext[] = [
     label: "Make Your Own",
     tagline: "Tell us what you need",
     art: DISC.custom,
-    glow: "#8b6fd0",
+    glow: "#c568a0",
     custom: true,
     intent:
       "A fully personal session, written live around a short phrase the person typed about what they " +
