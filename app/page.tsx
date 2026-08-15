@@ -1582,7 +1582,7 @@ export default function Home() {
                   <span className="sname">{c.label}</span>
                   {c.custom && (
                     <span className="ssub">
-                      A guided session, written for whatever you bring
+                      A guided session for whatever you need.
                     </span>
                   )}
                 </span>
