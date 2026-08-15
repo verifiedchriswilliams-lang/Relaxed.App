@@ -58,18 +58,19 @@ function fitToDuration(segs: CustomSegment[], durationMin: number): CustomSegmen
   const weight = segs.reduce((a, s) => a + Math.max(s.pauseAfter, 0.5), 0) || 1;
   const tail = Math.min(0.08 * target, 25);
   const budget = Math.max(target - speech - tail, segs.length * 2);
-  return segs.map((s, i) => {
-    const isLast = i === segs.length - 1;
+  return segs.map((s) => {
     const w = Math.max(s.pauseAfter, 0.5);
-    const p = isLast
-      ? Math.min(6, s.pauseAfter || 3)
-      : Math.max(2, Math.min(120, (w / weight) * budget));
+    const p = Math.max(2, Math.min(120, (w / weight) * budget));
     return { text: s.text, pauseAfter: Math.round(p * 10) / 10 };
   });
 }
 
 function buildPrompt(name: string, phrase: string, durationMin: number): string {
   const band = getDurationBand(durationMin);
+  // Enough separate spoken lines to anchor a session of this length: the pauses
+  // between them fill the time, but there must be enough lines to spread across
+  // it (too few and the session cannot reach its duration).
+  const lineTarget = Math.max(8, Math.min(28, Math.round(durationMin * 1.2) + 4));
   return [
     `Name: ${name}`,
     `Session type: Custom, written live for what this person is carrying right now.`,
@@ -79,6 +80,7 @@ function buildPrompt(name: string, phrase: string, durationMin: number): string 
     `SAFETY: If their words suggest they may be in crisis or thinking of harming themselves, keep the session especially gentle and grounding, make no attempt at therapy or advice, and include one soft line that reaching out to someone they trust, or a helpline, is a strong and kind thing to do. Otherwise do not mention helplines. Never diagnose, and never promise an outcome.`,
     `Target length: ${durationMin} minutes`,
     `Pacing for this length: ${band.guidance}`,
+    `Write roughly ${lineTarget} short spoken lines, each a sentence or two, separated by the pause tags. Spread them across the whole session so the pauses can carry the time; do not front-load all the words.`,
     ``,
     `Write the spoken mindfulness script now, spoken words plus <break time="2.5s" /> tags only. Fill the time mainly with silence and returns to the breath, not with extra words.`,
   ].join("\n");

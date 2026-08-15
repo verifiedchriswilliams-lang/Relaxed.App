@@ -270,6 +270,83 @@ class AudioEngine {
     if (lastSrc) lastSrc.onended = () => this.onVoiceEnded?.();
   }
 
+  // Streaming variant for Custom: we have the whole script (text + pauses) up
+  // front, but synthesize the audio line by line so playback can START as soon
+  // as the first line is ready. Each line is scheduled on the AudioContext clock
+  // the moment it decodes; because meditation pauses are long, synthesis stays
+  // well ahead of playback. Reuses lineStarts/playStartTime, so the karaoke
+  // transcript, pause handling, and completion all work exactly as for presets.
+  async playStream(
+    segments: { text: string; pauseAfter: number }[],
+    fetchAudio: (text: string) => Promise<ArrayBuffer | null>
+  ) {
+    if (!segments?.length) return;
+    const ctx = this.ensureCtx();
+    await ctx.resume().catch(() => {});
+
+    const voiceBus = ctx.createGain();
+    voiceBus.gain.value = this.voiceGainValue;
+    voiceBus.connect(ctx.destination);
+    this.ambientNodes.push(voiceBus);
+
+    // One promise per line, resolved by the fetch/decode workers below.
+    const settle: Array<(b: AudioBuffer | null) => void> = [];
+    const ready: Promise<AudioBuffer | null>[] = segments.map(
+      (_, i) => new Promise((res) => (settle[i] = res))
+    );
+    let next = 0;
+    const worker = async () => {
+      for (;;) {
+        const i = next++;
+        if (i >= segments.length) return;
+        let buf: AudioBuffer | null = null;
+        try {
+          const arr = await fetchAudio(segments[i].text);
+          if (arr && this.ctx === ctx) buf = await this.decode(ctx, arr);
+        } catch {
+          buf = null;
+        }
+        settle[i](buf);
+      }
+    };
+    const CONCURRENCY = 3;
+    for (let k = 0; k < Math.min(CONCURRENCY, segments.length); k++) worker();
+
+    // Schedule lines in order as each becomes available, chaining the timeline.
+    this.lineStarts = [];
+    let started = false;
+    let cursor = ctx.currentTime + 0.2;
+    let lastSrc: AudioBufferSourceNode | null = null;
+    for (let i = 0; i < segments.length; i++) {
+      const buf = await ready[i];
+      if (this.ctx !== ctx) return; // stopped while waiting
+      const now = ctx.currentTime;
+      const startAt = Math.max(cursor, now + 0.05);
+      if (!started) {
+        this.playStartTime = startAt;
+        started = true;
+      }
+      this.lineStarts.push(startAt - this.playStartTime);
+      let dur = 0;
+      if (buf) {
+        try {
+          const src = ctx.createBufferSource();
+          src.buffer = buf;
+          src.playbackRate.value = VOICE_RATE;
+          src.connect(voiceBus);
+          src.start(startAt);
+          this.voiceSegs.push(src);
+          lastSrc = src;
+          dur = buf.duration / VOICE_RATE;
+        } catch {
+          return;
+        }
+      }
+      cursor = startAt + dur + segments[i].pauseAfter;
+    }
+    if (lastSrc) lastSrc.onended = () => this.onVoiceEnded?.();
+  }
+
   // Which line is being spoken right now (or just spoken, during its pause).
   // -1 before the first line. Pause-aware: a suspended context freezes its
   // clock, so this holds while paused.
@@ -1009,6 +1086,13 @@ export default function Home() {
       return;
     }
 
+    // Custom: a bespoke session written live for the user's phrase, then voiced
+    // and streamed line by line so playback starts within seconds.
+    if (selected.custom) {
+      await beginCustom();
+      return;
+    }
+
     setScreen("generating");
     setGenStep(0);
     // Walk the "composing" steps so it reads as real work being done. Thanks to
@@ -1054,6 +1138,53 @@ export default function Home() {
     }
   }
 
+  // Custom flow: ask Claude for the bespoke script, then stream the voice.
+  async function beginCustom() {
+    setScreen("generating");
+    setGenStep(0);
+    const started = Date.now();
+    const stepA = window.setTimeout(() => setGenStep(1), 1600);
+    const stepB = window.setTimeout(() => setGenStep(2), 3600);
+    try {
+      const res = await fetch("/api/custom-script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          phrase: customText.trim(),
+          durationMin: duration,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.error || `Request failed (${res.status})`);
+      const segs: { text: string; pauseAfter: number }[] = Array.isArray(
+        data.segments
+      )
+        ? data.segments
+        : [];
+      if (!segs.length) throw new Error("Empty session");
+
+      setScript(segs.map((s) => s.text).join("\n"));
+      setNote("");
+      setIsPreview(Boolean(data.mock));
+      // A short floor so the composing beat reads, but far shorter than the
+      // presets: streaming means the voice starts moments after this.
+      const wait = 3200 - (Date.now() - started);
+      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+      window.clearTimeout(stepA);
+      window.clearTimeout(stepB);
+      setGenStep(2);
+      setScreen("player");
+      startPlaybackStream(segs);
+    } catch (e) {
+      window.clearTimeout(stepA);
+      window.clearTimeout(stepB);
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+      setScreen("setup");
+    }
+  }
+
   function startPlayback(
     segments: { audio: string | null; pauseAfter: number }[]
   ) {
@@ -1079,6 +1210,54 @@ export default function Home() {
     }
     eng.startAmbient(soundscape, src, level);
     eng.playSegments(segments);
+    setPlaying(true);
+    setElapsed(0);
+    startTick();
+    acquireWakeLock();
+
+    if (endTimerRef.current) window.clearTimeout(endTimerRef.current);
+    endTimerRef.current = window.setTimeout(completeSession, totalSecs * 1000);
+  }
+
+  // Streaming playback for Custom: same bed + loudness as a preset, but the
+  // voice lines are synthesized on demand (via /api/tts) and played as they
+  // arrive, so the guide begins within seconds.
+  function startPlaybackStream(
+    segments: { text: string; pauseAfter: number }[]
+  ) {
+    const eng = engineRef.current;
+    eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
+
+    const vs = VOICE_STATS[`${voice}-${accent}`];
+    eng.voiceGainValue = vs
+      ? normGain(vs.rms, vs.peak, VOICE_TARGET + (vs.trim ?? 0))
+      : 1;
+
+    const def = soundDef(soundscape);
+    const src = def && !def.soon ? asset(def.src) : undefined;
+    let level: number | undefined;
+    if (src && def?.rms != null && def?.peak != null) {
+      level = normGain(def.rms, def.peak, BED_UNDER_VOICE);
+    } else if (src) {
+      level = 0.4;
+    }
+    eng.startAmbient(soundscape, src, level);
+
+    const fetchAudio = async (text: string): Promise<ArrayBuffer | null> => {
+      try {
+        const r = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, voice, accent }),
+        });
+        if (!r.ok) return null;
+        return await r.arrayBuffer();
+      } catch {
+        return null;
+      }
+    };
+    eng.playStream(segments, fetchAudio);
+
     setPlaying(true);
     setElapsed(0);
     startTick();
@@ -1161,22 +1340,44 @@ export default function Home() {
             <div className="halo" />
           </div>
           <div>
-            <div className="gen-title">Composing your session</div>
+            <div className="gen-title">
+              {selected.custom ? "Writing your session" : "Composing your session"}
+            </div>
             <div className="gen-detail">
-              {(name.trim() || "You")} · {selected.label} · {duration} min ·{" "}
-              {soundLabel}
+              {selected.custom && customText.trim() ? (
+                <>
+                  {name.trim() || "You"} · &ldquo;{customText.trim()}&rdquo; ·{" "}
+                  {duration} min
+                </>
+              ) : (
+                <>
+                  {name.trim() || "You"} · {selected.label} · {duration} min ·{" "}
+                  {soundLabel}
+                </>
+              )}
             </div>
           </div>
           <div className="steps">
-            {[
-              <>Crafting your journey</>,
-              <>
-                Scoring your soundscape with <b>ElevenMusic</b>
-              </>,
-              <>
-                Giving it voice with <b>ElevenLabs</b>
-              </>,
-            ].map((label, i) => (
+            {(selected.custom
+              ? [
+                  <>Reading what you wrote</>,
+                  <>
+                    Writing your session with <b>Claude</b>
+                  </>,
+                  <>
+                    Giving it voice with <b>ElevenLabs</b>
+                  </>,
+                ]
+              : [
+                  <>Crafting your journey</>,
+                  <>
+                    Scoring your soundscape with <b>ElevenMusic</b>
+                  </>,
+                  <>
+                    Giving it voice with <b>ElevenLabs</b>
+                  </>,
+                ]
+            ).map((label, i) => (
               <div
                 key={i}
                 className={`step ${i < genStep ? "done" : ""} ${
