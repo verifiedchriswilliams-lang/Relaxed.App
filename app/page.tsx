@@ -921,13 +921,15 @@ export default function Home() {
     return () => cancelAnimationFrame(raf);
   }, [screen]);
 
-  // Keep the active line centered in the transcript, so the reader never scrolls.
+  // Keep the active line a little above center in the transcript, so there's
+  // clear room below it for the upcoming words (the pane fades out its bottom
+  // edge, so a dead-centered line reads as bottom-aligned).
   useEffect(() => {
     const c = transcriptRef.current;
     if (!c || activeLine < 0) return;
     const el = c.querySelector<HTMLElement>(`[data-line="${activeLine}"]`);
     if (!el) return;
-    const top = el.offsetTop - c.clientHeight / 2 + el.clientHeight / 2;
+    const top = el.offsetTop + el.clientHeight / 2 - c.clientHeight * 0.4;
     c.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
   }, [activeLine, showTranscript]);
 
