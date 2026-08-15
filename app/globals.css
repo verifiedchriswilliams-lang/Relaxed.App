@@ -1092,6 +1092,11 @@ button {
   max-height: 34vh;
   overflow-y: auto;
   scrollbar-width: none;
+  /* Room above the first line and below the last, so every line (including the
+     very first) can sit at the target position instead of being pinned to the
+     top under the fade mask. */
+  padding-top: 13vh;
+  padding-bottom: 20vh;
   -webkit-mask-image: linear-gradient(
     to bottom,
     transparent 0,

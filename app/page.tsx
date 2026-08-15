@@ -929,7 +929,7 @@ export default function Home() {
     if (!c || activeLine < 0) return;
     const el = c.querySelector<HTMLElement>(`[data-line="${activeLine}"]`);
     if (!el) return;
-    const top = el.offsetTop + el.clientHeight / 2 - c.clientHeight * 0.4;
+    const top = el.offsetTop + el.clientHeight / 2 - c.clientHeight * 0.35;
     c.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
   }, [activeLine, showTranscript]);
 
