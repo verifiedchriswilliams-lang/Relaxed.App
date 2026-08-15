@@ -141,7 +141,7 @@ const ALL_CONTEXTS: SessionContext[] = [
   },
   {
     id: "custom",
-    label: "Your Own",
+    label: "Make Your Own",
     tagline: "Tell us what you need",
     art: DISC.custom,
     glow: "#8b6fd0",

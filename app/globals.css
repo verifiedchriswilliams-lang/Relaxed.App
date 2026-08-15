@@ -285,11 +285,24 @@ button {
   box-shadow: 0 0 16px -2px var(--og, transparent),
     inset 0 0 0 1px rgba(255, 255, 255, 0.25);
 }
+.slabel {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+}
 .state .sname {
   font-size: 27px;
   font-weight: 300;
   letter-spacing: -0.015em;
   color: var(--ink-0);
+}
+/* Subscript under the "Make Your Own" tile: signals the bespoke differentiator. */
+.state .ssub {
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--ink-2);
 }
 
 .footnote {

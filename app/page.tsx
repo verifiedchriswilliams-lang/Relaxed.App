@@ -1578,7 +1578,14 @@ export default function Home() {
                     { background: c.art, "--og": c.glow } as React.CSSProperties
                   }
                 />
-                <span className="sname">{c.label}</span>
+                <span className="slabel">
+                  <span className="sname">{c.label}</span>
+                  {c.custom && (
+                    <span className="ssub">
+                      A guided session, written for whatever you bring
+                    </span>
+                  )}
+                </span>
               </button>
             ))}
           </div>
