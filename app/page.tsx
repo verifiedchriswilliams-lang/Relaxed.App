@@ -183,20 +183,23 @@ class AudioEngine {
     return this.ctx;
   }
 
-  // Call synchronously inside a user gesture (the Begin tap) to unlock audio.
-  unlock() {
-    // By default iOS treats Web Audio as "ambient", which obeys the hardware
-    // mute switch, so a silenced phone plays nothing. Declaring the audio as
-    // "playback" (iOS 16.4+) makes it ignore the mute switch, like a music or
-    // podcast app. No-op where unsupported.
+  // By default iOS treats Web Audio as "ambient", which obeys the hardware mute
+  // switch, so a silenced phone plays nothing. Declaring the audio as "playback"
+  // (iOS 16.4+) makes it ignore the mute switch, like a music or podcast app.
+  // No-op where unsupported. Call from any gesture that starts sound (Begin, or
+  // a tray preview tap).
+  private setPlaybackCategory() {
     try {
-      const nav = navigator as unknown as {
-        audioSession?: { type: string };
-      };
+      const nav = navigator as unknown as { audioSession?: { type: string } };
       if (nav.audioSession) nav.audioSession.type = "playback";
     } catch {
       /* unsupported; nothing to do */
     }
+  }
+
+  // Call synchronously inside a user gesture (the Begin tap) to unlock audio.
+  unlock() {
+    this.setPlaybackCategory();
     const ctx = this.ensureCtx();
     ctx.resume().catch(() => {});
     try {
@@ -549,6 +552,7 @@ class AudioEngine {
     // claim our token — otherwise stopPreview would invalidate our own token
     // and the guard below would bail before playback.
     this.stopPreview();
+    this.setPlaybackCategory();
     const ctx = this.ensureCtx();
     await ctx.resume().catch(() => {});
     const token = ++this.previewToken;
