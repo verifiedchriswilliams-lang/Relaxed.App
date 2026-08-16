@@ -1079,6 +1079,16 @@ export default function Home() {
     setTrayOpen(true);
   }
 
+  // Let all three composing steps reach their green "done" state, including the
+  // final one, before revealing the player, so the last step visibly completes
+  // instead of jumping away while it's still active.
+  async function finishComposing() {
+    setGenStep(2); // final step active
+    await new Promise((r) => setTimeout(r, 350));
+    setGenStep(3); // final step completes: its dot eases to green
+    await new Promise((r) => setTimeout(r, 1150));
+  }
+
   async function begin() {
     // Unlock the audio engine within this tap so mobile browsers will let the
     // voice + soundscape play once ready. Stop any tray audition first.
@@ -1143,7 +1153,7 @@ export default function Home() {
       if (wait > 0) await new Promise((r) => setTimeout(r, wait));
       window.clearTimeout(stepA);
       window.clearTimeout(stepB);
-      setGenStep(2);
+      await finishComposing();
       setScreen("player");
       startPlayback(Array.isArray(data.segments) ? data.segments : []);
     } catch (e) {
@@ -1190,7 +1200,7 @@ export default function Home() {
       if (wait > 0) await new Promise((r) => setTimeout(r, wait));
       window.clearTimeout(stepA);
       window.clearTimeout(stepB);
-      setGenStep(2);
+      await finishComposing();
       setScreen("player");
       startPlaybackStream(segs);
     } catch (e) {
