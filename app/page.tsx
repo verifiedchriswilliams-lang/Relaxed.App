@@ -961,7 +961,9 @@ export default function Home() {
         if (p.name) setName(p.name);
         if (p.voice) setVoice(p.voice);
         if (p.accent) setAccent(p.accent);
-        if (p.soundscape) {
+        // Ignore a saved "silence" (the removed Off option): every session
+        // now keeps a bed, so fall back to the default soundscape.
+        if (p.soundscape && p.soundscape !== "silence") {
           setSoundscape(p.soundscape);
           setSoundTab(catOf(p.soundscape));
         }
@@ -1790,18 +1792,8 @@ export default function Home() {
                 ))}
               </div>
               <div className="rail">
-                <button
-                  className={`chip ${
-                    soundPicked && soundscape === "silence" ? "on" : ""
-                  }`}
-                  onClick={() => {
-                    setSoundPicked(true);
-                    setSoundscape("silence");
-                    engineRef.current.stopPreview();
-                  }}
-                >
-                  Off
-                </button>
+                {/* No "Off": every session keeps a continuous soundscape bed,
+                    which also keeps iOS audio alive when the phone locks. */}
                 {SOUNDSCAPES.filter((s) => s.cat === soundTab).map((s) => (
                   <button
                     key={s.id}
