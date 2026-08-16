@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
+import { BRAND } from "@/lib/brand";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -9,21 +10,20 @@ const manrope = Manrope({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://elevenmind.io"),
-  title: "ElevenMind — Personalized Mindfulness",
-  description:
-    "The way out is in. ElevenMind writes you a mindfulness session in the moment, from your name, the time you have, and the state you want to reach, and speaks it aloud over a calming soundscape.",
+  metadataBase: new URL(BRAND.url),
+  title: `${BRAND.name} — Personalized Mindfulness`,
+  description: `The way out is in. ${BRAND.name} writes you a mindfulness session in the moment, from your name, the time you have, and the state you want to reach, and speaks it aloud over a calming soundscape.`,
   openGraph: {
     type: "website",
-    siteName: "ElevenMind",
+    siteName: BRAND.name,
     url: "/",
-    title: "ElevenMind — Personalized Mindfulness",
+    title: `${BRAND.name} — Personalized Mindfulness`,
     description:
       "The way out is in. A mindfulness session composed for you in the moment, voiced aloud over a calming soundscape.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ElevenMind — Personalized Mindfulness",
+    title: `${BRAND.name} — Personalized Mindfulness`,
     description: "The way out is in.",
   },
 };

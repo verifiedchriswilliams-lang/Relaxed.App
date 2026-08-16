@@ -11,19 +11,21 @@ import {
   type VoiceChoice,
 } from "@/lib/contexts";
 import { asset } from "@/lib/assets";
+import { BRAND } from "@/lib/brand";
 import GUIDES from "@/lib/voices.json";
 
-// ElevenMind wordmark: the family bar glyph, then Eleven (700) + Mind (400).
+// Wordmark: the bar glyph, then the brand name in two weights
+// (ElevenMind => Eleven + Mind; relaxed.app => relaxed + .app).
 function Wordmark() {
   return (
-    <div className="wm" aria-label="ElevenMind">
+    <div className="wm" aria-label={BRAND.name}>
       <span className="bars" aria-hidden="true">
         <i />
         <i />
       </span>
       <span className="name">
-        <b>Eleven</b>
-        <span>Mind</span>
+        <b>{BRAND.strong}</b>
+        <span>{BRAND.light}</span>
       </span>
     </div>
   );
