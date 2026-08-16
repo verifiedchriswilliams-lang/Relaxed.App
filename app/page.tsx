@@ -185,6 +185,18 @@ class AudioEngine {
 
   // Call synchronously inside a user gesture (the Begin tap) to unlock audio.
   unlock() {
+    // By default iOS treats Web Audio as "ambient", which obeys the hardware
+    // mute switch, so a silenced phone plays nothing. Declaring the audio as
+    // "playback" (iOS 16.4+) makes it ignore the mute switch, like a music or
+    // podcast app. No-op where unsupported.
+    try {
+      const nav = navigator as unknown as {
+        audioSession?: { type: string };
+      };
+      if (nav.audioSession) nav.audioSession.type = "playback";
+    } catch {
+      /* unsupported; nothing to do */
+    }
     const ctx = this.ensureCtx();
     ctx.resume().catch(() => {});
     try {
