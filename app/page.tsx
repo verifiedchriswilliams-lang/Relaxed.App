@@ -129,6 +129,18 @@ function soundDef(id: Soundscape): SoundDef | undefined {
   return SOUNDSCAPES.find((s) => s.id === id);
 }
 
+// A curated soundscape per intention, pre-selected when the tray opens so a bed
+// is always ready (no "Off", no disabled Begin) and the starting point feels
+// considered rather than arbitrary. The user can still audition and change it.
+const DEFAULT_SOUND: Record<ContextId, Soundscape> = {
+  meditation: "pad", // soft ambient
+  sleep: "rain",
+  flow: "lofi",
+  relax: "ocean",
+  "stress-relief": "rain",
+  custom: "pad",
+};
+
 type Accent = "us" | "uk";
 
 interface Prefs {
@@ -1076,8 +1088,12 @@ export default function Home() {
     setContext(id);
     setError(null);
     setVoicePicked(false); // open with no voice highlighted (preview on first tap)
-    setSoundPicked(false); // ...and no soundscape highlighted either
-    setSoundTab("nature"); // always open on the first category
+    // Soundscape gets a contextual default, pre-selected, so there's always a
+    // bed and Begin is never blocked. (Voice stays unselected on purpose.)
+    const ds = DEFAULT_SOUND[id] ?? "rain";
+    setSoundscape(ds);
+    setSoundPicked(true);
+    setSoundTab(catOf(ds));
     setTrayOpen(true);
   }
 
