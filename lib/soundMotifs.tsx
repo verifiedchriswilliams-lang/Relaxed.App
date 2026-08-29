@@ -89,17 +89,22 @@ const MOTIFS: Record<string, Inner> = {
       ))}
     </>
   ),
-  // A single cresting wave that curls over, gently swelling, over a drifting waterline.
+  // A crested wave breaking above two flowing current lines. The crest gently
+  // swells (bob) while the currents drift beneath it.
   ocean: (
     <>
       <g className="m-bob">
-        <path className="s thin" d="M16 62 Q20 41 41 37 Q62 33 60 50 Q58 61 46 57 Q38 55 43 47" />
-        <circle className="fillc" cx={62} cy={42} r={1.5} />
+        <path
+          className="s thin"
+          d="M16 57 Q32 57 40 43 Q47 31 60 36 Q71 40 66 51 Q61 58 53 54 Q47 51 52 46"
+        />
+        <circle className="fillc" cx={61} cy={36} r={1.5} />
       </g>
+      <Wave y={63} amp={3} step={18} dur={8} />
       <path
         className="s thin m-drift"
-        style={{ "--drift": "44px", animationDuration: "9s" } as React.CSSProperties}
-        d="M-22 66 q 5.5 -3 11 0 q 5.5 3 11 0 q 5.5 -3 11 0 q 5.5 3 11 0 q 5.5 -3 11 0 q 5.5 3 11 0 q 5.5 -3 11 0 q 5.5 3 11 0"
+        style={{ "--drift": "36px", animationDuration: "11s", opacity: 0.8 } as React.CSSProperties}
+        d={wave(70, 2.4, 18)}
       />
     </>
   ),
