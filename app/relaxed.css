@@ -12,88 +12,54 @@
    light/dark. Palette + type + motion values come from the identity tokens.
    ============================================================================ */
 
-/* ---- tokens: light (Paper) is the default ------------------------------- */
+/* ---- tokens: a single, committed dark (Ink) world ----------------------- */
+/* relaxed.app is deliberately dark-only, regardless of the device setting — the
+   Ink ground is the calming register the product lives in, and the bloom, ring
+   and motifs read richest on it. (Same stance as ElevenMind's single dark
+   world.) Bone ink, Gray accents; no Paper/light variant. */
 :root[data-brand="relaxed"] {
   --font: var(--rx-font-family), system-ui, -apple-system, "Segoe UI", sans-serif;
 
   /* grounds */
-  --night-0: #faf9f7; /* Paper — app background */
-  --night-1: #faf9f7;
+  --night-0: #121110; /* Ink — app background */
+  --night-1: #121110;
 
   /* text */
-  --ink-0: #121110; /* Ink — primary */
-  --ink-1: #5f5a52; /* secondary */
-  --ink-2: #8b857c; /* Gray — tertiary, ".app" suffix, placeholders */
+  --ink-0: #efebe3; /* Bone — primary */
+  --ink-1: rgba(239, 235, 227, 0.72); /* secondary */
+  --ink-2: rgba(239, 235, 227, 0.5); /* Gray — tertiary, ".app" suffix, placeholders */
 
   /* surfaces + selection */
-  --glass: #ffffff; /* raised surface (was translucent glass) */
-  --glass-line: rgba(18, 17, 16, 0.1); /* hairline */
-  --glass-strong: #121110; /* selected / primary fill = Ink */
-  --rx-invert-fg: #faf9f7; /* text on a selected/Ink fill */
+  --glass: #1c1b18; /* raised surface, a hair above Ink */
+  --glass-line: rgba(239, 235, 227, 0.14); /* hairline */
+  --glass-strong: #efebe3; /* selected / primary fill = Bone */
+  --rx-invert-fg: #121110; /* Ink text on a Bone fill */
 
-  --rx-line-strong: rgba(18, 17, 16, 0.18);
-  --rx-hover: rgba(18, 17, 16, 0.05);
-  --rx-scrim: rgba(18, 17, 16, 0.32);
-  --rx-shadow: 0 12px 28px -14px rgba(18, 17, 16, 0.3);
+  --rx-line-strong: rgba(239, 235, 227, 0.24);
+  --rx-hover: rgba(239, 235, 227, 0.06);
+  --rx-scrim: rgba(0, 0, 0, 0.5);
+  --rx-shadow: 0 12px 30px -14px rgba(0, 0, 0, 0.6);
   --rx-ease-breath: cubic-bezier(0.37, 0, 0.63, 1);
-}
-
-/* ---- tokens: dark (Ink) — follow the device ----------------------------- */
-@media (prefers-color-scheme: dark) {
-  :root[data-brand="relaxed"] {
-    --night-0: #121110; /* Ink — app background */
-    --night-1: #121110;
-
-    --ink-0: #efebe3; /* Bone — primary */
-    --ink-1: rgba(239, 235, 227, 0.72);
-    --ink-2: rgba(239, 235, 227, 0.5);
-
-    --glass: #1c1b18; /* raised surface, a hair above Ink */
-    --glass-line: rgba(239, 235, 227, 0.14);
-    --glass-strong: #efebe3; /* selected fill = Bone */
-    --rx-invert-fg: #121110; /* Ink text on a Bone fill */
-
-    --rx-line-strong: rgba(239, 235, 227, 0.24);
-    --rx-hover: rgba(239, 235, 227, 0.06);
-    --rx-scrim: rgba(0, 0, 0, 0.5);
-    --rx-shadow: 0 12px 30px -14px rgba(0, 0, 0, 0.6);
-  }
+  --rx-bloom: rgba(239, 235, 227, 0.1); /* soft light-bloom on Ink */
 }
 
 /* ---- atmosphere: monochrome, not imagery -------------------------------- */
-/* Restraint-safe depth. No photo, no colour — just a whisper of a vignette so
-   Paper / Ink read as a lit surface rather than dead-flat. Layered over the
-   token ground colour so the palette is unchanged. */
-:root[data-brand="relaxed"] {
-  --rx-bloom: rgba(18, 17, 16, 0.05); /* soft shadow-bloom on Paper */
-}
+/* Restraint-safe depth: a whisper of a vignette so Ink reads as a lit surface
+   rather than dead-flat. Layered over the ground colour so the palette is
+   unchanged. */
 [data-brand="relaxed"] body {
   background: radial-gradient(
-      135% 105% at 50% 26%,
-      rgba(18, 17, 16, 0) 58%,
-      rgba(18, 17, 16, 0.05) 100%
+      120% 90% at 50% 6%,
+      rgba(239, 235, 227, 0.05),
+      rgba(239, 235, 227, 0) 46%
+    ),
+    radial-gradient(
+      130% 100% at 50% 100%,
+      rgba(0, 0, 0, 0.28),
+      rgba(0, 0, 0, 0) 55%
     ),
     var(--night-0);
   background-attachment: fixed;
-}
-@media (prefers-color-scheme: dark) {
-  :root[data-brand="relaxed"] {
-    --rx-bloom: rgba(239, 235, 227, 0.1); /* soft light-bloom on Ink */
-  }
-  [data-brand="relaxed"] body {
-    background: radial-gradient(
-        120% 90% at 50% 6%,
-        rgba(239, 235, 227, 0.05),
-        rgba(239, 235, 227, 0) 46%
-      ),
-      radial-gradient(
-        130% 100% at 50% 100%,
-        rgba(0, 0, 0, 0.28),
-        rgba(0, 0, 0, 0) 55%
-      ),
-      var(--night-0);
-    background-attachment: fixed;
-  }
 }
 
 /* The earned moment: a soft glow breathes behind the mark while a session is

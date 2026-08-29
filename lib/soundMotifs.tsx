@@ -93,7 +93,7 @@ const MOTIFS: Record<string, Inner> = {
   // swells (bob) while the currents drift beneath it.
   ocean: (
     <>
-      <g className="m-bob">
+      <g className="m-swirl">
         <path
           className="s thin"
           d="M16 57 Q32 57 40 43 Q47 31 60 36 Q71 40 66 51 Q61 58 53 54 Q47 51 52 46"

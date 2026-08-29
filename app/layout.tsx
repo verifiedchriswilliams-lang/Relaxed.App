@@ -42,14 +42,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // ElevenMind is a single dark world; relaxed follows the device (Paper / Ink).
-  themeColor:
-    BRAND.id === "relaxed"
-      ? [
-          { media: "(prefers-color-scheme: light)", color: "#FAF9F7" },
-          { media: "(prefers-color-scheme: dark)", color: "#121110" },
-        ]
-      : "#070912",
+  // Both brands are single dark worlds: relaxed on Ink, ElevenMind on night blue.
+  themeColor: BRAND.id === "relaxed" ? "#121110" : "#070912",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
