@@ -418,6 +418,12 @@
   transform-box: fill-box;
   transform-origin: center;
 }
+[data-brand="relaxed"] .pmotif .axis {
+  stroke: currentColor;
+  stroke-width: 1.4;
+  opacity: 0.22;
+  vector-effect: non-scaling-stroke;
+}
 
 @keyframes m-ripple {
   0% { transform: scale(0.55); opacity: 0; }
@@ -462,6 +468,14 @@
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
 }
+@keyframes m-swirl {
+  0%, 100% { transform: translateX(-3px); }
+  50% { transform: translateX(3px); }
+}
+@keyframes m-chime {
+  0%, 100% { transform: rotate(-7deg); }
+  50% { transform: rotate(7deg); }
+}
 [data-brand="relaxed"] .pmotif .m-ripple { animation: m-ripple 4.6s ease-out infinite; }
 [data-brand="relaxed"] .pmotif .m-fall { animation: m-fall 2.1s linear infinite; }
 [data-brand="relaxed"] .pmotif .m-drift { animation: m-drift linear infinite; }
@@ -472,6 +486,8 @@
 [data-brand="relaxed"] .pmotif .m-flash { animation: m-flash 5s ease-in-out infinite; }
 [data-brand="relaxed"] .pmotif .m-bob { animation: m-bob 4s ease-in-out infinite; }
 [data-brand="relaxed"] .pmotif .m-pluck { animation: m-pluck 3.2s ease-in-out infinite; }
+[data-brand="relaxed"] .pmotif .m-swirl { animation: m-swirl 6s ease-in-out infinite; }
+[data-brand="relaxed"] .pmotif .m-chime { animation: m-chime 5s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
   [data-brand="relaxed"] .pmotif * { animation: none !important; }

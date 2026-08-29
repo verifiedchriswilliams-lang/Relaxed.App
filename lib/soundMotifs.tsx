@@ -3,11 +3,11 @@ import React from "react";
 // Per-soundscape line motifs for the relaxed.app player, drawn in the stem
 // mark's language: a single stroke weight, flat caps, no fill, currentColor so
 // they follow the theme. Each sits inside the breathing session ring and carries
-// one honest motion true to its sound (rain falling, waves drifting, a record
-// turning). No colour, no photograph. Geometry validated in the design preview.
+// one honest motion true to its sound. No colour, no photograph. Geometry
+// validated in the design preview.
 
 // A sine-ish wave path. Period = 2*step; drifting one period (--drift) loops
-// seamlessly. Drawn wider than the viewBox so the ends never show inside the ring.
+// seamlessly. Drawn wider than the viewBox so the ends never show in the ring.
 function wave(y: number, amp: number, step: number): string {
   let x = -2 * step;
   let d = `M${x} ${y} Q${x + step * 0.5} ${y - amp} ${x + step} ${y}`;
@@ -19,25 +19,48 @@ function wave(y: number, amp: number, step: number): string {
   return d;
 }
 
-function Wave({
-  y,
-  amp,
-  step,
-  dur,
-}: {
-  y: number;
-  amp: number;
-  step: number;
-  dur: number;
-}) {
+function Wave({ y, amp, step, dur }: { y: number; amp: number; step: number; dur: number }) {
   return (
     <path
       className="s thin m-drift"
-      style={
-        { "--drift": `${2 * step}px`, animationDuration: `${dur}s` } as React.CSSProperties
-      }
+      style={{ "--drift": `${2 * step}px`, animationDuration: `${dur}s` } as React.CSSProperties}
       d={wave(y, amp, step)}
     />
+  );
+}
+
+const AXIS = <line className="axis" x1={10} y1={50} x2={90} y2={50} />;
+
+function Piano() {
+  const x0 = 27;
+  const w = 46;
+  const keys = 7;
+  const kw = w / keys;
+  const top = 42;
+  const h = 22;
+  const bk = [1, 2, 4, 5, 6];
+  const bw = kw * 0.56;
+  const bh = h * 0.6;
+  return (
+    <>
+      <rect className="s thin" x={x0} y={top} width={w} height={h} rx={1.5} />
+      {Array.from({ length: keys - 1 }).map((_, i) => {
+        const x = x0 + (i + 1) * kw;
+        return <line key={i} className="s thin" x1={x} y1={top} x2={x} y2={top + h} />;
+      })}
+      {bk.map((i, j) => (
+        <rect
+          key={j}
+          className="fillc m-shimmer"
+          x={x0 + i * kw - bw / 2}
+          y={top}
+          width={bw}
+          height={bh}
+          rx={0.8}
+          style={{ animationDelay: `${j * 0.3}s` }}
+        />
+      ))}
+    </>
   );
 }
 
@@ -66,46 +89,70 @@ const MOTIFS: Record<string, Inner> = {
       ))}
     </>
   ),
+  // A single cresting wave that curls over, gently swelling, over a drifting waterline.
   ocean: (
     <>
-      <Wave y={48} amp={8} step={20} dur={7} />
-      <Wave y={58} amp={8} step={20} dur={11} />
+      <g className="m-bob">
+        <path className="s thin" d="M16 62 Q20 41 41 37 Q62 33 60 50 Q58 61 46 57 Q38 55 43 47" />
+        <circle className="fillc" cx={62} cy={42} r={1.5} />
+      </g>
+      <path
+        className="s thin m-drift"
+        style={{ "--drift": "44px", animationDuration: "9s" } as React.CSSProperties}
+        d="M-22 66 q 5.5 -3 11 0 q 5.5 3 11 0 q 5.5 -3 11 0 q 5.5 3 11 0 q 5.5 -3 11 0 q 5.5 3 11 0 q 5.5 -3 11 0 q 5.5 3 11 0"
+      />
     </>
   ),
+  // Flat flowing lines with one swirl gust in the middle.
   wind: (
     <>
-      <Wave y={42} amp={3.5} step={20} dur={4.2} />
-      <Wave y={50} amp={2.6} step={20} dur={5.6} />
-      <Wave y={58} amp={3.5} step={20} dur={7} />
+      <Wave y={40} amp={3} step={20} dur={5} />
+      <g className="m-swirl">
+        <path className="s thin" d="M24 50 H56 C64 50 64 40 57 40 C51 40 52 48 58 48" />
+      </g>
+      <Wave y={60} amp={3} step={20} dur={7} />
     </>
   ),
   thunder: (
     <>
-      <path className="s thin" d="M35 45 Q34 37 42 37 Q45 31 53 34 Q63 32 64 42" />
-      <path className="s m-flash" d="M53 45 L45 58 L51 58 L44 71" />
+      <path
+        className="s thin"
+        d="M33 52 Q26 52 27 45 Q27 39 34 40 Q35 31 44 32 Q50 27 56 33 Q66 31 66 41 Q73 42 71 49 Q70 52 64 52 Z"
+      />
+      <path className="s m-flash" d="M50 52 L44 62 L50 62 L44 72" />
     </>
   ),
+  // Larger chimes hung from the bar; each sways from its top, neighbours meeting.
   windchimes: (
-    <g className="m-sway" style={{ transformOrigin: "center top" }}>
-      <line className="s thin" x1={35} y1={33} x2={65} y2={33} />
+    <>
+      <line className="s thin" x1={31} y1={28} x2={65} y2={28} />
       {[
-        [41, 60],
-        [48, 66],
-        [55, 62],
-        [61, 55],
+        [34, 72],
+        [41, 76],
+        [48, 73],
+        [55, 75],
+        [62, 70],
       ].map(([x, y2], i) => (
-        <line key={i} className="s thin" x1={x} y1={33} x2={x} y2={y2} />
+        <line
+          key={i}
+          className="s thin m-chime"
+          x1={x}
+          y1={28}
+          x2={x}
+          y2={y2}
+          style={{ transformOrigin: "center top", animationDelay: `${(i % 2) * 2.5}s` }}
+        />
       ))}
-    </g>
+    </>
   ),
 
   // ---- Music ----
   bowls: (
     <>
       {[
-        [3, "M28 58 Q50 46 72 58"],
-        [1.5, "M31 55 Q50 45 69 55"],
-        [0, "M34 52 Q50 44 66 52"],
+        [3.4, "M27 54 Q50 40 73 54"],
+        [1.7, "M30 51 Q50 39 70 51"],
+        [0, "M33 48 Q50 38 67 48"],
       ].map(([delay, d], i) => (
         <path
           key={i}
@@ -132,13 +179,7 @@ const MOTIFS: Record<string, Inner> = {
       ))}
     </>
   ),
-  piano: (
-    <g className="m-bob">
-      <ellipse className="fillc" cx={45} cy={63} rx={7} ry={5} />
-      <line className="s" x1={52} y1={63} x2={52} y2={34} />
-      <path className="s" d="M52 34 Q60 36 59 45" />
-    </g>
-  ),
+  piano: <Piano />,
   lofi: (
     <g className="m-spin">
       <circle className="s thin" cx={50} cy={50} r={21} />
@@ -147,65 +188,100 @@ const MOTIFS: Record<string, Inner> = {
       <line className="s thin" x1={50} y1={29} x2={50} y2={33.5} />
     </g>
   ),
+  // Right-side-up harp with sound waves radiating off the strings.
   harp: (
     <>
-      <path className="s thin" d="M38 30 L38 70 L64 70" />
-      <path className="s thin" d="M38 30 Q54 33 64 70" />
+      <line className="s thin" x1={35} y1={26} x2={35} y2={72} />
+      <path className="s thin" d="M35 26 Q54 24 62 40" />
+      <line className="s thin" x1={35} y1={72} x2={62} y2={40} />
       {[
-        [45, 41],
-        [51, 48],
-        [57, 57],
-      ].map(([x, y1], i) => (
+        [42, 28, 65],
+        [48, 31, 58],
+        [54, 35, 50],
+      ].map(([x, t, b], i) => (
         <line
           key={i}
           className="s thin m-pluck"
           x1={x}
-          y1={y1}
+          y1={t}
           x2={x}
-          y2={70}
+          y2={b}
           style={{ animationDelay: `${i * 0.5}s` }}
+        />
+      ))}
+      {[0, 1.2, 2.4].map((delay, i) => (
+        <path
+          key={`w${i}`}
+          className="s thin m-pulse"
+          style={
+            {
+              transformBox: "view-box",
+              transformOrigin: "60px 40px",
+              animationDelay: `${delay}s`,
+            } as React.CSSProperties
+          }
+          d="M66 32 Q76 40 66 48"
         />
       ))}
     </>
   ),
 
-  // ---- Frequencies ----
+  // ---- Frequencies (oscilloscope: a faint centre axis unifies the family) ----
   brown: (
     <>
-      {Array.from({ length: 11 }).map((_, i) => {
-        const x = 31 + i * 3.8;
-        const h = [7, 11, 8, 13, 9, 12, 7, 13, 8, 10, 8][i];
+      {AXIS}
+      {Array.from({ length: 13 }).map((_, i) => {
+        const x = 29 + i * 3.5;
+        const hh = [6, 10, 7, 12, 8, 11, 7, 13, 8, 10, 7, 9, 6][i];
         return (
           <line
             key={i}
             className="s thin m-shimmer"
             x1={x}
-            y1={50 - h / 2}
+            y1={50 - hh / 2}
             x2={x}
-            y2={50 + h / 2}
-            style={{ animationDelay: `${(i % 5) * 0.22}s` }}
+            y2={50 + hh / 2}
+            style={{ animationDelay: `${(i % 5) * 0.2}s` }}
           />
         );
       })}
     </>
   ),
-  pad432: <Wave y={50} amp={5} step={12} dur={5} />,
+  pad432: (
+    <>
+      {AXIS}
+      <Wave y={50} amp={5} step={10} dur={5} />
+    </>
+  ),
   binaural: (
     <>
+      {AXIS}
       <path
         className="s thin m-drift"
         style={{ "--drift": "32px", animationDuration: "9s" } as React.CSSProperties}
-        d={wave(46, 7, 16)}
+        d={wave(50, 7, 16)}
       />
       <path
         className="s thin m-drift"
-        style={{ "--drift": "32px", animationDuration: "9.7s" } as React.CSSProperties}
-        d={wave(54, 7, 16)}
+        style={
+          { "--drift": "33.8px", animationDuration: "9.8s", opacity: 0.75 } as React.CSSProperties
+        }
+        d={wave(50, 7, 16.9)}
       />
     </>
   ),
-  delta: <Wave y={52} amp={15} step={30} dur={12} />,
-  theta: <Wave y={50} amp={9} step={18} dur={8} />,
+  delta: (
+    <>
+      {AXIS}
+      <Wave y={52} amp={16} step={32} dur={13} />
+    </>
+  ),
+  theta: (
+    <>
+      {AXIS}
+      <Wave y={50} amp={9} step={17} dur={8} />
+    </>
+  ),
 };
 
 // Fallback: a calm single wave for any id without a bespoke motif.
