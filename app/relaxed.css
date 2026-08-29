@@ -60,6 +60,76 @@
   }
 }
 
+/* ---- atmosphere: monochrome, not imagery -------------------------------- */
+/* Restraint-safe depth. No photo, no colour — just a whisper of a vignette so
+   Paper / Ink read as a lit surface rather than dead-flat. Layered over the
+   token ground colour so the palette is unchanged. */
+:root[data-brand="relaxed"] {
+  --rx-bloom: rgba(18, 17, 16, 0.05); /* soft shadow-bloom on Paper */
+}
+[data-brand="relaxed"] body {
+  background: radial-gradient(
+      135% 105% at 50% 26%,
+      rgba(18, 17, 16, 0) 58%,
+      rgba(18, 17, 16, 0.05) 100%
+    ),
+    var(--night-0);
+  background-attachment: fixed;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-brand="relaxed"] {
+    --rx-bloom: rgba(239, 235, 227, 0.1); /* soft light-bloom on Ink */
+  }
+  [data-brand="relaxed"] body {
+    background: radial-gradient(
+        120% 90% at 50% 6%,
+        rgba(239, 235, 227, 0.05),
+        rgba(239, 235, 227, 0) 46%
+      ),
+      radial-gradient(
+        130% 100% at 50% 100%,
+        rgba(0, 0, 0, 0.28),
+        rgba(0, 0, 0, 0) 55%
+      ),
+      var(--night-0);
+    background-attachment: fixed;
+  }
+}
+
+/* The earned moment: a soft glow breathes behind the mark while a session is
+   composing or playing. Monochrome, so it belongs to the stem world. */
+[data-brand="relaxed"] .gen-orb,
+[data-brand="relaxed"] .play-orb,
+[data-brand="relaxed"] .done-orb {
+  position: relative;
+}
+[data-brand="relaxed"] .gen-orb::before,
+[data-brand="relaxed"] .play-orb::before,
+[data-brand="relaxed"] .done-orb::before {
+  content: "";
+  position: absolute;
+  inset: -45%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, var(--rx-bloom), transparent 72%);
+  z-index: 0;
+  animation: rx-breathe var(--rx-breath, 11s) var(--rx-ease-breath) infinite;
+  pointer-events: none;
+}
+[data-brand="relaxed"] .gen-glyph,
+[data-brand="relaxed"] .play-orb .disc,
+[data-brand="relaxed"] .play-orb .ring,
+[data-brand="relaxed"] .done-orb .disc {
+  position: relative;
+  z-index: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-brand="relaxed"] .gen-orb::before,
+  [data-brand="relaxed"] .play-orb::before,
+  [data-brand="relaxed"] .done-orb::before {
+    animation: none !important;
+  }
+}
+
 /* ---- no glass. solid surfaces, no backdrop blur ------------------------- */
 [data-brand="relaxed"] .glass,
 [data-brand="relaxed"] .tray,
