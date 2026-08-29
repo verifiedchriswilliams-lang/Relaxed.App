@@ -1423,18 +1423,30 @@ export default function Home() {
               ? [
                   <>Reading what you wrote</>,
                   <>Personalizing your session</>,
-                  <>
-                    Giving it voice with <b>ElevenLabs</b>
-                  </>,
+                  IS_RELAXED ? (
+                    <>Giving it voice</>
+                  ) : (
+                    <>
+                      Giving it voice with <b>ElevenLabs</b>
+                    </>
+                  ),
                 ]
               : [
                   <>Crafting your journey</>,
-                  <>
-                    Scoring your soundscape with <b>ElevenMusic</b>
-                  </>,
-                  <>
-                    Giving it voice with <b>ElevenLabs</b>
-                  </>,
+                  IS_RELAXED ? (
+                    <>Scoring your soundtrack</>
+                  ) : (
+                    <>
+                      Scoring your soundscape with <b>ElevenMusic</b>
+                    </>
+                  ),
+                  IS_RELAXED ? (
+                    <>Giving it voice</>
+                  ) : (
+                    <>
+                      Giving it voice with <b>ElevenLabs</b>
+                    </>
+                  ),
                 ]
             ).map((label, i) => (
               <div
@@ -1595,9 +1607,11 @@ export default function Home() {
             <span className="dot" />
             Done
           </button>
-          <div className="done-credit">
-            Voiced by <b>ElevenLabs</b> · scored with <b>ElevenMusic</b>
-          </div>
+          {!IS_RELAXED && (
+            <div className="done-credit">
+              Voiced by <b>ElevenLabs</b> · scored with <b>ElevenMusic</b>
+            </div>
+          )}
         </div>
       </main>
     );
@@ -1663,10 +1677,14 @@ export default function Home() {
         <div className="footnote">
           Every session personalized for you.
           <br />
-          <span className="credit">
-            Voiced by <b>ElevenLabs</b> · scored with <b>ElevenMusic</b>
-          </span>
-          <br />
+          {!IS_RELAXED && (
+            <>
+              <span className="credit">
+                Voiced by <b>ElevenLabs</b> · scored with <b>ElevenMusic</b>
+              </span>
+              <br />
+            </>
+          )}
           Not medical or therapeutic advice.
         </div>
       </main>

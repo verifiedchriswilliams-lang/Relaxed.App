@@ -53,17 +53,6 @@ function RelaxedCard() {
       >
         The way out is in.
       </div>
-      <div
-        style={{
-          position: "absolute",
-          bottom: 40,
-          display: "flex",
-          fontSize: 18,
-          color: "rgba(239,235,227,0.48)",
-        }}
-      >
-        Voiced by ElevenLabs · scored with ElevenMusic
-      </div>
     </div>
   );
 }
