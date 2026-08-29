@@ -337,12 +337,12 @@
 @keyframes rx-breathe {
   0%,
   100% {
-    transform: scale(0.96);
-    opacity: 0.72;
+    transform: scale(0.9);
+    opacity: 0.68;
   }
   45%,
   55% {
-    transform: scale(1.04);
+    transform: scale(1.1);
     opacity: 1;
   }
 }
