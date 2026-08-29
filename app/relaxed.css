@@ -204,13 +204,13 @@
   text-transform: lowercase;
 }
 
-/* Coloured session discs → calm hairline rings. There is no accent colour;
-   the orb is a quiet ring in every state. */
+/* No intention marker — words alone. The most "stem" treatment: the list leans
+   on type and space, with no coloured disc and no ring. (The breathing session
+   ring on the player/composing screens stays — that's the focal point, not a
+   list bullet.) */
 [data-brand="relaxed"] .state .orb,
 [data-brand="relaxed"] .tray-head .orb {
-  background: transparent;
-  border: 1.5px solid var(--rx-line-strong);
-  box-shadow: none;
+  display: none;
 }
 
 /* ---- credit / footnote -------------------------------------------------- */
