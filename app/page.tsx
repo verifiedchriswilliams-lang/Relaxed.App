@@ -26,7 +26,16 @@ function Wordmark() {
   return (
     <div className="wm" aria-label={BRAND.name}>
       {IS_RELAXED ? (
-        <StemGlyph size={20} className="wmark" />
+        // Cropped tight to the mark's own edges so it can sit on the text
+        // baseline (see .wm rules) instead of floating in a square canvas.
+        <svg className="wmark" viewBox="33 19 34 56" fill="none" aria-hidden="true">
+          <path
+            d="M40 74 V40 C40 30 49 26 60 26"
+            stroke="currentColor"
+            strokeWidth={13}
+            strokeLinecap="butt"
+          />
+        </svg>
       ) : (
         <span className="bars" aria-hidden="true">
           <i />

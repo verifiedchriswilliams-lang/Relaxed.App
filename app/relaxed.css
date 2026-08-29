@@ -106,11 +106,18 @@
 }
 
 /* ---- wordmark: stem glyph + Figtree lockup ------------------------------ */
+/* The mark is cropped to its own edges and sits on the text baseline, sized to
+   the wordmark's ascender height, so the r reads as part of the word rather than
+   a mark floating above it. Gap is proportional to the type. */
 [data-brand="relaxed"] .wm {
-  gap: 9px;
+  align-items: baseline;
+  gap: 7px;
 }
 [data-brand="relaxed"] .wm .wmark {
   color: var(--ink-0);
+  height: 15px;
+  width: auto;
+  display: block;
 }
 [data-brand="relaxed"] .wm .name {
   font-size: 17px;
