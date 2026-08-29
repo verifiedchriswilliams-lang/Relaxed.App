@@ -13,6 +13,7 @@ import {
 import { asset } from "@/lib/assets";
 import { BRAND } from "@/lib/brand";
 import { StemGlyph } from "@/lib/mark";
+import { SoundMotif } from "@/lib/soundMotifs";
 
 // Which visual world are we in? relaxed swaps the aurora + coloured discs for
 // the flat, no-accent "stem" identity; ElevenMind keeps its night sky.
@@ -1491,7 +1492,9 @@ export default function Home() {
                       "--pg": selected.glow,
                     } as React.CSSProperties)
               }
-            />
+            >
+              {IS_RELAXED && <SoundMotif id={soundscape} />}
+            </div>
             <div className="ring" />
           </div>
           <div className="breath">
