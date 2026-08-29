@@ -12,6 +12,11 @@ import {
 } from "@/lib/contexts";
 import { asset } from "@/lib/assets";
 import { BRAND } from "@/lib/brand";
+import { StemGlyph } from "@/lib/mark";
+
+// Which visual world are we in? relaxed swaps the aurora + coloured discs for
+// the flat, no-accent "stem" identity; ElevenMind keeps its night sky.
+const IS_RELAXED = BRAND.id === "relaxed";
 import GUIDES from "@/lib/voices.json";
 
 // Wordmark: the bar glyph, then the brand name in two weights
@@ -19,10 +24,14 @@ import GUIDES from "@/lib/voices.json";
 function Wordmark() {
   return (
     <div className="wm" aria-label={BRAND.name}>
-      <span className="bars" aria-hidden="true">
-        <i />
-        <i />
-      </span>
+      {IS_RELAXED ? (
+        <StemGlyph size={20} className="wmark" />
+      ) : (
+        <span className="bars" aria-hidden="true">
+          <i />
+          <i />
+        </span>
+      )}
       <span className="name">
         <b>{BRAND.strong}</b>
         <span>{BRAND.light}</span>
@@ -1382,8 +1391,14 @@ export default function Home() {
         </div>
         <div className="generating">
           <div className="gen-orb">
-            <div className="disc" style={{ background: selected.art }} />
-            <div className="halo" />
+            {IS_RELAXED ? (
+              <StemGlyph size={92} className="gen-glyph" />
+            ) : (
+              <>
+                <div className="disc" style={{ background: selected.art }} />
+                <div className="halo" />
+              </>
+            )}
           </div>
           <div>
             <div className="gen-title">
@@ -1457,10 +1472,12 @@ export default function Home() {
             <div
               className={`disc ${playing ? "breathe" : ""}`}
               style={
-                {
-                  background: selected.art,
-                  "--pg": selected.glow,
-                } as React.CSSProperties
+                IS_RELAXED
+                  ? undefined
+                  : ({
+                      background: selected.art,
+                      "--pg": selected.glow,
+                    } as React.CSSProperties)
               }
             />
             <div className="ring" />
@@ -1547,10 +1564,12 @@ export default function Home() {
             <div
               className="disc"
               style={
-                {
-                  background: selected.art,
-                  "--pg": selected.glow,
-                } as React.CSSProperties
+                IS_RELAXED
+                  ? undefined
+                  : ({
+                      background: selected.art,
+                      "--pg": selected.glow,
+                    } as React.CSSProperties)
               }
             />
             <div className="ring" />
@@ -1565,10 +1584,12 @@ export default function Home() {
             className="done-btn"
             onClick={end}
             style={
-              {
-                "--cta-glow": selected.glow,
-                "--cta-disc": selected.art,
-              } as React.CSSProperties
+              IS_RELAXED
+                ? undefined
+                : ({
+                    "--cta-glow": selected.glow,
+                    "--cta-disc": selected.art,
+                  } as React.CSSProperties)
             }
           >
             <span className="dot" />
@@ -1621,7 +1642,9 @@ export default function Home() {
                 <span
                   className="orb"
                   style={
-                    { background: c.art, "--og": c.glow } as React.CSSProperties
+                    IS_RELAXED
+                      ? undefined
+                      : ({ background: c.art, "--og": c.glow } as React.CSSProperties)
                   }
                 />
                 <span className="slabel">
@@ -1652,12 +1675,16 @@ export default function Home() {
 
   return (
     <>
-      <div className="photo-sky" />
-      <div className="photo-scrim" />
-      <div
-        className={`mood-glow ${moodOn ? "on" : ""}`}
-        style={{ "--gc": selected.glow } as React.CSSProperties}
-      />
+      {!IS_RELAXED && (
+        <>
+          <div className="photo-sky" />
+          <div className="photo-scrim" />
+          <div
+            className={`mood-glow ${moodOn ? "on" : ""}`}
+            style={{ "--gc": selected.glow } as React.CSSProperties}
+          />
+        </>
+      )}
       <div className="app">{content}</div>
 
       {/* Options tray (setup only) */}
@@ -1677,10 +1704,12 @@ export default function Home() {
               <span
                 className="orb"
                 style={
-                  {
-                    background: selected.art,
-                    "--og": selected.glow,
-                  } as React.CSSProperties
+                  IS_RELAXED
+                    ? undefined
+                    : ({
+                        background: selected.art,
+                        "--og": selected.glow,
+                      } as React.CSSProperties)
                 }
               />
               <div>
@@ -1858,10 +1887,12 @@ export default function Home() {
               onClick={begin}
               disabled={selected.custom && !customText.trim()}
               style={
-                {
-                  "--cta-glow": selected.glow,
-                  "--cta-disc": selected.art,
-                } as React.CSSProperties
+                IS_RELAXED
+                  ? undefined
+                  : ({
+                      "--cta-glow": selected.glow,
+                      "--cta-disc": selected.art,
+                    } as React.CSSProperties)
               }
             >
               <span className="dot" />

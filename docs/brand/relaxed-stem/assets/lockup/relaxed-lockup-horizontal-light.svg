@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 80" width="480" height="80" role="img" aria-label="relaxed.app">
+  <rect width="480" height="80" fill="none"></rect>
+  <g transform="translate(6,14) scale(0.52)">
+    <rect width="100" height="100" rx="23" fill="#121110"></rect>
+    <path d="M40 74 V40 C40 30 49 26 60 26" fill="none" stroke="#EFEBE3" stroke-width="13" stroke-linecap="butt"></path>
+  </g>
+  <text x="76" y="56" font-family="Figtree, system-ui, sans-serif" font-weight="400" font-size="56" letter-spacing="0.84" fill="#121110">relaxed<tspan fill="#8B857C">.app</tspan></text>
+</svg>

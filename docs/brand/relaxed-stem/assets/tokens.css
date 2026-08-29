@@ -1,0 +1,28 @@
+/* relaxed — "stem" identity tokens */
+:root {
+  /* neutrals — the entire palette. there is no accent colour. */
+  --rx-ink:    #121110;  /* primary surface (dark), primary text (light) */
+  --rx-bone:   #EFEBE3;  /* primary surface (light), primary text (dark) */
+  --rx-paper:  #FAF9F7;  /* app background, light mode */
+  --rx-gray:   #8B857C;  /* subdued text, ".app" suffix — 4.6:1 on paper */
+  --rx-line:   rgba(18,17,16,0.08);   /* hairlines on light */
+  --rx-line-d: rgba(239,235,227,0.14); /* hairlines on dark */
+
+  /* type */
+  --rx-font: 'Figtree', system-ui, -apple-system, sans-serif;
+  --rx-track-mark: 0.015em;  /* wordmark + display */
+  --rx-track-ui:   0.02em;   /* small ui text */
+
+  /* radius */
+  --rx-r-sm: 8px;
+  --rx-r-md: 14px;
+  --rx-r-lg: 20px;
+  --rx-r-pill: 999px;
+  --rx-r-tile: 23%;   /* app icon tile only */
+
+  /* motion */
+  --rx-breath: 11s;
+  --rx-ease-breath: cubic-bezier(.37, 0, .63, 1);
+  --rx-ease-enter:  cubic-bezier(.16, 1, .3, 1);
+  --rx-ease-exit:   cubic-bezier(.4, 0, 1, 1);
+}

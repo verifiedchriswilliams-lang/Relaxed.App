@@ -1,13 +1,25 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope } from "next/font/google";
+import { Manrope, Figtree } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { BRAND } from "@/lib/brand";
 import "./globals.css";
+import "./relaxed.css";
 
+// ElevenMind's face: Manrope, light weights for the big words.
 const manrope = Manrope({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   display: "swap",
+});
+
+// relaxed's face: Figtree (SIL OFL), self-hosted by next/font at build. Exposed
+// as a CSS variable so the [data-brand="relaxed"] layer can point --font at it
+// without disturbing ElevenMind.
+const figtree = Figtree({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600"],
+  display: "swap",
+  variable: "--rx-font-family",
 });
 
 export const metadata: Metadata = {
@@ -30,7 +42,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#070912",
+  // ElevenMind is a single dark world; relaxed follows the device (Paper / Ink).
+  themeColor:
+    BRAND.id === "relaxed"
+      ? [
+          { media: "(prefers-color-scheme: light)", color: "#FAF9F7" },
+          { media: "(prefers-color-scheme: dark)", color: "#121110" },
+        ]
+      : "#070912",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -42,7 +61,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={manrope.className}>
+    <html
+      lang="en"
+      data-brand={BRAND.id}
+      className={`${manrope.className} ${figtree.variable}`}
+    >
       <body>
         {children}
         <Analytics />

@@ -1,0 +1,318 @@
+/* ============================================================================
+   relaxed — the "stem" identity, layered over the shared structure in
+   globals.css. Scoped entirely under [data-brand="relaxed"], so the ElevenMind
+   build (data-brand="elevenmind") never sees a single rule here.
+
+   Strategy: most of globals.css already draws through CSS variables
+   (--ink-*, --glass*, --night-*, --font). Redefining those variables re-themes
+   the majority of the app for free. The blocks after the tokens fix the places
+   globals.css hard-codes a dark-world colour, and make the structural moves the
+   identity calls for: warm Ink/Bone/Paper instead of cosmic glass, no accent
+   colour, calm rings instead of coloured discs, Figtree, follow-the-device
+   light/dark. Palette + type + motion values come from the identity tokens.
+   ============================================================================ */
+
+/* ---- tokens: light (Paper) is the default ------------------------------- */
+:root[data-brand="relaxed"] {
+  --font: var(--rx-font-family), system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* grounds */
+  --night-0: #faf9f7; /* Paper — app background */
+  --night-1: #faf9f7;
+
+  /* text */
+  --ink-0: #121110; /* Ink — primary */
+  --ink-1: #5f5a52; /* secondary */
+  --ink-2: #8b857c; /* Gray — tertiary, ".app" suffix, placeholders */
+
+  /* surfaces + selection */
+  --glass: #ffffff; /* raised surface (was translucent glass) */
+  --glass-line: rgba(18, 17, 16, 0.1); /* hairline */
+  --glass-strong: #121110; /* selected / primary fill = Ink */
+  --rx-invert-fg: #faf9f7; /* text on a selected/Ink fill */
+
+  --rx-line-strong: rgba(18, 17, 16, 0.18);
+  --rx-hover: rgba(18, 17, 16, 0.05);
+  --rx-scrim: rgba(18, 17, 16, 0.32);
+  --rx-shadow: 0 12px 28px -14px rgba(18, 17, 16, 0.3);
+  --rx-ease-breath: cubic-bezier(0.37, 0, 0.63, 1);
+}
+
+/* ---- tokens: dark (Ink) — follow the device ----------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root[data-brand="relaxed"] {
+    --night-0: #121110; /* Ink — app background */
+    --night-1: #121110;
+
+    --ink-0: #efebe3; /* Bone — primary */
+    --ink-1: rgba(239, 235, 227, 0.72);
+    --ink-2: rgba(239, 235, 227, 0.5);
+
+    --glass: #1c1b18; /* raised surface, a hair above Ink */
+    --glass-line: rgba(239, 235, 227, 0.14);
+    --glass-strong: #efebe3; /* selected fill = Bone */
+    --rx-invert-fg: #121110; /* Ink text on a Bone fill */
+
+    --rx-line-strong: rgba(239, 235, 227, 0.24);
+    --rx-hover: rgba(239, 235, 227, 0.06);
+    --rx-scrim: rgba(0, 0, 0, 0.5);
+    --rx-shadow: 0 12px 30px -14px rgba(0, 0, 0, 0.6);
+  }
+}
+
+/* ---- no glass. solid surfaces, no backdrop blur ------------------------- */
+[data-brand="relaxed"] .glass,
+[data-brand="relaxed"] .tray,
+[data-brand="relaxed"] .begin,
+[data-brand="relaxed"] .done-btn {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* ---- wordmark: stem glyph + Figtree lockup ------------------------------ */
+[data-brand="relaxed"] .wm {
+  gap: 9px;
+}
+[data-brand="relaxed"] .wm .wmark {
+  color: var(--ink-0);
+}
+[data-brand="relaxed"] .wm .name {
+  font-size: 17px;
+  letter-spacing: 0.015em; /* positive tracking is load-bearing — do not tighten */
+  color: var(--ink-0);
+}
+[data-brand="relaxed"] .wm .name b {
+  font-weight: 400; /* "relaxed" is Regular, not bold */
+}
+[data-brand="relaxed"] .wm .name span {
+  font-weight: 400;
+  color: var(--ink-2); /* ".app" in Gray */
+  opacity: 1;
+}
+
+/* ---- lowercase brand voice on UI chrome --------------------------------- */
+/* The identity is all-lowercase. Applied to labels and controls only — never to
+   full sentences (greeting, taglines, hints, disclaimer stay sentence case for
+   readability) and never where it would touch a proper noun: the ElevenLabs /
+   ElevenMusic credit and the user's own typed name are deliberately excluded. */
+[data-brand="relaxed"] .tray-head .tt,
+[data-brand="relaxed"] .seg button,
+[data-brand="relaxed"] .chip,
+[data-brand="relaxed"] .soundtabs button,
+[data-brand="relaxed"] .begin,
+[data-brand="relaxed"] .done-btn,
+[data-brand="relaxed"] .cbtn,
+[data-brand="relaxed"] .goback,
+[data-brand="relaxed"] .show-transcript,
+[data-brand="relaxed"] .remember > span {
+  text-transform: lowercase;
+}
+
+/* ---- home hero ---------------------------------------------------------- */
+[data-brand="relaxed"] .greeting {
+  font-weight: 400;
+}
+[data-brand="relaxed"] .greeting b {
+  font-weight: 600;
+}
+[data-brand="relaxed"] .namefield {
+  box-shadow: none;
+}
+[data-brand="relaxed"] .prompt {
+  color: var(--ink-1);
+  font-weight: 500;
+  text-transform: lowercase;
+  letter-spacing: 0.08em;
+  text-shadow: none;
+}
+[data-brand="relaxed"] .state:hover,
+[data-brand="relaxed"] .state:focus-visible {
+  background: var(--rx-hover);
+}
+[data-brand="relaxed"] .state .sname {
+  font-weight: 400;
+  text-transform: lowercase;
+}
+
+/* Coloured session discs → calm hairline rings. There is no accent colour;
+   the orb is a quiet ring in every state. */
+[data-brand="relaxed"] .state .orb,
+[data-brand="relaxed"] .tray-head .orb {
+  background: transparent;
+  border: 1.5px solid var(--rx-line-strong);
+  box-shadow: none;
+}
+
+/* ---- credit / footnote -------------------------------------------------- */
+[data-brand="relaxed"] .footnote .credit b {
+  color: var(--ink-1);
+}
+
+/* ---- tray --------------------------------------------------------------- */
+[data-brand="relaxed"] .scrim {
+  background: var(--rx-scrim);
+}
+[data-brand="relaxed"] .tray {
+  background: var(--glass);
+  border-top: 1px solid var(--glass-line);
+  box-shadow: var(--rx-shadow);
+}
+[data-brand="relaxed"] .grab {
+  background: var(--rx-line-strong);
+}
+[data-brand="relaxed"] .tray-head .tt {
+  font-weight: 500;
+}
+[data-brand="relaxed"] .ol,
+[data-brand="relaxed"] .transcript .thead .label {
+  text-transform: lowercase;
+  letter-spacing: 0.08em;
+}
+
+/* ---- custom input ------------------------------------------------------- */
+[data-brand="relaxed"] .custom-input {
+  color: var(--ink-0);
+}
+[data-brand="relaxed"] .custom-input:focus {
+  border-color: var(--ink-0);
+  box-shadow: 0 0 0 3px var(--rx-hover);
+}
+
+/* ---- segmented / chips / flags: selection = Ink fill, never colour ------ */
+[data-brand="relaxed"] .seg button.on {
+  color: var(--rx-invert-fg);
+}
+[data-brand="relaxed"] .chip.on {
+  border-color: var(--glass-strong);
+  color: var(--rx-invert-fg);
+}
+[data-brand="relaxed"] .flagbtn.on {
+  border-color: var(--ink-0);
+  box-shadow: 0 0 0 2px var(--ink-0);
+}
+[data-brand="relaxed"] .soundtabs button.on {
+  color: var(--ink-0);
+  border-bottom-color: var(--ink-0);
+}
+
+/* ---- duration slider ---------------------------------------------------- */
+[data-brand="relaxed"] .track {
+  background: var(--rx-line-strong);
+}
+[data-brand="relaxed"] .fill {
+  background: var(--ink-0);
+}
+[data-brand="relaxed"] .tick {
+  background: var(--rx-line-strong);
+}
+[data-brand="relaxed"] .thumb {
+  background: var(--ink-0);
+  box-shadow: 0 2px 8px -2px rgba(18, 17, 16, 0.4), 0 0 0 5px var(--rx-hover);
+}
+
+/* ---- remember switch ---------------------------------------------------- */
+[data-brand="relaxed"] .switch {
+  border-color: var(--rx-line-strong);
+}
+[data-brand="relaxed"] .switch .knob {
+  background: var(--ink-0);
+}
+[data-brand="relaxed"] .switch.on {
+  background: var(--glass-strong);
+}
+[data-brand="relaxed"] .switch.on .knob {
+  background: var(--rx-invert-fg);
+}
+
+/* ---- primary buttons: solid Ink (light) / Bone (dark) pill -------------- */
+[data-brand="relaxed"] .begin,
+[data-brand="relaxed"] .done-btn {
+  background: var(--glass-strong);
+  border-color: var(--glass-strong);
+  color: var(--rx-invert-fg);
+  box-shadow: var(--rx-shadow);
+}
+[data-brand="relaxed"] .begin:hover,
+[data-brand="relaxed"] .done-btn:hover {
+  background: var(--ink-0);
+}
+[data-brand="relaxed"] .begin .dot,
+[data-brand="relaxed"] .done-btn .dot {
+  display: none;
+}
+
+/* ---- closing screen ----------------------------------------------------- */
+[data-brand="relaxed"] .done-title {
+  font-weight: 400;
+  color: var(--ink-0);
+}
+[data-brand="relaxed"] .done-credit b {
+  color: var(--ink-1);
+}
+[data-brand="relaxed"] .err {
+  color: var(--ink-1);
+}
+
+/* ---- generating: the stem glyph breathes; steps stay monochrome --------- */
+[data-brand="relaxed"] .gen-glyph {
+  color: var(--ink-0);
+  animation: rx-breathe var(--rx-breath, 11s) var(--rx-ease-breath) infinite;
+}
+[data-brand="relaxed"] .step b {
+  color: var(--ink-0);
+}
+[data-brand="relaxed"] .step .dot {
+  background: var(--rx-line-strong);
+}
+[data-brand="relaxed"] .step.done .dot,
+[data-brand="relaxed"] .step.active .dot {
+  background: var(--ink-0);
+  box-shadow: none;
+}
+
+/* ---- player: calm breathing ring, no coloured disc, no mark ------------- */
+[data-brand="relaxed"] .play-orb .disc,
+[data-brand="relaxed"] .done-orb .disc {
+  background: transparent;
+  border: 1.5px solid var(--rx-line-strong);
+  box-shadow: none;
+}
+[data-brand="relaxed"] .play-orb .ring,
+[data-brand="relaxed"] .done-orb .ring {
+  display: none;
+}
+[data-brand="relaxed"] .play-orb .disc.breathe,
+[data-brand="relaxed"] .done-orb .disc {
+  animation: rx-breathe var(--rx-breath, 11s) var(--rx-ease-breath) infinite;
+}
+[data-brand="relaxed"] .cbtn.play .tri {
+  border-left-color: var(--rx-invert-fg);
+}
+[data-brand="relaxed"] .cbtn.play .bars i {
+  background: var(--rx-invert-fg);
+}
+[data-brand="relaxed"] .transcript {
+  background: var(--glass);
+}
+
+/* The identity's breath: 4s in / 1s hold / 5s out / 1s rest feel, gentle
+   scale + opacity. Kept separate from ElevenMind's 14.5s "breathe". */
+@keyframes rx-breathe {
+  0%,
+  100% {
+    transform: scale(0.96);
+    opacity: 0.72;
+  }
+  45%,
+  55% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-brand="relaxed"] .gen-glyph,
+  [data-brand="relaxed"] .play-orb .disc.breathe,
+  [data-brand="relaxed"] .done-orb .disc {
+    animation: none !important;
+  }
+}
