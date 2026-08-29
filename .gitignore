@@ -17,3 +17,13 @@ next-env.d.ts
 /public/voice-previews/*.mp3
 # No audio belongs at the repo root.
 /*.mp3
+
+# Capacitor iOS. The ios/ project is generated on a Mac by `npx cap add ios`
+# and should be committed EXCEPT the parts below (CocoaPods, build output, and
+# the web assets Capacitor copies in on each sync).
+/ios/App/Pods/
+/ios/App/App/public/
+/ios/App/build/
+/ios/DerivedData/
+*.xcuserstate
+xcuserdata/

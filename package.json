@@ -9,16 +9,25 @@
     "start": "next start",
     "lint": "next lint",
     "build:voices": "node scripts/build-voice-cache.mjs",
-    "build:previews": "node scripts/build-voice-previews.mjs"
+    "build:previews": "node scripts/build-voice-previews.mjs",
+    "ios:assets": "capacitor-assets generate --ios --assetPath assets",
+    "ios:sync": "cap sync ios",
+    "ios:open": "cap open ios"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.68.0",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
     "@vercel/analytics": "^2.0.1",
     "next": "14.2.35",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^8.5.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",

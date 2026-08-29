@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>relaxed</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #121110;
+        color: #efebe3;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      .wrap {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 22px;
+        text-align: center;
+        padding: 0 32px;
+      }
+      svg {
+        color: #efebe3;
+      }
+      .name {
+        font-size: 17px;
+        letter-spacing: 0.015em;
+      }
+      .name .s {
+        color: rgba(239, 235, 227, 0.5);
+      }
+      .msg {
+        font-size: 14px;
+        color: rgba(239, 235, 227, 0.5);
+        max-width: 26ch;
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Fallback shown only if the hosted relaxed.app can't be reached. The live
+         app is loaded from https://relaxed.app (see capacitor.config.ts). -->
+    <div class="wrap">
+      <svg width="26" height="43" viewBox="33 19 34 56" fill="none" aria-hidden="true">
+        <path d="M40 74 V40 C40 30 49 26 60 26" stroke="currentColor" stroke-width="13" stroke-linecap="butt" />
+      </svg>
+      <div class="name">relaxed<span class="s">.app</span></div>
+      <div class="msg">You're offline. Reconnect to begin a session.</div>
+    </div>
+  </body>
+</html>
