@@ -24,19 +24,19 @@ const figtree = Figtree({
 
 export const metadata: Metadata = {
   metadataBase: new URL(BRAND.url),
-  title: `${BRAND.name} — Personalized Mindfulness`,
+  title: `${BRAND.name} · Personalized Mindfulness`,
   description: `The way out is in. ${BRAND.name} writes you a mindfulness session in the moment, from your name, the time you have, and the state you want to reach, and speaks it aloud over a calming soundscape.`,
   openGraph: {
     type: "website",
     siteName: BRAND.name,
     url: "/",
-    title: `${BRAND.name} — Personalized Mindfulness`,
+    title: `${BRAND.name} · Personalized Mindfulness`,
     description:
       "The way out is in. A mindfulness session composed for you in the moment, voiced aloud over a calming soundscape.",
   },
   twitter: {
     card: "summary_large_image",
-    title: `${BRAND.name} — Personalized Mindfulness`,
+    title: `${BRAND.name} · Personalized Mindfulness`,
     description: "The way out is in.",
   },
 };

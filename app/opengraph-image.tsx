@@ -6,7 +6,7 @@ import { BRAND } from "@/lib/brand";
 // credit. relaxed uses the "stem" identity (warm Ink, Bone stem, no accent);
 // ElevenMind keeps the aurora + teal "11".
 export const runtime = "edge";
-export const alt = `${BRAND.name} — Personalized Mindfulness`;
+export const alt = `${BRAND.name} · Personalized Mindfulness`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
