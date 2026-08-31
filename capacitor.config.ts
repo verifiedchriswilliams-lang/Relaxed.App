@@ -27,8 +27,14 @@ const config: CapacitorConfig = {
   },
   plugins: {
     SplashScreen: {
-      launchShowDuration: 1100,
+      // Calm launch: hold the Ink splash a touch longer so the hosted page has
+      // time to paint, then cross-fade it out rather than cutting hard. The
+      // splash background is the same Ink as the app (#121110), so even if the
+      // fade and first paint aren't perfectly synced there's no flash — the
+      // ground never changes, only content settles in over it.
+      launchShowDuration: 1500,
       launchAutoHide: true,
+      launchFadeOutDuration: 700,
       backgroundColor: "#121110",
       showSpinner: false,
     },

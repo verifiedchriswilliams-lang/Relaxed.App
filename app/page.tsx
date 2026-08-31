@@ -1715,7 +1715,12 @@ export default function Home() {
           />
         </>
       )}
-      <div className="app">{content}</div>
+      {/* key={screen} remounts the screen subtree on every transition so the
+          calm fade-in (relaxed's rx-screen-in) re-fires; audio/state live in
+          refs and hooks on the parent, so this only re-animates the view. */}
+      <div className="app" key={screen}>
+        {content}
+      </div>
 
       {/* Options tray (setup only) */}
       {screen === "setup" && (

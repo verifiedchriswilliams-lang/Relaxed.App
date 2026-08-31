@@ -21,6 +21,11 @@
   --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
+  /* UI micro-interaction timing (tabs, chips, inputs, buttons). Tokenized so a
+     brand can soften the whole set at once; defaults preserve the original feel. */
+  --ease-ui: ease;
+  --t-ui: 0.16s;
+
   --gutter: 22px;
   --maxw: 460px;
 }
@@ -414,7 +419,7 @@ button {
   border-radius: 12px;
   padding: 13px 15px;
   outline: none;
-  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+  transition: border-color var(--t-ui) var(--ease-ui), box-shadow var(--t-ui) var(--ease-ui);
 }
 .custom-input::placeholder {
   color: var(--ink-2);
@@ -475,7 +480,7 @@ button {
   border: 0;
   border-radius: 9px;
   padding: 8px 22px;
-  transition: all 0.16s ease;
+  transition: all var(--t-ui) var(--ease-ui);
 }
 .seg button.on {
   background: var(--glass-strong);
@@ -496,7 +501,7 @@ button {
   bottom: 24%;
   width: 1px;
   background: var(--glass-line);
-  transition: opacity 0.16s ease;
+  transition: opacity var(--t-ui) var(--ease-ui);
 }
 .seg3 button.on::before,
 .seg3 button.on + button::before {
@@ -521,7 +526,7 @@ button {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  transition: all 0.16s ease;
+  transition: all var(--t-ui) var(--ease-ui);
 }
 .flagbtn.on {
   border-color: #fff;
@@ -553,7 +558,7 @@ button {
   padding: 4px 4px 10px;
   margin-bottom: -1px;
   cursor: pointer;
-  transition: color 0.16s ease, border-color 0.16s ease;
+  transition: color var(--t-ui) var(--ease-ui), border-color var(--t-ui) var(--ease-ui);
 }
 .soundtabs button.on {
   color: #fff;
@@ -590,7 +595,7 @@ button {
   border: 1px solid var(--glass-line);
   border-radius: 12px;
   padding: 9px 16px;
-  transition: all 0.16s ease;
+  transition: all var(--t-ui) var(--ease-ui);
   white-space: nowrap;
 }
 .chip.on {
@@ -738,7 +743,7 @@ button {
   gap: 10px;
   box-shadow: 0 0 34px -6px var(--cta-glow, rgba(255, 255, 255, 0.3)),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  transition: box-shadow 0.3s ease, background 0.2s ease, transform 0.16s ease;
+  transition: box-shadow 0.3s ease, background 0.2s ease, transform var(--t-ui) var(--ease-ui);
 }
 .begin:hover {
   background: rgba(255, 255, 255, 0.15);
@@ -771,7 +776,7 @@ button {
   text-underline-offset: 3px;
   padding: 8px 18px;
   cursor: pointer;
-  transition: color 0.16s ease;
+  transition: color var(--t-ui) var(--ease-ui);
 }
 .goback:hover {
   color: var(--ink-1);
@@ -854,7 +859,7 @@ button {
   gap: 10px;
   box-shadow: 0 0 34px -6px var(--cta-glow, rgba(255, 255, 255, 0.3)),
     inset 0 1px 0 rgba(255, 255, 255, 0.18);
-  transition: box-shadow 0.3s ease, background 0.2s ease, transform 0.16s ease;
+  transition: box-shadow 0.3s ease, background 0.2s ease, transform var(--t-ui) var(--ease-ui);
 }
 .done-btn:hover {
   background: rgba(255, 255, 255, 0.15);
@@ -1054,7 +1059,7 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.16s ease;
+  transition: background var(--t-ui) var(--ease-ui);
 }
 .cbtn:hover {
   background: rgba(255, 255, 255, 0.12);

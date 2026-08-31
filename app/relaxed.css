@@ -41,6 +41,16 @@
   --rx-shadow: 0 12px 30px -14px rgba(0, 0, 0, 0.6);
   --rx-ease-breath: cubic-bezier(0.37, 0, 0.63, 1);
   --rx-bloom: rgba(239, 235, 227, 0.1); /* soft light-bloom on Ink */
+
+  /* ---- calmer motion ---------------------------------------------------- */
+  /* relaxed leans away from the snappy, clicky defaults toward slow, settling
+     motion — nothing arrives with a hard edge. A single decelerating curve
+     (no overshoot) is the app's motion signature; the UI micro-interactions run
+     roughly twice as long as the shared default. */
+  --rx-ease-soft: cubic-bezier(0.16, 0.84, 0.44, 1); /* gentle decelerate, no bounce */
+  --t-ui: 0.34s; /* was 0.16s — softer tabs, chips, inputs, buttons */
+  --ease-ui: var(--rx-ease-soft);
+  --ease-spring: var(--rx-ease-soft); /* drop the springy overshoot on selection */
 }
 
 /* ---- atmosphere: monochrome, not imagery -------------------------------- */
@@ -359,6 +369,37 @@
   [data-brand="relaxed"] .done-orb .disc {
     animation: none !important;
   }
+}
+
+/* ---- screen transitions: every screen settles in, never cuts ------------ */
+/* The whole app is a sequence of full-screen states (home → composing → the
+   session → closing). By default React swaps them instantly — a hard cut. Here
+   each screen materializes with a slow fade and a small upward settle, so the
+   launch-to-home hand-off and every step between feel like breathing in, not a
+   jump. Re-fires per screen via a key on the .app wrapper (see page.tsx). */
+[data-brand="relaxed"] .wrap {
+  animation: rx-screen-in 0.9s var(--rx-ease-soft) both;
+}
+@keyframes rx-screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-brand="relaxed"] .wrap {
+    animation: none !important;
+  }
+}
+/* The closing screen already fades in at the screen level now, so drop its own
+   inner rise — one calm settle, consistent with every other screen. (The orb
+   keeps its independent breathing.) */
+[data-brand="relaxed"] .done {
+  animation: none;
 }
 
 /* ---- per-soundscape session motif (player only) ------------------------- */
