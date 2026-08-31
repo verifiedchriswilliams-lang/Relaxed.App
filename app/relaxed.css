@@ -88,8 +88,18 @@
   border-radius: 50%;
   background: radial-gradient(closest-side, var(--rx-bloom), transparent 72%);
   z-index: 0;
-  animation: rx-breathe var(--rx-breath, 11s) var(--rx-ease-breath) infinite;
   pointer-events: none;
+}
+/* Composing + closing glow: the identity's free-running breath. */
+[data-brand="relaxed"] .gen-orb::before,
+[data-brand="relaxed"] .done-orb::before {
+  animation: rx-breathe var(--rx-breath, 11s) var(--rx-ease-breath) infinite;
+}
+/* Player glow breathes off the shared --pb clock (page.tsx), locked to the ring
+   and the cue words. --pb: 0 = exhaled, 1 = inhaled. */
+[data-brand="relaxed"] .play-orb::before {
+  transform: scale(calc(0.9 + 0.2 * var(--pb, 0)));
+  opacity: calc(0.68 + 0.32 * var(--pb, 0));
 }
 [data-brand="relaxed"] .gen-glyph,
 [data-brand="relaxed"] .play-orb .disc,
@@ -335,9 +345,17 @@
 [data-brand="relaxed"] .done-orb .ring {
   display: none;
 }
-[data-brand="relaxed"] .play-orb .disc.breathe,
 [data-brand="relaxed"] .done-orb .disc {
   animation: rx-breathe var(--rx-breath, 11s) var(--rx-ease-breath) infinite;
+}
+/* The player ring breathes off the shared JS clock (--pb) rather than a
+   free-running keyframe, so it expands exactly while the cue reads "Breathe in",
+   holds at the top, and contracts on "Breathe out" — and it freezes in place
+   (clock paused) when the session is paused. 0 = exhaled (0.9), 1 = inhaled
+   (1.1). Applied to .disc (not .disc.breathe) so a pause holds, not snaps. */
+[data-brand="relaxed"] .play-orb .disc {
+  transform: scale(calc(0.9 + 0.2 * var(--pb, 0)));
+  opacity: calc(0.68 + 0.32 * var(--pb, 0));
 }
 [data-brand="relaxed"] .cbtn.play .tri {
   border-left-color: var(--rx-invert-fg);

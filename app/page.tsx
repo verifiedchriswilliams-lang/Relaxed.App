@@ -878,6 +878,31 @@ function mmss(total: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+// The breathing cycle, shared by the orb and the on-screen cue so they can never
+// drift: 6s inhale, a 2.5s hold at the top, 6s exhale (a 14.5s cycle).
+const BREATH_IN = 6;
+const BREATH_HOLD = 2.5;
+const BREATH_OUT = 6;
+const BREATH_CYCLE = BREATH_IN + BREATH_HOLD + BREATH_OUT;
+
+function easeInOut(x: number): number {
+  return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+}
+
+// For a position t seconds into playback, the eased breath amount (0 = fully
+// exhaled, 1 = fully inhaled / held at the top) and which phase we're in. The
+// orb scales with `pb`; the cue words read from `phase` — one source of truth,
+// so "Breathe in" always lands with the ring expanding.
+function breathAt(t: number): { pb: number; phase: "in" | "hold" | "out" } {
+  const c = ((t % BREATH_CYCLE) + BREATH_CYCLE) % BREATH_CYCLE;
+  if (c < BREATH_IN) return { pb: easeInOut(c / BREATH_IN), phase: "in" };
+  if (c < BREATH_IN + BREATH_HOLD) return { pb: 1, phase: "hold" };
+  return {
+    pb: easeInOut(1 - (c - BREATH_IN - BREATH_HOLD) / BREATH_OUT),
+    phase: "out",
+  };
+}
+
 export default function Home() {
   const [screen, setScreen] = useState<Screen>("setup");
   const [name, setName] = useState("");
@@ -909,8 +934,17 @@ export default function Home() {
   const [showTranscript, setShowTranscript] = useState(true);
   const [genStep, setGenStep] = useState(0);
   const [activeLine, setActiveLine] = useState(-1);
+  const [breathPhase, setBreathPhase] = useState<"in" | "hold" | "out">("in");
 
   const engineRef = useRef<AudioEngine>(new AudioEngine());
+  // Breathing: one smooth clock (seconds of playing time) drives both the orb
+  // and the cue. It advances only while playing, so a pause freezes the orb
+  // mid-breath and resumes exactly in phase.
+  const playOrbRef = useRef<HTMLDivElement | null>(null);
+  const playingRef = useRef(false);
+  const breathClockRef = useRef(0);
+  const breathTsRef = useRef<number | null>(null);
+  const reduceMotionRef = useRef(false);
   const endTimerRef = useRef<number | null>(null);
   const completeTimerRef = useRef<number | null>(null);
   const tickRef = useRef<number | null>(null);
@@ -1035,17 +1069,44 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, screen]);
 
-  // Karaoke: follow the spoken line on the player screen, synced to the audio
-  // clock so it stays exact and pauses when the session pauses.
+  useEffect(() => {
+    playingRef.current = playing;
+  }, [playing]);
+
+  // Karaoke + breathing: one rAF loop on the player screen. It follows the
+  // spoken line (synced to the audio clock) and advances the breathing clock
+  // that drives both the orb (via the --pb custom property) and the cue words,
+  // so the ring expands on "Breathe in", holds, and contracts on "Breathe out".
   useEffect(() => {
     if (screen !== "player") {
       setActiveLine(-1);
       return;
     }
+    // Fresh breath clock each time we enter the player.
+    breathClockRef.current = 0;
+    breathTsRef.current = null;
+    reduceMotionRef.current =
+      typeof window !== "undefined" &&
+      !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     let raf = 0;
     const tick = () => {
       const idx = engineRef.current.activeLineIndex();
       setActiveLine((prev) => (prev === idx ? prev : idx));
+
+      const now =
+        typeof performance !== "undefined" ? performance.now() : Date.now();
+      const last = breathTsRef.current;
+      breathTsRef.current = now;
+      if (last != null && playingRef.current) {
+        breathClockRef.current += (now - last) / 1000;
+      }
+      const { pb, phase } = breathAt(breathClockRef.current);
+      const orb = playOrbRef.current;
+      if (orb) {
+        orb.style.setProperty("--pb", reduceMotionRef.current ? "0.5" : pb.toFixed(4));
+      }
+      setBreathPhase((prev) => (prev === phase ? prev : phase));
+
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -1371,9 +1432,8 @@ export default function Home() {
     setScreen("setup");
   }
 
-  // 6s in, a 2.5s hold at the top, 6s out (a 14.5s cycle).
-  const breathPhase =
-    elapsed % 14.5 < 6 ? "in" : elapsed % 14.5 < 8.5 ? "hold" : "out";
+  // Cue words read from the same breathing clock as the orb (breathPhase state),
+  // so they change exactly as the ring turns at the top and bottom of the breath.
   const breathCue = !playing
     ? "Paused"
     : breathPhase === "in"
@@ -1490,7 +1550,7 @@ export default function Home() {
         </div>
 
         <div className="player-center">
-          <div className="play-orb">
+          <div className="play-orb" ref={playOrbRef}>
             <div
               className={`disc ${playing ? "breathe" : ""}`}
               style={
