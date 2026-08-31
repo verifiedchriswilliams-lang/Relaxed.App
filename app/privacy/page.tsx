@@ -54,11 +54,11 @@ export default function PrivacyPage() {
             as part of the words of the session you request.
           </li>
           <li style={{ marginBottom: "10px" }}>
-            <b>Session inputs</b> &mdash; the intention, length, voice and
-            soundscape you choose, and (for a &ldquo;Make Your Own&rdquo; session)
-            the short phrase you type &mdash; are sent to our processors to
-            generate that one session. They are not tied to your identity and are
-            not used to build a profile of you.
+            <b>Session inputs.</b> The intention, length, voice and soundscape you
+            choose, and (for a &ldquo;Make Your Own&rdquo; session) the short
+            phrase you type, are sent to our processors to generate that one
+            session. They are not tied to your identity and are not used to build
+            a profile of you.
           </li>
           <li>
             <b>Anonymous usage analytics.</b> We use privacy-friendly, aggregate
@@ -85,15 +85,15 @@ export default function PrivacyPage() {
         </p>
         <ul style={{ paddingLeft: "20px", margin: 0 }}>
           <li style={{ marginBottom: "8px" }}>
-            <b>Anthropic</b> &mdash; generates the words of your session from your
-            chosen intention and phrase.
+            <b>Anthropic</b> generates the words of your session from your chosen
+            intention and phrase.
           </li>
           <li style={{ marginBottom: "8px" }}>
-            <b>ElevenLabs</b> &mdash; turns those words into the spoken voice.
+            <b>ElevenLabs</b> turns those words into the spoken voice.
           </li>
           <li>
-            <b>Vercel</b> &mdash; hosts the app and provides the anonymous,
-            aggregate analytics.
+            <b>Vercel</b> hosts the app and provides the anonymous, aggregate
+            analytics.
           </li>
         </ul>
       </Section>
