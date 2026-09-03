@@ -1819,7 +1819,10 @@ export default function Home() {
               />
               <div>
                 <div className="tt">{selected.label}</div>
-                <div className="ts">{selected.tagline}</div>
+                {/* The custom tray's own prompt ("What's on your mind?") already
+                    says this, so drop the redundant tagline there; presets keep
+                    it as their only descriptor. */}
+                {!selected.custom && <div className="ts">{selected.tagline}</div>}
               </div>
             </div>
 
