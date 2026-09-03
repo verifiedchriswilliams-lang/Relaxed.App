@@ -1842,10 +1842,7 @@ export default function Home() {
                   placeholder="e.g. studying for a test"
                   aria-label="What's on your mind"
                 />
-                <div className="custom-hint">
-                  A few words is perfect. We&apos;ll write a session just for
-                  this.
-                </div>
+                <div className="custom-hint">A few words is perfect.</div>
               </div>
             )}
 
