@@ -1717,9 +1717,7 @@ export default function Home() {
             />
           </div>
 
-          <div className="prompt">
-            {IS_RELAXED ? "What do you need?" : "What would you like to do?"}
-          </div>
+          <div className="prompt">What would you like to do?</div>
           <div className="states">
             {CONTEXTS.map((c) => (
               <button
