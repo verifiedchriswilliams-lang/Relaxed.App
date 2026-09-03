@@ -311,6 +311,9 @@
   align-items: center;
   gap: 8px;
   margin-top: 6px;
+  /* Chrome is lowercase in the relaxed identity (same as the wordmark and the
+     tile labels); the footnote sentences above keep their normal case. */
+  text-transform: lowercase;
 }
 [data-brand="relaxed"] .foot-links a {
   color: var(--ink-2);
