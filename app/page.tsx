@@ -1828,7 +1828,8 @@ export default function Home() {
 
             {selected.custom && (
               <div className="opt">
-                <div className="ol">What&apos;s on your mind?</div>
+                {/* The prompt lives in the placeholder now, so there's no
+                    separate label line; aria-label keeps it accessible. */}
                 <input
                   className="custom-input"
                   type="text"
@@ -1839,7 +1840,7 @@ export default function Home() {
                   onChange={(e) =>
                     setCustomText(e.target.value.replace(/\s+/g, " ").slice(0, CUSTOM_MAX_CHARS))
                   }
-                  placeholder="e.g. studying for a test"
+                  placeholder="what's on your mind? e.g. studying for a test"
                   aria-label="What's on your mind"
                 />
                 <div className="custom-hint">A few words is perfect.</div>
