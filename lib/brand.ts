@@ -15,6 +15,7 @@ export interface Brand {
   light: string; // the light half of the wordmark
   domain: string;
   url: string;
+  support: string; // support/contact email surfaced in-app
 }
 
 const BRANDS: Record<BrandId, Brand> = {
@@ -25,6 +26,7 @@ const BRANDS: Record<BrandId, Brand> = {
     light: "Mind",
     domain: "elevenmind.io",
     url: "https://elevenmind.io",
+    support: "hello@elevenmind.io",
   },
   relaxed: {
     id: "relaxed",
@@ -33,6 +35,7 @@ const BRANDS: Record<BrandId, Brand> = {
     light: ".app",
     domain: "relaxed.app",
     url: "https://relaxed.app",
+    support: "support@relaxed.app",
   },
 };
 

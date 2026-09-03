@@ -304,6 +304,29 @@
   display: none;
 }
 
+/* ---- footer links (Contact / Privacy) ----------------------------------- */
+/* Understated, in the muted footnote register; a touch brighter on hover. */
+[data-brand="relaxed"] .foot-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+[data-brand="relaxed"] .foot-links a {
+  color: var(--ink-2);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color var(--t-ui) var(--ease-ui), border-color var(--t-ui) var(--ease-ui);
+}
+[data-brand="relaxed"] .foot-links a:hover {
+  color: var(--ink-1);
+  border-bottom-color: var(--rx-line-strong);
+}
+[data-brand="relaxed"] .foot-links .dotsep {
+  color: var(--ink-2);
+  opacity: 0.6;
+}
+
 /* ---- closing screen ----------------------------------------------------- */
 [data-brand="relaxed"] .done-title {
   font-weight: 400;

@@ -9,7 +9,7 @@ export const metadata = {
 // nothing: the name you type stays on your device, session inputs are sent to the
 // AI providers only to generate that session, and analytics are anonymous and
 // aggregate. Update the contact address below if you use a different one.
-const CONTACT = "support@relaxed.app";
+const CONTACT = BRAND.support;
 const UPDATED = "August 31, 2026";
 
 export default function PrivacyPage() {

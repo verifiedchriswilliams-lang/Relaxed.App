@@ -7,6 +7,8 @@
 // (light, mid, light, deep, light, mid) that carries all of the app's colour.
 // The interface itself stays neutral gray; the disc does the mood.
 
+import { BRAND } from "./brand";
+
 export type ContextId =
   | "meditation"
   | "sleep"
@@ -31,11 +33,14 @@ export interface SessionContext {
   custom?: boolean;
 }
 
-// The Custom tile is written live via the APIs, so it launches behind a flag:
-// until it's set, the home screen shows Breathe (stress-relief) instead, so
-// production always has a working fifth tile.
+// "Make Your Own" (the live, bespoke session) is relaxed.app's flagship, so it is
+// on by default there; set NEXT_PUBLIC_ENABLE_CUSTOM=0 to hide it. ElevenMind
+// keeps it behind an explicit opt-in flag so that demo stays unchanged. When it's
+// off, the home shows Breathe (stress-relief) as the fifth tile instead.
 export const CUSTOM_ENABLED =
-  process.env.NEXT_PUBLIC_ENABLE_CUSTOM === "1";
+  BRAND.id === "relaxed"
+    ? process.env.NEXT_PUBLIC_ENABLE_CUSTOM !== "0"
+    : process.env.NEXT_PUBLIC_ENABLE_CUSTOM === "1";
 
 // A custom phrase is meant to be a few words, not a paragraph: it keeps the
 // prompt tight and the resulting meditation focused.
@@ -142,7 +147,7 @@ const ALL_CONTEXTS: SessionContext[] = [
   },
   {
     id: "custom",
-    label: "Make Your Own",
+    label: "In your words",
     tagline: "Tell us what you need",
     art: DISC.custom,
     glow: "#c568a0",
