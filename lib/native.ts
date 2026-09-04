@@ -34,7 +34,7 @@ function mediaSession(): any {
 interface NowPlaying {
   title: string;
   artist: string;
-  duration: number;
+  album?: string;
   onPlay: () => void;
   onPause: () => void;
   onStop?: () => void;
@@ -51,7 +51,7 @@ export function setNowPlaying(np: NowPlaying): void {
     s.metadata = new (window as any).MediaMetadata({
       title: np.title,
       artist: np.artist,
-      album: "relaxed",
+      album: np.album ?? np.artist,
       artwork: [
         // Full-bleed square (no rounded/transparent corners) so iOS's own
         // rounded frame reads clean and the blurred card background stays dark.

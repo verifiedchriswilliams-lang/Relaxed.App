@@ -1096,16 +1096,16 @@ export default function Home() {
       return;
     }
     setNowPlaying({
-      title: selected.label,
-      artist: `${soundLabel} · relaxed`,
-      duration: totalSecs,
+      title: selected.custom ? "Your session" : selected.label,
+      artist: `${BRAND.name} · ${soundLabel}`,
+      album: BRAND.name,
       onPlay: () => mediaActionRef.current.play(),
       onPause: () => mediaActionRef.current.pause(),
       onStop: () => mediaActionRef.current.stop(),
     });
     return () => clearNowPlaying();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen, selected.label, soundLabel, totalSecs]);
+  }, [screen, selected.label, selected.custom, soundLabel]);
 
   // Keep the lock-screen play/pause icon in sync (no scrubber — see native.ts).
   useEffect(() => {
