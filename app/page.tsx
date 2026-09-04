@@ -1561,10 +1561,12 @@ export default function Home() {
                       "--pg": selected.glow,
                     } as React.CSSProperties)
               }
-            >
-              {IS_RELAXED && <SoundMotif id={soundscape} />}
-            </div>
+            />
             <div className="ring" />
+            {/* relaxed: the motif sits OUTSIDE the breathing disc so it stays
+                steady (its own gentle motion) while the ring expands/contracts
+                around it — otherwise it scales with the ring and jitters. */}
+            {IS_RELAXED && <SoundMotif id={soundscape} />}
           </div>
           <div className="breath">
             <div className={`cue ${playing ? "pulse" : ""}`}>{breathCue}</div>

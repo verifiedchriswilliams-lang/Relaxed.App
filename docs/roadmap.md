@@ -53,7 +53,11 @@ bigger catalog, it's "tell relaxed what you need and it makes one for you."
 - **Lightweight anonymous event analytics** (session start/complete/abandon, replay,
   selections, post-session sentiment) so every later decision is data-informed.
 - Polish: refine orb motion, typography/spacing, generation states.
-- Fold in the queued iOS build-2 change (splash cross-fade) when convenient.
+- **iPad / Mac layout** (moved up from Phase 4): widen the column and enlarge the
+  breathing orb on tablet-plus screens so it doesn't read as a marooned phone
+  column. Ships via web, so it also lifts the Mac (iPad-app-on-Mac) experience.
+- Fold in the iOS build-2 native changes (splash cross-fade + beveled launch mark)
+  when convenient.
 
 ## Phase 1 — make the AI genuinely special (the moat)
 
