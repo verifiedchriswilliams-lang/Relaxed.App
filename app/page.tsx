@@ -14,6 +14,7 @@ import { asset } from "@/lib/assets";
 import { BRAND } from "@/lib/brand";
 import { StemGlyph } from "@/lib/mark";
 import { SoundMotif } from "@/lib/soundMotifs";
+import { haptic, setNowPlaying, setPlaybackState, clearNowPlaying } from "@/lib/native";
 
 // Which visual world are we in? relaxed swaps the aurora + coloured discs for
 // the flat, no-accent "stem" identity; ElevenMind keeps its night sky.
@@ -945,6 +946,9 @@ export default function Home() {
   const breathClockRef = useRef(0);
   const breathTsRef = useRef<number | null>(null);
   const reduceMotionRef = useRef(false);
+  // Lock-screen (MediaSession) controls call into the latest play/pause via this
+  // ref, so the handlers we register once never go stale.
+  const mediaActionRef = useRef({ play: () => {}, pause: () => {}, stop: () => {} });
   const endTimerRef = useRef<number | null>(null);
   const completeTimerRef = useRef<number | null>(null);
   const tickRef = useRef<number | null>(null);
@@ -1072,6 +1076,42 @@ export default function Home() {
   useEffect(() => {
     playingRef.current = playing;
   }, [playing]);
+
+  // Keep the lock-screen play/pause/stop pointed at the current handlers.
+  mediaActionRef.current = {
+    play: () => {
+      if (!playing) togglePlay();
+    },
+    pause: () => {
+      if (playing) togglePlay();
+    },
+    stop: () => end(),
+  };
+
+  // Lock screen / Control Center "Now Playing" card. Set the metadata + working
+  // controls when a session is on the player, and clear it when we leave.
+  useEffect(() => {
+    if (screen !== "player") {
+      clearNowPlaying();
+      return;
+    }
+    setNowPlaying({
+      title: selected.label,
+      artist: `${soundLabel} · relaxed`,
+      duration: totalSecs,
+      onPlay: () => mediaActionRef.current.play(),
+      onPause: () => mediaActionRef.current.pause(),
+      onStop: () => mediaActionRef.current.stop(),
+    });
+    return () => clearNowPlaying();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen, selected.label, soundLabel, totalSecs]);
+
+  // Keep the lock-screen play/pause state and scrubber position fresh.
+  useEffect(() => {
+    if (screen !== "player") return;
+    setPlaybackState(playing, elapsed, totalSecs);
+  }, [screen, playing, elapsed, totalSecs]);
 
   // Karaoke + breathing: one rAF loop on the player screen. It follows the
   // spoken line (synced to the audio clock) and advances the breathing clock
@@ -1314,6 +1354,7 @@ export default function Home() {
   function startPlayback(
     segments: { audio: string | null; pauseAfter: number }[]
   ) {
+    haptic("medium");
     const eng = engineRef.current;
     eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
 
@@ -1351,6 +1392,7 @@ export default function Home() {
   function startPlaybackStream(
     segments: { text: string; pauseAfter: number }[]
   ) {
+    haptic("medium");
     const eng = engineRef.current;
     eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
 
@@ -1396,6 +1438,7 @@ export default function Home() {
   // Reached the chosen duration: wind the sound down and, once it has faded a
   // little, ease into the closing screen (the audio keeps fading underneath).
   function completeSession() {
+    haptic("success");
     engineRef.current.fadeOutAmbient(6);
     stopTick();
     setPlaying(false);
@@ -1408,6 +1451,7 @@ export default function Home() {
   }
 
   function togglePlay() {
+    haptic("light");
     if (playing) {
       engineRef.current.suspend();
       stopTick();
