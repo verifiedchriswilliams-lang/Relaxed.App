@@ -1107,11 +1107,11 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, selected.label, soundLabel, totalSecs]);
 
-  // Keep the lock-screen play/pause state and scrubber position fresh.
+  // Keep the lock-screen play/pause icon in sync (no scrubber — see native.ts).
   useEffect(() => {
     if (screen !== "player") return;
-    setPlaybackState(playing, elapsed, totalSecs);
-  }, [screen, playing, elapsed, totalSecs]);
+    setPlaybackState(playing);
+  }, [screen, playing]);
 
   // Karaoke + breathing: one rAF loop on the player screen. It follows the
   // spoken line (synced to the audio clock) and advances the breathing clock

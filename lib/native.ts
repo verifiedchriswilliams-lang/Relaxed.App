@@ -53,8 +53,9 @@ export function setNowPlaying(np: NowPlaying): void {
       artist: np.artist,
       album: "relaxed",
       artwork: [
-        { src: `${origin}/apple-icon`, sizes: "180x180", type: "image/png" },
-        { src: `${origin}/icon`, sizes: "512x512", type: "image/png" },
+        // Full-bleed square (no rounded/transparent corners) so iOS's own
+        // rounded frame reads clean and the blurred card background stays dark.
+        { src: `${origin}/artwork`, sizes: "512x512", type: "image/png" },
       ],
     });
     s.setActionHandler("play", () => np.onPlay());
@@ -72,20 +73,18 @@ export function setNowPlaying(np: NowPlaying): void {
   }
 }
 
-export function setPlaybackState(playing: boolean, position: number, duration: number): void {
+export function setPlaybackState(playing: boolean): void {
   const s = mediaSession();
   if (!s) return;
   try {
     s.playbackState = playing ? "playing" : "paused";
-    if (typeof s.setPositionState === "function" && duration > 0) {
-      s.setPositionState({
-        duration,
-        position: Math.min(Math.max(position, 0), duration),
-        playbackRate: 1,
-      });
-    }
+    // No progress bar: the in-app timer is a per-second counter that iOS freezes
+    // while the phone is locked, so a MediaSession scrubber fed from it desyncs
+    // and snaps back on resume. A meditation isn't scrubbable anyway, so we show a
+    // clean play/pause card with no (misleading) progress bar. Clear any prior one.
+    if (typeof s.setPositionState === "function") s.setPositionState();
   } catch {
-    /* position state is best-effort */
+    /* playback state is best-effort */
   }
 }
 
