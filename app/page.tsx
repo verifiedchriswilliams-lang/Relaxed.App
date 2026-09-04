@@ -952,6 +952,12 @@ export default function Home() {
   const endTimerRef = useRef<number | null>(null);
   const completeTimerRef = useRef<number | null>(null);
   const tickRef = useRef<number | null>(null);
+  // Session clock kept in wall-clock time (ms of actual playback), so the timer
+  // and the auto-end survive the screen locking / backgrounding, which throttles
+  // JS timers. Pauses are excluded, so pausing correctly extends the session.
+  const playedMsRef = useRef(0);
+  const runStartRef = useRef<number | null>(null);
+  const completedRef = useRef(false);
   const transcriptRef = useRef<HTMLDivElement | null>(null);
   const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
@@ -1165,11 +1171,41 @@ export default function Home() {
     c.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
   }, [activeLine, showTranscript]);
 
+  // --- Session clock (wall-clock based) ---
+  const nowMs = () =>
+    typeof performance !== "undefined" ? performance.now() : Date.now();
+  function elapsedSecs(): number {
+    const running = runStartRef.current != null ? nowMs() - runStartRef.current : 0;
+    return (playedMsRef.current + running) / 1000;
+  }
+  function clockStart() {
+    playedMsRef.current = 0;
+    runStartRef.current = nowMs();
+    completedRef.current = false;
+  }
+  function clockPause() {
+    if (runStartRef.current != null) {
+      playedMsRef.current += nowMs() - runStartRef.current;
+      runStartRef.current = null;
+    }
+  }
+  function clockResume() {
+    if (runStartRef.current == null) runStartRef.current = nowMs();
+  }
+
   function startTick() {
     if (tickRef.current) window.clearInterval(tickRef.current);
+    // Re-read the wall clock each tick so the display stays accurate after the
+    // phone was locked (a throttled interval just resumes at the right value),
+    // and end the session when real playback time reaches the chosen length.
     tickRef.current = window.setInterval(() => {
-      setElapsed((e) => (e < totalSecs ? e + 1 : e));
-    }, 1000);
+      const e = elapsedSecs();
+      setElapsed(Math.min(Math.floor(e), totalSecs));
+      if (!completedRef.current && e >= totalSecs) {
+        completedRef.current = true;
+        completeSession();
+      }
+    }, 500);
   }
   function stopTick() {
     if (tickRef.current) {
@@ -1377,13 +1413,11 @@ export default function Home() {
     }
     eng.startAmbient(soundscape, src, level);
     eng.playSegments(segments);
+    clockStart();
     setPlaying(true);
     setElapsed(0);
     startTick();
     acquireWakeLock();
-
-    if (endTimerRef.current) window.clearTimeout(endTimerRef.current);
-    endTimerRef.current = window.setTimeout(completeSession, totalSecs * 1000);
   }
 
   // Streaming playback for Custom: same bed + loudness as a preset, but the
@@ -1426,19 +1460,18 @@ export default function Home() {
     };
     eng.playStream(segments, fetchAudio);
 
+    clockStart();
     setPlaying(true);
     setElapsed(0);
     startTick();
     acquireWakeLock();
-
-    if (endTimerRef.current) window.clearTimeout(endTimerRef.current);
-    endTimerRef.current = window.setTimeout(completeSession, totalSecs * 1000);
   }
 
   // Reached the chosen duration: wind the sound down and, once it has faded a
   // little, ease into the closing screen (the audio keeps fading underneath).
   function completeSession() {
     haptic("success");
+    clockPause();
     engineRef.current.fadeOutAmbient(6);
     stopTick();
     setPlaying(false);
@@ -1454,11 +1487,13 @@ export default function Home() {
     haptic("light");
     if (playing) {
       engineRef.current.suspend();
+      clockPause();
       stopTick();
       setPlaying(false);
       releaseWakeLock();
     } else {
       engineRef.current.resume();
+      clockResume();
       startTick();
       setPlaying(true);
       acquireWakeLock();
@@ -1467,6 +1502,8 @@ export default function Home() {
 
   function end() {
     engineRef.current.stop();
+    clockPause();
+    runStartRef.current = null;
     if (endTimerRef.current) window.clearTimeout(endTimerRef.current);
     if (completeTimerRef.current) window.clearTimeout(completeTimerRef.current);
     stopTick();
