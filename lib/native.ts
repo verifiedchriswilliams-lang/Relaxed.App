@@ -35,6 +35,7 @@ interface NowPlaying {
   title: string;
   artist: string;
   album?: string;
+  category?: string; // soundscape category → picks the lock-screen artwork emblem
   onPlay: () => void;
   onPause: () => void;
   onStop?: () => void;
@@ -55,7 +56,12 @@ export function setNowPlaying(np: NowPlaying): void {
       artwork: [
         // Full-bleed square (no rounded/transparent corners) so iOS's own
         // rounded frame reads clean and the blurred card background stays dark.
-        { src: `${origin}/artwork`, sizes: "512x512", type: "image/png" },
+        // ?c=<category> picks a soundscape-specific emblem.
+        {
+          src: `${origin}/artwork${np.category ? `?c=${encodeURIComponent(np.category)}` : ""}`,
+          sizes: "512x512",
+          type: "image/png",
+        },
       ],
     });
     s.setActionHandler("play", () => np.onPlay());
