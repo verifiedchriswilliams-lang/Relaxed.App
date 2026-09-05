@@ -181,6 +181,14 @@ const VOICE_RATE = 1.0;
 // personally composed rather than pulled off a shelf.
 const MIN_GENERATING_MS = 8500;
 
+// Timeline cursor carried through streamInto, so a second batch of lines (the
+// Custom body, after the arrival) chains straight onto the first.
+interface StreamState {
+  started: boolean;
+  cursor: number;
+  lastSrc: AudioBufferSourceNode | null;
+}
+
 // ---------------------------------------------------------------------------
 // One audio engine for the whole session. Both the synthesized soundscape and
 // the spoken voice play through a single Web Audio context, so on mobile they
@@ -319,25 +327,74 @@ class AudioEngine {
     if (lastSrc) lastSrc.onended = () => this.onVoiceEnded?.();
   }
 
-  // Streaming variant for Custom: we have the whole script (text + pauses) up
-  // front, but synthesize the audio line by line so playback can START as soon
-  // as the first line is ready. Each line is scheduled on the AudioContext clock
-  // the moment it decodes; because meditation pauses are long, synthesis stays
-  // well ahead of playback. Reuses lineStarts/playStartTime, so the karaoke
-  // transcript, pause handling, and completion all work exactly as for presets.
-  async playStream(
-    segments: { text: string; pauseAfter: number }[],
-    fetchAudio: (text: string) => Promise<ArrayBuffer | null>
+  // Instant-start Custom: the personalized body isn't written yet when the user
+  // taps Begin, so we open with a short, fixed arrival (spoken through the same
+  // TTS path) the moment playback starts, then stream the body lines in behind
+  // it once Claude returns them. The bed + breathing (started by the caller) are
+  // already running, so there's no wait — the guide simply joins a beat later.
+  // Timeline, transcript sync and completion continue seamlessly across the two
+  // phases because both write into the same lineStarts / cursor state.
+  async playCustomStream(
+    arrival: { text: string; pauseAfter: number }[],
+    bodyPromise: Promise<{ text: string; pauseAfter: number }[]>,
+    fetchAudio: (text: string) => Promise<ArrayBuffer | null>,
+    onBody?: (body: { text: string; pauseAfter: number }[]) => void
   ) {
-    if (!segments?.length) return;
     const ctx = this.ensureCtx();
     await ctx.resume().catch(() => {});
+    const voiceBus = this.makeVoiceBus(ctx);
+    this.lineStarts = [];
+    const state: StreamState = {
+      started: false,
+      cursor: ctx.currentTime + 0.2,
+      lastSrc: null,
+    };
 
+    // Phase A — the arrival, playing right away.
+    if (arrival.length) {
+      await this.streamInto(ctx, voiceBus, arrival, fetchAudio, state);
+    }
+    if (this.ctx !== ctx) return; // ended during the arrival
+
+    // Phase B — the personalized body, once it's written.
+    let body: { text: string; pauseAfter: number }[] = [];
+    try {
+      body = await bodyPromise;
+    } catch {
+      body = [];
+    }
+    if (this.ctx !== ctx) return; // ended while waiting on the script
+    onBody?.(body);
+    if (body.length) {
+      await this.streamInto(ctx, voiceBus, body, fetchAudio, state);
+      // Only fade out at the true end of the guided body. If the body never
+      // arrived, we leave the bed running so it degrades to a sounds-only
+      // session rather than fading to silence after the arrival.
+      if (this.ctx === ctx && state.lastSrc) {
+        state.lastSrc.onended = () => this.onVoiceEnded?.();
+      }
+    }
+  }
+
+  private makeVoiceBus(ctx: AudioContext): GainNode {
     const voiceBus = ctx.createGain();
     voiceBus.gain.value = this.voiceGainValue;
     voiceBus.connect(ctx.destination);
     this.ambientNodes.push(voiceBus);
+    return voiceBus;
+  }
 
+  // Core streaming loop for playCustomStream: synthesize a batch of lines with a
+  // small worker pool, then schedule them in order as each decodes, chaining the
+  // timeline from `state.cursor`. Appending a second batch (the body, after the
+  // arrival) is just another call with the same state.
+  private async streamInto(
+    ctx: AudioContext,
+    voiceBus: GainNode,
+    segments: { text: string; pauseAfter: number }[],
+    fetchAudio: (text: string) => Promise<ArrayBuffer | null>,
+    state: StreamState
+  ) {
     // One promise per line, resolved by the fetch/decode workers below.
     const settle: Array<(b: AudioBuffer | null) => void> = [];
     const ready: Promise<AudioBuffer | null>[] = segments.map(
@@ -361,19 +418,14 @@ class AudioEngine {
     const CONCURRENCY = 3;
     for (let k = 0; k < Math.min(CONCURRENCY, segments.length); k++) worker();
 
-    // Schedule lines in order as each becomes available, chaining the timeline.
-    this.lineStarts = [];
-    let started = false;
-    let cursor = ctx.currentTime + 0.2;
-    let lastSrc: AudioBufferSourceNode | null = null;
     for (let i = 0; i < segments.length; i++) {
       const buf = await ready[i];
       if (this.ctx !== ctx) return; // stopped while waiting
       const now = ctx.currentTime;
-      const startAt = Math.max(cursor, now + 0.05);
-      if (!started) {
+      const startAt = Math.max(state.cursor, now + 0.05);
+      if (!state.started) {
         this.playStartTime = startAt;
-        started = true;
+        state.started = true;
       }
       this.lineStarts.push(startAt - this.playStartTime);
       let dur = 0;
@@ -385,15 +437,14 @@ class AudioEngine {
           src.connect(voiceBus);
           src.start(startAt);
           this.voiceSegs.push(src);
-          lastSrc = src;
+          state.lastSrc = src;
           dur = buf.duration / VOICE_RATE;
         } catch {
           return;
         }
       }
-      cursor = startAt + dur + segments[i].pauseAfter;
+      state.cursor = startAt + dur + segments[i].pauseAfter;
     }
-    if (lastSrc) lastSrc.onended = () => this.onVoiceEnded?.();
   }
 
   // Which line is being spoken right now (or just spoken, during its pause).
@@ -1289,10 +1340,10 @@ export default function Home() {
       return;
     }
 
-    // Custom: a bespoke session written live for the user's phrase, then voiced
-    // and streamed line by line so playback starts within seconds.
+    // Custom: instant start — straight to the player, bed + breathing now, and
+    // the guide streams in behind a short arrival (see beginCustom).
     if (selected.custom) {
-      await beginCustom();
+      beginCustom();
       return;
     }
 
@@ -1341,14 +1392,71 @@ export default function Home() {
     }
   }
 
-  // Custom flow: ask Claude for the bespoke script, then stream the voice.
-  async function beginCustom() {
-    setScreen("generating");
-    setGenStep(0);
-    const started = Date.now();
-    const stepA = window.setTimeout(() => setGenStep(1), 1600);
-    const stepB = window.setTimeout(() => setGenStep(2), 3600);
-    try {
+  // Custom flow, instant start: no "composing" screen and no wait. We go
+  // straight to the player, start the bed + breathing immediately, speak a short
+  // fixed arrival while Claude writes the personalized body, then stream the
+  // body lines in behind the arrival (see AudioEngine.playCustomStream). If the
+  // voice is set to None it's a pure soundscape, so this path doesn't apply.
+  function customArrival(): { text: string; pauseAfter: number }[] {
+    const who = name.trim();
+    return [
+      { text: who ? `Let's begin, ${who}.` : "Let's begin.", pauseAfter: 2.4 },
+      {
+        text: "Settle into a position you can rest in, and when you feel ready, let your eyes close.",
+        pauseAfter: 3.2,
+      },
+      { text: "Take a slow breath in. And gently let it go.", pauseAfter: 4 },
+    ];
+  }
+
+  function beginCustom() {
+    const arrival = customArrival();
+    setNote("");
+    setIsPreview(false);
+    // Show the arrival lines right away so the transcript isn't empty; the body
+    // is appended in onBody once it's written.
+    setScript(arrival.map((a) => a.text).join("\n"));
+    setScreen("player");
+    startCustomInstant(arrival);
+  }
+
+  // Kick off the instant Custom session: bed + breathing + clock start now, and
+  // the arrival/body stream through the same normalized voice bus as a preset.
+  function startCustomInstant(arrival: { text: string; pauseAfter: number }[]) {
+    haptic("medium");
+    const eng = engineRef.current;
+
+    const vs = VOICE_STATS[`${voice}-${accent}`];
+    eng.voiceGainValue = vs
+      ? normGain(vs.rms, vs.peak, VOICE_TARGET + (vs.trim ?? 0))
+      : 1;
+
+    const def = soundDef(soundscape);
+    const src = def && !def.soon ? asset(def.src) : undefined;
+    let level: number | undefined;
+    if (src && def?.rms != null && def?.peak != null) {
+      level = normGain(def.rms, def.peak, BED_UNDER_VOICE);
+    } else if (src) {
+      level = 0.4;
+    }
+    eng.startAmbient(soundscape, src, level);
+    eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
+
+    const fetchAudio = async (text: string): Promise<ArrayBuffer | null> => {
+      try {
+        const r = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, voice, accent }),
+        });
+        if (!r.ok) return null;
+        return await r.arrayBuffer();
+      } catch {
+        return null;
+      }
+    };
+
+    const bodyPromise = (async () => {
       const res = await fetch("/api/custom-script", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1359,33 +1467,32 @@ export default function Home() {
         }),
       });
       const data = await res.json();
-      if (!res.ok)
-        throw new Error(data.error || `Request failed (${res.status})`);
-      const segs: { text: string; pauseAfter: number }[] = Array.isArray(
-        data.segments
-      )
-        ? data.segments
+      if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+      if (typeof data.mock === "boolean") setIsPreview(data.mock);
+      return Array.isArray(data.segments)
+        ? (data.segments as { text: string; pauseAfter: number }[])
         : [];
-      if (!segs.length) throw new Error("Empty session");
+    })();
 
-      setScript(segs.map((s) => s.text).join("\n"));
-      setNote("");
-      setIsPreview(Boolean(data.mock));
-      // A short floor so the composing beat reads, but far shorter than the
-      // presets: streaming means the voice starts moments after this.
-      const wait = 3200 - (Date.now() - started);
-      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-      window.clearTimeout(stepA);
-      window.clearTimeout(stepB);
-      await finishComposing();
-      setScreen("player");
-      startPlaybackStream(segs);
-    } catch (e) {
-      window.clearTimeout(stepA);
-      window.clearTimeout(stepB);
-      setError(e instanceof Error ? e.message : "Something went wrong.");
-      setScreen("setup");
-    }
+    eng.playCustomStream(arrival, bodyPromise, fetchAudio, (body) => {
+      if (body.length) {
+        setScript(
+          [...arrival.map((a) => a.text), ...body.map((s) => s.text)].join("\n")
+        );
+      } else {
+        // The guide couldn't be written/reached; keep the bed going so it lands
+        // as a calm sounds-only session rather than an error bounce.
+        setNote(
+          "We couldn't reach your guide just now, so let the sounds carry this one. Tap End whenever you're ready."
+        );
+      }
+    });
+
+    clockStart();
+    setPlaying(true);
+    setElapsed(0);
+    startTick();
+    acquireWakeLock();
   }
 
   function startPlayback(
@@ -1414,53 +1521,6 @@ export default function Home() {
     }
     eng.startAmbient(soundscape, src, level);
     eng.playSegments(segments);
-    clockStart();
-    setPlaying(true);
-    setElapsed(0);
-    startTick();
-    acquireWakeLock();
-  }
-
-  // Streaming playback for Custom: same bed + loudness as a preset, but the
-  // voice lines are synthesized on demand (via /api/tts) and played as they
-  // arrive, so the guide begins within seconds.
-  function startPlaybackStream(
-    segments: { text: string; pauseAfter: number }[]
-  ) {
-    haptic("medium");
-    const eng = engineRef.current;
-    eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
-
-    const vs = VOICE_STATS[`${voice}-${accent}`];
-    eng.voiceGainValue = vs
-      ? normGain(vs.rms, vs.peak, VOICE_TARGET + (vs.trim ?? 0))
-      : 1;
-
-    const def = soundDef(soundscape);
-    const src = def && !def.soon ? asset(def.src) : undefined;
-    let level: number | undefined;
-    if (src && def?.rms != null && def?.peak != null) {
-      level = normGain(def.rms, def.peak, BED_UNDER_VOICE);
-    } else if (src) {
-      level = 0.4;
-    }
-    eng.startAmbient(soundscape, src, level);
-
-    const fetchAudio = async (text: string): Promise<ArrayBuffer | null> => {
-      try {
-        const r = await fetch("/api/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, voice, accent }),
-        });
-        if (!r.ok) return null;
-        return await r.arrayBuffer();
-      } catch {
-        return null;
-      }
-    };
-    eng.playStream(segments, fetchAudio);
-
     clockStart();
     setPlaying(true);
     setElapsed(0);
