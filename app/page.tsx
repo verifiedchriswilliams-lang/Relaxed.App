@@ -15,6 +15,12 @@ import { BRAND } from "@/lib/brand";
 import { StemGlyph } from "@/lib/mark";
 import { SoundMotif } from "@/lib/soundMotifs";
 import { haptic, setNowPlaying, setPlaybackState, clearNowPlaying } from "@/lib/native";
+import {
+  loadRecent,
+  pushRecent,
+  recordMood,
+  type RecentSession,
+} from "@/lib/history";
 
 // Which visual world are we in? relaxed swaps the aurora + coloured discs for
 // the flat, no-accent "stem" identity; ElevenMind keeps its night sky.
@@ -1028,6 +1034,10 @@ function easeInOut(x: number): number {
   return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
 }
 
+// The one-tap post-session reflection. Warm, low-pressure, all positive-or-
+// neutral so it never feels like a grade.
+const MOODS = ["much calmer", "a little calmer", "about the same"] as const;
+
 // For a position t seconds into playback, the eased breath amount (0 = fully
 // exhaled, 1 = fully inhaled / held at the top) and which phase we're in. The
 // orb scales with `pb`; the cue words read from `phase` — one source of truth,
@@ -1074,6 +1084,10 @@ export default function Home() {
   const [genStep, setGenStep] = useState(0);
   const [activeLine, setActiveLine] = useState(-1);
   const [breathPhase, setBreathPhase] = useState<"in" | "hold" | "out">("in");
+  // Recent sessions (on-device) for one-tap replay, and the post-session
+  // feedback the user taps on the closing screen. No accounts, no network.
+  const [recent, setRecent] = useState<RecentSession[]>([]);
+  const [mood, setMood] = useState<string | null>(null);
 
   const engineRef = useRef<AudioEngine>(new AudioEngine());
   // Breathing: one smooth clock (seconds of playing time) drives both the orb
@@ -1187,6 +1201,7 @@ export default function Home() {
     } catch {
       /* ignore */
     }
+    setRecent(loadRecent());
   }, []);
 
   useEffect(() => {
@@ -1394,6 +1409,56 @@ export default function Home() {
     setTrayOpen(true);
   }
 
+  // Save the session that's starting to on-device history, so it can be replayed
+  // later with one tap. Called from begin() for every kind of session.
+  function rememberSession() {
+    const phrase = customText.trim();
+    const label = selected.custom
+      ? phrase
+        ? `“${phrase}”`
+        : selected.label
+      : selected.label;
+    const soundBit = voice === "none" ? "sounds only" : soundLabel;
+    setRecent(
+      pushRecent({
+        context,
+        label,
+        sub: `${duration} min · ${soundBit}`,
+        duration,
+        voice,
+        accent,
+        soundscape,
+        customText: selected.custom ? phrase : undefined,
+        at: Date.now(),
+      })
+    );
+  }
+
+  // One-tap replay: restore every choice from a past session and open the tray
+  // pre-filled, ready to begin (or tweak).
+  function replay(r: RecentSession) {
+    engineRef.current.stopPreview();
+    setError(null);
+    setContext(r.context as ContextId);
+    setDuration(r.duration as Duration);
+    setVoice(r.voice as VoiceChoice);
+    setVoicePicked(true);
+    setAccent(r.accent as Accent);
+    setSoundscape(r.soundscape as Soundscape);
+    setSoundPicked(true);
+    setSoundTab(catOf(r.soundscape as Soundscape));
+    setCustomText(r.customText ?? "");
+    setTrayOpen(true);
+  }
+
+  // The post-session reflection: one tap, stored on-device, never blocking.
+  function chooseMood(m: string) {
+    if (mood) return;
+    haptic("light");
+    setMood(m);
+    recordMood({ mood: m, context, custom: !!selected.custom });
+  }
+
   // Let all three composing steps reach their green "done" state, including the
   // final one, before revealing the player, so the last step visibly completes
   // instead of jumping away while it's still active.
@@ -1412,6 +1477,8 @@ export default function Home() {
 
     setError(null);
     persistPrefs();
+    rememberSession();
+    setMood(null); // fresh reflection for this session
     setElapsed(0);
     setShowTranscript(true);
     setTrayOpen(false);
@@ -1899,6 +1966,26 @@ export default function Home() {
           <div className="done-sub">
             Take a moment before you go. The calm is yours to keep.
           </div>
+          <div className="mood-check">
+            {mood ? (
+              <div className="mood-thanks">Thank you. Noted, just for you.</div>
+            ) : (
+              <>
+                <div className="mood-prompt">How do you feel?</div>
+                <div className="mood-row">
+                  {MOODS.map((m) => (
+                    <button
+                      key={m}
+                      className="mood-btn"
+                      onClick={() => chooseMood(m)}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
           <button
             className="done-btn"
             onClick={end}
@@ -1979,6 +2066,24 @@ export default function Home() {
               </button>
             ))}
           </div>
+
+          {recent.length > 0 && (
+            <div className="recent">
+              <div className="recent-label">recent</div>
+              <div className="recent-row">
+                {recent.map((r, i) => (
+                  <button
+                    key={i}
+                    className="recent-chip"
+                    onClick={() => replay(r)}
+                  >
+                    <span className="rc-label">{r.label}</span>
+                    <span className="rc-sub">{r.sub}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="footnote">
