@@ -39,25 +39,33 @@ bigger catalog, it's "tell relaxed what you need and it makes one for you."
 
 ## Phase 0 — make the existing product feel expensive (do first)
 
-- **Instant start, scoped to the custom path.** Start ambient + orb immediately on
-  tap, play a cached deterministic "arrival," and stream the personalized body in
-  behind it (reuse `playStream`). Perceive "started immediately," not "generating."
-- **Audio craft.** Voice ducking under the bed, crossfades, a soft start/end bell,
-  and scene-based bed intensity (Arrival sparse -> Deep richer -> Close strips away).
-  Builds on the existing dual-bus engine.
-- **Onboarding as ritual, not config.** Excellent defaults; tuck voice/soundscape
-  behind a "Customize" control. Progressive reveal over a parameter grid.
-- **Post-session micro-feedback + Replay.** One-tap "How do you feel?" and a
-  replayable ephemeral session ("Tuesday Night Reset") — both work without accounts
-  (localStorage). Replay also gives a quality signal.
-- **Lightweight anonymous event analytics** (session start/complete/abandon, replay,
-  selections, post-session sentiment) so every later decision is data-informed.
-- Polish: refine orb motion, typography/spacing, generation states.
-- **iPad / Mac layout** (moved up from Phase 4): widen the column and enlarge the
-  breathing orb on tablet-plus screens so it doesn't read as a marooned phone
-  column. Ships via web, so it also lifts the Mac (iPad-app-on-Mac) experience.
-- Fold in the iOS build-2 native changes (splash cross-fade + beveled launch mark)
-  when convenient.
+Phase 0 web work is complete and lives on the `phase0-web` branch (preview only;
+not yet merged to production). Remaining Phase 0 items are the native/App Store
+follow-ups noted at the end.
+
+- ✅ **Instant start (Make Your Own).** Tapping Begin goes straight to the player:
+  the bed + breathing orb start at once, a short fixed arrival is spoken through the
+  existing TTS path, and Claude's personalized body streams in behind it. No
+  "composing" screen, no 10-40s wait. (`playCustomStream` in app/page.tsx.)
+- ✅ **Audio craft.** Voice ducking (the bed dips under each line and swells back in
+  the long pauses), an arrival bloom (bed comes in sparse then fills over ~30s), and
+  soft synthesized singing-bowl bells at start and close. Built on the existing bus.
+  Scene-mapped bed intensity tied to script sections is a later refinement.
+- ✅ **Onboarding as ritual, not config.** The tray opens minimal — intention,
+  duration, Begin — with voice/soundscape folded behind a "Customize" row that shows
+  the current pick at a glance (e.g. "Her · Ocean Waves") and expands on demand.
+- ✅ **Post-session micro-feedback + Replay.** One-tap "How do you feel?" on the
+  closing screen and a "recent" list on the home screen that restores every choice
+  with one tap. Both on-device (localStorage), no accounts. (lib/history.ts.)
+- ✅ **Lightweight anonymous event analytics** (session start/complete/abandon,
+  replay, feedback) via Vercel custom events. No accounts, no identifiers, no free
+  text — never the name or the custom phrase, only the shape. (lib/analytics.ts.)
+- ✅ **iPad / Mac layout:** widened column + enlarged orb on tablet-plus screens.
+- ✅ **iOS build-2 native changes** (splash cross-fade + beveled launch mark), shipped
+  in the 1.1 build.
+- Polish: continue refining orb motion, typography/spacing, generation states.
+- Native follow-ups still open: none blocking; revisit lock-screen richness and
+  further haptics as the native app iterates.
 
 ## Phase 1 — make the AI genuinely special (the moat)
 
