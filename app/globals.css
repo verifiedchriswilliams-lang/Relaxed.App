@@ -968,6 +968,8 @@ button {
   transform: translateY(-1px);
 }
 .rc-label {
+  flex: 1;
+  min-width: 0;
   font-size: 14.5px;
   font-weight: 600;
   color: #fff;

@@ -172,6 +172,24 @@ const DEFAULT_SOUND: Record<ContextId, Soundscape> = {
 
 type Accent = "us" | "uk";
 
+// The normalized voice gain and the bed's file + level for a given selection,
+// shared by every playback path so loudness can't drift between them. `solo`
+// (no voice) plays the bed louder; otherwise it sits under the voice.
+function bedAndVoice(voice: VoiceChoice, accent: Accent, soundscape: Soundscape) {
+  const vs = VOICE_STATS[`${voice}-${accent}`];
+  const voiceGain = vs ? normGain(vs.rms, vs.peak, VOICE_TARGET + (vs.trim ?? 0)) : 1;
+  const def = soundDef(soundscape);
+  const src = def && !def.soon ? asset(def.src) : undefined;
+  let level: number | undefined;
+  if (src && def?.rms != null && def?.peak != null) {
+    const target = voice === "none" ? BED_SOLO : BED_UNDER_VOICE;
+    level = normGain(def.rms, def.peak, target);
+  } else if (src) {
+    level = voice === "none" ? 0.85 : 0.4;
+  }
+  return { voiceGain, src, level };
+}
+
 interface Prefs {
   name: string;
   voice: VoiceChoice;
@@ -642,9 +660,13 @@ class AudioEngine {
     const ATTACK = 0.3; // how quickly it dips as a line begins
     const UNDUCK_MIN = 2; // only recover in pauses at least this long
     const g = duck.gain;
-    const attackStart = Math.max(startAt - ATTACK, this.playStartTime);
+    // Never anchor in the past: when synthesis lags, startAt is ~now, so clamp
+    // the attack to now (the dip just happens a touch quicker) instead of
+    // scheduling a setValueAtTime behind the clock.
+    const now = this.ctx ? this.ctx.currentTime : startAt;
+    const attackStart = Math.max(startAt - ATTACK, this.playStartTime, now);
     g.setValueAtTime(this.duckHold, attackStart);
-    g.linearRampToValueAtTime(DUCK, startAt);
+    g.linearRampToValueAtTime(DUCK, Math.max(startAt, attackStart + 0.01));
     this.duckHold = DUCK;
     const lineEnd = startAt + dur;
     if (pauseAfter >= UNDUCK_MIN) {
@@ -1597,19 +1619,8 @@ export default function Home() {
     haptic("medium");
     const eng = engineRef.current;
 
-    const vs = VOICE_STATS[`${voice}-${accent}`];
-    eng.voiceGainValue = vs
-      ? normGain(vs.rms, vs.peak, VOICE_TARGET + (vs.trim ?? 0))
-      : 1;
-
-    const def = soundDef(soundscape);
-    const src = def && !def.soon ? asset(def.src) : undefined;
-    let level: number | undefined;
-    if (src && def?.rms != null && def?.peak != null) {
-      level = normGain(def.rms, def.peak, BED_UNDER_VOICE);
-    } else if (src) {
-      level = 0.4;
-    }
+    const { voiceGain, src, level } = bedAndVoice(voice, accent, soundscape);
+    eng.voiceGainValue = voiceGain;
     eng.startAmbient(soundscape, src, level);
     eng.playBell({ gain: 0.06, f0: 396, decay: 4.5 }); // soft "enter" cue
     eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
@@ -1628,6 +1639,16 @@ export default function Home() {
       }
     };
 
+    // Reserve the arrival's spoken + pause time on the server so the body fills
+    // (duration - arrival) and the two together land on the chosen length,
+    // rather than the guide overrunning into the closing bell.
+    const leadSeconds = Math.round(
+      arrival.reduce(
+        (a, s) => a + s.text.trim().split(/\s+/).length / 2.2 + s.pauseAfter,
+        0
+      )
+    );
+
     const bodyPromise = (async () => {
       const res = await fetch("/api/custom-script", {
         method: "POST",
@@ -1636,6 +1657,7 @@ export default function Home() {
           name,
           phrase: customText.trim(),
           durationMin: duration,
+          leadSeconds,
         }),
       });
       const data = await res.json();
@@ -1645,6 +1667,10 @@ export default function Home() {
         ? (data.segments as { text: string; pauseAfter: number }[])
         : [];
     })();
+    // playCustomStream awaits this inside a try/catch, but it may early-return
+    // (session ended during the arrival) before it ever does; mark it handled so
+    // a rejected script fetch can't surface as an unhandled rejection.
+    bodyPromise.catch(() => {});
 
     eng.playCustomStream(arrival, bodyPromise, fetchAudio, (body) => {
       if (body.length) {
@@ -1675,23 +1701,10 @@ export default function Home() {
     const eng = engineRef.current;
     eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
 
-    // Normalize this voice to the common target so all four sound equally loud
-    // (plus a small per-voice perceptual trim).
-    const vs = VOICE_STATS[`${voice}-${accent}`];
-    eng.voiceGainValue = vs
-      ? normGain(vs.rms, vs.peak, VOICE_TARGET + (vs.trim ?? 0))
-      : 1;
-
-    // Normalize the bed to a common level: quiet under the voice, louder solo.
-    const def = soundDef(soundscape);
-    const src = def && !def.soon ? asset(def.src) : undefined;
-    let level: number | undefined;
-    if (src && def?.rms != null && def?.peak != null) {
-      const target = voice === "none" ? BED_SOLO : BED_UNDER_VOICE;
-      level = normGain(def.rms, def.peak, target);
-    } else if (src) {
-      level = voice === "none" ? 0.85 : 0.4;
-    }
+    // Shared loudness normalization: voice to the common target, bed quiet under
+    // the voice or louder solo (see bedAndVoice).
+    const { voiceGain, src, level } = bedAndVoice(voice, accent, soundscape);
+    eng.voiceGainValue = voiceGain;
     eng.startAmbient(soundscape, src, level);
     eng.playBell({ gain: 0.06, f0: 396, decay: 4.5 }); // soft "enter" cue
     eng.playSegments(segments);

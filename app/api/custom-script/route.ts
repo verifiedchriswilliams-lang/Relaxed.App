@@ -15,6 +15,10 @@ interface Body {
   name?: string;
   phrase?: string;
   durationMin?: number;
+  // Seconds of spoken "arrival" the client plays before this body (instant
+  // start). Subtracted from the fill target so the body plus the arrival add up
+  // to the chosen length, and the closing line isn't clipped by the timer.
+  leadSeconds?: number;
 }
 
 export interface CustomSegment {
@@ -51,9 +55,15 @@ function parseBreaks(raw: string): CustomSegment[] {
 
 // Stretch (or gently compress) the pauses so speech + silence fills the chosen
 // length, leaving a short tail of quiet at the end. Mirrors lib/sessions.
-function fitToDuration(segs: CustomSegment[], durationMin: number): CustomSegment[] {
+// leadSeconds reserves time for a spoken arrival the client plays first, so the
+// body targets (length - arrival) and the two together land on the duration.
+function fitToDuration(
+  segs: CustomSegment[],
+  durationMin: number,
+  leadSeconds = 0
+): CustomSegment[] {
   if (!segs.length) return segs;
-  const target = durationMin * 60;
+  const target = Math.max(durationMin * 60 - Math.max(0, leadSeconds), 60);
   const speech = segs.reduce((a, s) => a + speechSecs(s.text), 0);
   const weight = segs.reduce((a, s) => a + Math.max(s.pauseAfter, 0.5), 0) || 1;
   const tail = Math.min(0.08 * target, 25);
@@ -111,6 +121,12 @@ export async function POST(req: NextRequest) {
   const name = (body.name || "").trim().slice(0, 60);
   const phrase = (body.phrase || "").replace(/\s+/g, " ").trim().slice(0, 70);
   const durationMin = Math.min(30, Math.max(3, Number(body.durationMin) || 10));
+  // Clamp the reserved arrival to something sane (never more than a third of a
+  // short session), so a bad client value can't starve the body.
+  const leadSeconds = Math.min(
+    Math.max(0, Number(body.leadSeconds) || 0),
+    durationMin * 20
+  );
   if (!phrase) return NextResponse.json({ error: "No phrase" }, { status: 400 });
 
   const who = name || "friend";
@@ -118,7 +134,7 @@ export async function POST(req: NextRequest) {
 
   // Preview mode: no key, still return a coherent (generic) bespoke-ish session.
   if (!apiKey) {
-    const segs = fitToDuration(fallbackScript(name, phrase), durationMin);
+    const segs = fitToDuration(fallbackScript(name, phrase), durationMin, leadSeconds);
     return NextResponse.json({ segments: segs, mock: true });
   }
 
@@ -136,10 +152,10 @@ export async function POST(req: NextRequest) {
       .join("")
       .trim();
 
-    let segs = fitToDuration(parseBreaks(raw), durationMin);
+    let segs = fitToDuration(parseBreaks(raw), durationMin, leadSeconds);
     if (segs.length < 3) {
       // Model returned something unusable; fall back so the session still plays.
-      segs = fitToDuration(fallbackScript(name, phrase), durationMin);
+      segs = fitToDuration(fallbackScript(name, phrase), durationMin, leadSeconds);
     }
     return NextResponse.json({ segments: segs });
   } catch (e) {
