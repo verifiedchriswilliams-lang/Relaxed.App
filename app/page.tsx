@@ -198,6 +198,14 @@ interface StreamState {
 class AudioEngine {
   ctx: AudioContext | null = null;
   ambientMaster: GainNode | null = null;
+  // A gain node downstream of the master that the bed passes through, used only
+  // for voice ducking: it dips the whole bed a few dB while the guide speaks and
+  // swells it back up in the long meditative pauses. Kept separate from the
+  // master so it never fights the master's fade-in bloom or the closing fade.
+  private ambientDuck: GainNode | null = null;
+  // The bed level the duck envelope is holding just before the next attack, so
+  // each line's ramp starts from a known anchor (avoids clicks / long ramps).
+  private duckHold = 1;
   ambientNodes: AudioNode[] = [];
   voiceSegs: AudioBufferSourceNode[] = [];
   voiceGainValue = 1; // per-voice loudness normalization, set before playSegments
@@ -317,7 +325,9 @@ class AudioEngine {
           src.start(t);
           this.voiceSegs.push(src);
           lastSrc = src;
-          t += d.buffer.duration / VOICE_RATE;
+          const dur = d.buffer.duration / VOICE_RATE;
+          this.duckForLine(t, dur, d.pauseAfter);
+          t += dur;
         } catch {
           return;
         }
@@ -439,6 +449,7 @@ class AudioEngine {
           this.voiceSegs.push(src);
           state.lastSrc = src;
           dur = buf.duration / VOICE_RATE;
+          this.duckForLine(startAt, dur, segments[i].pauseAfter);
         } catch {
           return;
         }
@@ -467,13 +478,20 @@ class AudioEngine {
     const ctx = this.ensureCtx();
     const master = ctx.createGain();
     master.gain.value = 0;
-    master.connect(ctx.destination);
+    // bed sources -> master (level + fades) -> duck (voice ducking) -> out.
+    const duck = ctx.createGain();
+    duck.gain.value = 1;
+    this.duckHold = 1;
+    master.connect(duck);
+    duck.connect(ctx.destination);
     this.ambientMaster = master;
+    this.ambientDuck = duck;
+    this.ambientNodes.push(duck);
 
     // A hosted looping bed (ElevenLabs nature/music track).
     if (src) {
       this.startFile(ctx, src, master);
-      master.gain.linearRampToValueAtTime(level ?? 0.4, ctx.currentTime + 3);
+      this.bloomMaster(master, ctx, level ?? 0.4);
       return;
     }
 
@@ -592,7 +610,74 @@ class AudioEngine {
         break;
     }
 
-    master.gain.linearRampToValueAtTime(level ?? target, ctx.currentTime + 3);
+    this.bloomMaster(master, ctx, level ?? target);
+  }
+
+  // Bed intensity arc: come in present but sparse over a few seconds (the
+  // arrival), then keep blooming to full richness over the next half-minute, so
+  // the space fills in gently rather than snapping to full the instant it opens.
+  private bloomMaster(master: GainNode, ctx: AudioContext, level: number) {
+    const t = ctx.currentTime;
+    master.gain.cancelScheduledValues(t);
+    master.gain.setValueAtTime(0, t);
+    master.gain.linearRampToValueAtTime(level * 0.82, t + 3);
+    master.gain.linearRampToValueAtTime(level, t + 30);
+  }
+
+  // Voice ducking: dip the bed while a line is spoken and, when the pause after
+  // it is long enough to be worth it, swell it back up so the silence breathes.
+  // Ramps chain from duckHold (the level held before this line) so there are no
+  // clicks and short pauses simply stay ducked instead of pumping.
+  private duckForLine(startAt: number, dur: number, pauseAfter: number) {
+    const duck = this.ambientDuck;
+    if (!duck) return;
+    const DUCK = 0.55; // bed sits ~5 dB down under the voice
+    const ATTACK = 0.3; // how quickly it dips as a line begins
+    const UNDUCK_MIN = 2; // only recover in pauses at least this long
+    const g = duck.gain;
+    const attackStart = Math.max(startAt - ATTACK, this.playStartTime);
+    g.setValueAtTime(this.duckHold, attackStart);
+    g.linearRampToValueAtTime(DUCK, startAt);
+    this.duckHold = DUCK;
+    const lineEnd = startAt + dur;
+    if (pauseAfter >= UNDUCK_MIN) {
+      const recStart = lineEnd + 0.25;
+      const recEnd = lineEnd + pauseAfter - 0.4;
+      if (recEnd > recStart) {
+        g.setValueAtTime(DUCK, recStart);
+        g.linearRampToValueAtTime(1, recEnd);
+        this.duckHold = 1;
+      }
+    }
+  }
+
+  // A soft singing-bowl bell, synthesized (no asset): a warm fundamental with a
+  // couple of quiet partials and a long exponential tail. Used as a gentle
+  // start and end cue. Nodes are tracked so stop() silences a ringing tail.
+  playBell(opts?: { gain?: number; f0?: number; decay?: number; when?: number }) {
+    const ctx = this.ensureCtx();
+    const t0 = ctx.currentTime + (opts?.when ?? 0);
+    const gain = opts?.gain ?? 0.07;
+    const f0 = opts?.f0 ?? 396;
+    const decay = opts?.decay ?? 5;
+    const partials: [number, number][] = [
+      [1, 1],
+      [2.01, 0.42],
+      [2.77, 0.16],
+    ];
+    for (const [ratio, rel] of partials) {
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = f0 * ratio;
+      const ge = ctx.createGain();
+      ge.gain.setValueAtTime(0.0001, t0);
+      ge.gain.linearRampToValueAtTime(gain * rel, t0 + 0.02);
+      ge.gain.exponentialRampToValueAtTime(0.0001, t0 + decay);
+      osc.connect(ge).connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + decay + 0.1);
+      this.ambientNodes.push(osc, ge);
+    }
   }
 
   suspend() {
@@ -624,6 +709,8 @@ class AudioEngine {
     });
     this.ambientNodes = [];
     this.ambientMaster = null;
+    this.ambientDuck = null;
+    this.duckHold = 1;
   }
 
   // Audition a clip while choosing (a voice greeting, or a taste of a bed).
@@ -1440,6 +1527,7 @@ export default function Home() {
       level = 0.4;
     }
     eng.startAmbient(soundscape, src, level);
+    eng.playBell({ gain: 0.06, f0: 396, decay: 4.5 }); // soft "enter" cue
     eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
 
     const fetchAudio = async (text: string): Promise<ArrayBuffer | null> => {
@@ -1520,6 +1608,7 @@ export default function Home() {
       level = voice === "none" ? 0.85 : 0.4;
     }
     eng.startAmbient(soundscape, src, level);
+    eng.playBell({ gain: 0.06, f0: 396, decay: 4.5 }); // soft "enter" cue
     eng.playSegments(segments);
     clockStart();
     setPlaying(true);
@@ -1533,6 +1622,8 @@ export default function Home() {
   function completeSession() {
     haptic("success");
     clockPause();
+    // A soft closing bell, a fifth below the opening one, as the bed winds down.
+    engineRef.current.playBell({ gain: 0.055, f0: 264, decay: 6 });
     engineRef.current.fadeOutAmbient(6);
     stopTick();
     setPlaying(false);
