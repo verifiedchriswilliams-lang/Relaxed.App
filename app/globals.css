@@ -980,6 +980,68 @@ button {
   font-size: 12px;
   color: var(--ink-2);
 }
+
+/* "Customize" disclosure in the tray: essentials stay up front, voice + sound
+   fold away behind this row so opening a session feels like a ritual. */
+.customize {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--glass-line);
+  padding: 15px 2px;
+  color: var(--ink-1);
+  transition: color var(--t-ui) var(--ease-ui);
+}
+.customize:hover,
+.customize:focus-visible {
+  color: #fff;
+}
+.cz-label {
+  font-size: 14px;
+  font-weight: 600;
+  flex: 0 0 auto;
+}
+.cz-summary {
+  flex: 1;
+  min-width: 0;
+  text-align: right;
+  font-size: 13px;
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cz-chev {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  margin-left: 2px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  opacity: 0.7;
+  transition: transform var(--t-ui) var(--ease-ui);
+}
+.cz-chev.open {
+  transform: rotate(-135deg);
+}
+.cz-panel {
+  animation: cz-in 0.3s ease both;
+}
+@keyframes cz-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 .err {
   margin-top: 14px;
   text-align: center;

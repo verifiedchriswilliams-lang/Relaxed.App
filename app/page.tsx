@@ -1089,6 +1089,10 @@ export default function Home() {
   // feedback the user taps on the closing screen. No accounts, no network.
   const [recent, setRecent] = useState<RecentSession[]>([]);
   const [mood, setMood] = useState<string | null>(null);
+  // Onboarding as ritual: the tray opens with just the intention, duration and
+  // Begin. Voice and soundscape (excellent defaults already) live behind a
+  // "Customize" disclosure so it reads as entering a space, not filling a form.
+  const [customizeOpen, setCustomizeOpen] = useState(false);
 
   const engineRef = useRef<AudioEngine>(new AudioEngine());
   // Breathing: one smooth clock (seconds of playing time) drives both the orb
@@ -1174,6 +1178,11 @@ export default function Home() {
   const selected = getContext(context) ?? CONTEXTS[0];
   const soundLabel =
     SOUNDSCAPES.find((s) => s.id === soundscape)?.label ?? "Off";
+  // What the collapsed "Customize" row summarizes, so the defaults are visible
+  // at a glance without opening anything.
+  const voiceWord = voice === "none" ? "Sounds only" : voice === "male" ? "Him" : "Her";
+  const customizeSummary =
+    voice === "none" ? `Sounds only · ${soundLabel}` : `${voiceWord} · ${soundLabel}`;
   const totalSecs = duration * 60;
   // The named guide for the current voice + accent (null when "None").
   const guide =
@@ -1407,6 +1416,7 @@ export default function Home() {
     setSoundscape(ds);
     setSoundPicked(true);
     setSoundTab(catOf(ds));
+    setCustomizeOpen(false); // open as a calm, minimal ritual
     setTrayOpen(true);
   }
 
@@ -1450,6 +1460,7 @@ export default function Home() {
     setSoundPicked(true);
     setSoundTab(catOf(r.soundscape as Soundscape));
     setCustomText(r.customText ?? "");
+    setCustomizeOpen(false); // the summary line already shows the restored choices
     setTrayOpen(true);
   }
 
@@ -2213,6 +2224,31 @@ export default function Home() {
             )}
 
             <div className="opt">
+              <div className="ol">Duration</div>
+              <DurationSlider
+                stops={DURATIONS}
+                value={duration}
+                onChange={(v) => setDuration(v as Duration)}
+              />
+            </div>
+
+            <button
+              type="button"
+              className="customize"
+              onClick={() => setCustomizeOpen((v) => !v)}
+              aria-expanded={customizeOpen}
+            >
+              <span className="cz-label">Customize</span>
+              <span className="cz-summary">{customizeSummary}</span>
+              <span
+                className={`cz-chev ${customizeOpen ? "open" : ""}`}
+                aria-hidden="true"
+              />
+            </button>
+
+            {customizeOpen && (
+              <div className="cz-panel">
+            <div className="opt">
               <div className="ol">Voice</div>
               <div className="voicerow">
                 <div className="seg seg3">
@@ -2288,15 +2324,6 @@ export default function Home() {
             </div>
 
             <div className="opt">
-              <div className="ol">Duration</div>
-              <DurationSlider
-                stops={DURATIONS}
-                value={duration}
-                onChange={(v) => setDuration(v as Duration)}
-              />
-            </div>
-
-            <div className="opt">
               <div className="ol">Soundscape</div>
               <div className="soundtabs">
                 {SOUND_CATS.map((t) => (
@@ -2350,6 +2377,8 @@ export default function Home() {
                 <span className="knob" />
               </button>
             </div>
+              </div>
+            )}
 
             {error && <div className="err">{error}</div>}
 
