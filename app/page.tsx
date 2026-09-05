@@ -21,6 +21,7 @@ import {
   recordMood,
   type RecentSession,
 } from "@/lib/history";
+import { ev } from "@/lib/analytics";
 
 // Which visual world are we in? relaxed swaps the aurora + coloured discs for
 // the flat, no-accent "stem" identity; ElevenMind keeps its night sky.
@@ -1437,6 +1438,7 @@ export default function Home() {
   // One-tap replay: restore every choice from a past session and open the tray
   // pre-filled, ready to begin (or tweak).
   function replay(r: RecentSession) {
+    ev("session_replay", { context: r.context, duration: r.duration });
     engineRef.current.stopPreview();
     setError(null);
     setContext(r.context as ContextId);
@@ -1457,6 +1459,7 @@ export default function Home() {
     haptic("light");
     setMood(m);
     recordMood({ mood: m, context, custom: !!selected.custom });
+    ev("feedback", { mood: m, context, custom: !!selected.custom });
   }
 
   // Let all three composing steps reach their green "done" state, including the
@@ -1482,6 +1485,9 @@ export default function Home() {
     setElapsed(0);
     setShowTranscript(true);
     setTrayOpen(false);
+
+    const kind = voice === "none" ? "sounds" : selected.custom ? "custom" : "preset";
+    ev("session_start", { kind, context, duration, voice, accent, soundscape });
 
     // No-voice: a pure soundscape session. Skip generation and the voice
     // entirely; go straight to the player with the soundscape + breathing visual.
@@ -1640,6 +1646,7 @@ export default function Home() {
         setNote(
           "We couldn't reach your guide just now, so let the sounds carry this one. Tap End whenever you're ready."
         );
+        ev("custom_no_body", { context, duration });
       }
     });
 
@@ -1688,6 +1695,11 @@ export default function Home() {
   // little, ease into the closing screen (the audio keeps fading underneath).
   function completeSession() {
     haptic("success");
+    ev("session_complete", {
+      kind: voice === "none" ? "sounds" : selected.custom ? "custom" : "preset",
+      context,
+      duration,
+    });
     clockPause();
     // A soft closing bell, a fifth below the opening one, as the bed winds down.
     engineRef.current.playBell({ gain: 0.055, f0: 264, decay: 6 });
@@ -1720,6 +1732,16 @@ export default function Home() {
   }
 
   function end() {
+    // Left the player before the session completed → an abandon (with how far
+    // in). Completing flips completedRef first, so a natural finish isn't logged
+    // here. No free text, just the shape.
+    if (screen === "player" && !completedRef.current) {
+      ev("session_abandon", {
+        context,
+        duration,
+        elapsedSec: Math.floor(elapsedSecs()),
+      });
+    }
     engineRef.current.stop();
     clockPause();
     runStartRef.current = null;
