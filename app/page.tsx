@@ -101,11 +101,16 @@ interface SoundDef {
   // normalize every bed to the same perceived level without clipping.
   rms?: number;
   peak?: number;
+  // Per-bed perceptual trim (dB), same idea as the voices: equal RMS is not
+  // equal loudness. A bright / hissy bed (broadband HF, e.g. ocean) reads louder
+  // than its RMS, so a negative trim pulls it down; a dull / low-frequency bed
+  // reads quieter and can take a positive trim. Tune from measured LUFS.
+  trim?: number;
 }
 const SOUNDSCAPES: SoundDef[] = [
   // Nature — ElevenLabs recordings (looping).
   { id: "rain", label: "Rain", cat: "nature", src: "/sounds/Rain.mp3", rms: -42.5, peak: -14.4 },
-  { id: "ocean", label: "Ocean Waves", cat: "nature", src: "/sounds/Ocean.mp3", rms: -25.1, peak: -5.3 },
+  { id: "ocean", label: "Ocean Waves", cat: "nature", src: "/sounds/Ocean.mp3", rms: -25.1, peak: -5.3, trim: -5 },
   { id: "wind", label: "Wind", cat: "nature", src: "/sounds/Wind.mp3", rms: -43.4, peak: -24.0 },
   { id: "thunder", label: "Thunderstorm", cat: "nature", src: "/sounds/Thunderstorm.mp3", rms: -37.9, peak: -14.5 },
   { id: "windchimes", label: "Windchimes", cat: "nature", src: "/sounds/WindChimes.mp3", rms: -32.4, peak: -16.5 },
@@ -189,7 +194,7 @@ function bedAndVoice(voice: VoiceChoice, accent: Accent, soundscape: Soundscape)
   let level: number | undefined;
   if (src && def?.rms != null && def?.peak != null) {
     const target = voice === "none" ? BED_SOLO : BED_UNDER_VOICE;
-    level = normGain(def.rms, def.peak, target);
+    level = normGain(def.rms, def.peak, target + (def.trim ?? 0));
   } else if (src) {
     level = voice === "none" ? 0.85 : 0.4;
   }
@@ -1192,7 +1197,7 @@ export default function Home() {
     }
     const gain =
       def.rms != null && def.peak != null
-        ? normGain(def.rms, def.peak, BED_SOLO)
+        ? normGain(def.rms, def.peak, BED_SOLO + (def.trim ?? 0))
         : 0.7;
     // Skip past the bed's fade-in intro so the audition is audible at once.
     engineRef.current.preview(asset(def.src), { seconds: 6, gain, offset: 2.5 });
