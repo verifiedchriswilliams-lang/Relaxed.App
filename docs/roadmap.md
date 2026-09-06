@@ -39,9 +39,9 @@ bigger catalog, it's "tell relaxed what you need and it makes one for you."
 
 ## Phase 0 — make the existing product feel expensive (do first)
 
-Phase 0 web work is complete and lives on the `phase0-web` branch (preview only;
-not yet merged to production). Remaining Phase 0 items are the native/App Store
-follow-ups noted at the end.
+Phase 0 web work is complete and **shipped to production** (merged to `main`).
+The remaining Phase 0 items are the native/App Store follow-ups noted at the end
+(the beveled launch screen and haptics land with the 1.1.1 build).
 
 - ✅ **Instant start (Make Your Own).** Tapping Begin goes straight to the player:
   the bed + breathing orb start at once, a short fixed arrival is spoken through the
