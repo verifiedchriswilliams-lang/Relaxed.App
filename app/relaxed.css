@@ -7,9 +7,10 @@
    (--ink-*, --glass*, --night-*, --font). Redefining those variables re-themes
    the majority of the app for free. The blocks after the tokens fix the places
    globals.css hard-codes a dark-world colour, and make the structural moves the
-   identity calls for: warm Ink/Bone/Paper instead of cosmic glass, no accent
-   colour, calm rings instead of coloured discs, Figtree, follow-the-device
-   light/dark. Palette + type + motion values come from the identity tokens.
+   identity calls for: Ink/Bone instead of cosmic glass, no accent colour, calm
+   rings instead of coloured discs, Figtree, and a single committed dark world
+   (no light/Paper mode). Palette + type + motion values come from the identity
+   tokens (docs/brand/relaxed-stem).
    ============================================================================ */
 
 /* ---- tokens: a single, committed dark (Ink) world ----------------------- */

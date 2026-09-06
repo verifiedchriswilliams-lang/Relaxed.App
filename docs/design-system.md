@@ -120,23 +120,26 @@ spin, sway, pulse, shimmer, flash, bob, pluck, swirl, chime). These are the only
 - These feed `@capacitor/assets` to generate all native icon/splash sizes; see
   [ios-native.md](./ios-native.md).
 
-## 8. Spec vs implementation
+## 8. Spec vs implementation (reconciled)
 
-The [brand handoff](./brand/relaxed-stem/README.md) describes a slightly broader
-identity than the app currently ships; the app deliberately implements a subset.
-Known, intentional deltas:
+The [brand handoff](./brand/relaxed-stem/README.md) has been **updated to match the
+shipped product** (2026-09-07): where an earlier spec value and the code once
+differed, the shipped decision now wins and is recorded in the handoff and its
+token files (`tokens.json`, `tokens.css`). Decisions baked in:
 
-- **Dark-only.** The handoff defines a light-mode `--rx-paper (#FAF9F7)` ground and
-  a light tile; the product committed to a **dark-only** world (Ink/Bone), so the
-  light mode is specified but not shipped.
-- **Breathing cadence.** The handoff specifies an 11s breath loop (4s in / 1s hold
-  / 5s out / 1s rest); the app runs a 14.5s loop (6 / 2.5 / 6). The app value is
-  the shipped one.
-- **Type scale.** The app uses Figtree per the handoff but with its own component
-  sizing rather than the exact token table.
+- **Dark-only.** The product ships a single dark Ink/Bone world; the handoff's
+  light `--rx-paper` mode and light tile are retained only as a light/print
+  alternate (favicons, print, merch), explicitly not used in the app.
+- **Dark palette is canonical.** The handoff now carries the shipped dark scale
+  (Bone stepped by opacity: `--ink-0/1/2`, `--glass`, `--glass-line`, etc.), and
+  records that the ".app" suffix and placeholders are **Bone at 50%**, not a flat
+  gray hex.
+- **Breathing cadence 14.5s** (6s in / 2.5s hold / 6s out), and a single soft
+  decelerate (`cubic-bezier(.16,.84,.44,1)`) at 0.34s as the UI motion signature.
 
-These are product decisions, not drift, but they should be reconciled in the
-handoff if it is treated as the living source of record.
+The mark geometry, wordmark, spacing, and radius specs were already consistent and
+are unchanged. Going forward the handoff and the code are kept in sync by hand
+(there is no automated token pipeline; see below).
 
 ## 9. Diligence note
 

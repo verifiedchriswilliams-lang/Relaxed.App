@@ -1,5 +1,13 @@
 # Handoff: relaxed — "stem" identity
 
+> **Source of truth, updated 2026-09-07.** This handoff has been reconciled with
+> the shipped product; where the two once differed, the shipped decision now wins
+> and is recorded here. Notable decisions baked in: the product is **dark-only**
+> (the light/paper mode was not shipped), the **breath loop is 14.5s (6s in / 2.5s
+> hold / 6s out)**, and UI motion uses a **single soft decelerate at 0.34s**. The
+> mark, wordmark, and spacing/radius specs are unchanged. See the app docs at
+> [`../../design-system.md`](../../design-system.md).
+
 ## Overview
 
 `relaxed` is a personalized mindfulness app: the user gives their name, a context, a duration, a voice and a soundscape, and the app composes a guided session for them on demand. This handoff covers the **"stem" brand direction**, selected from three explored options.
@@ -78,8 +86,13 @@ assets/icon/
 ### Tile
 
 - Squircle at **23% corner radius** of tile size. Use the platform superellipse on iOS/macOS; `border-radius: 23%` on web.
-- Default is the **dark tile**: Ink `#121110` background, Bone `#EFEBE3` stroke, plus a 1px inset hairline `rgba(239,235,227,0.14)` when the tile sits on a dark surface so its edge stays visible.
-- Light tile (Bone ground, Ink stroke) is the alternate — for light-mode favicons, print, and merchandise.
+- The **dark tile** is the product default and the only tile the app ships: Ink
+  `#121110` background, Bone `#EFEBE3` stroke, plus a 1px inset hairline
+  `rgba(239,235,227,0.14)` when the tile sits on a dark surface so its edge stays
+  visible.
+- Light tile (Bone ground, Ink stroke) exists **only for light/print surfaces** —
+  light-mode favicons, print, and merchandise. It is not used in the app, which is
+  dark-only.
 
 ### Export sizes
 
@@ -133,18 +146,35 @@ assets/lockup/
 
 ### Colour — the whole palette
 
+**The product is dark-only.** The canonical palette is the dark scale below (Bone
+on Ink, with Bone stepped down in opacity for hierarchy). The ".app" suffix and
+placeholders are **Bone at 50%**, not a separate gray hex.
+
 ```
---rx-ink    #121110   dark surface; primary text on light
---rx-bone   #EFEBE3   light surface; primary text on dark
---rx-paper  #FAF9F7   app background, light mode
---rx-gray   #8B857C   subdued text and the ".app" suffix
---rx-line   rgba(18,17,16,0.08)      hairline on light
---rx-line-d rgba(239,235,227,0.14)   hairline on dark
+# Canonical (shipped, dark-only)
+--rx-ground          #121110                  app background (Ink)
+--rx-text            #EFEBE3                  primary text/marks (Bone)
+--rx-text-secondary  rgba(239,235,227,0.72)   secondary text
+--rx-text-tertiary   rgba(239,235,227,0.50)   tertiary, ".app" suffix, placeholders
+--rx-surface         #1C1B18                  raised surface (a hair above Ink)
+--rx-line            rgba(239,235,227,0.14)   hairline
+--rx-line-strong     rgba(239,235,227,0.24)   stronger hairline
+--rx-selected        #EFEBE3                  selected / primary fill (Bone)
+--rx-inverted-text   #121110                  Ink text on a Bone fill
+--rx-hover           rgba(239,235,227,0.06)   hover wash
+--rx-scrim           rgba(0,0,0,0.50)         sheet / backdrop scrim
+--rx-bloom           rgba(239,235,227,0.10)   soft light-bloom on Ink
+--rx-shadow          0 12px 30px -14px rgba(0,0,0,0.6)
+
+# Light / print alternate only (NOT used in the app)
+--rx-paper           #FAF9F7               light-surface ground (print, light favicons, merch)
+--rx-gray            #8B857C               subdued text on paper (4.6:1)
+--rx-line-light      rgba(18,17,16,0.08)   hairline on light surfaces
 ```
 
 There is **no accent colour**. If the product later needs to distinguish session contexts, do it with a label and ordering, not with hue — the absence of colour is the identity.
 
-Contrast: Ink on Paper 17.6:1 (AAA). Gray on Paper 4.6:1 (AA for body and above; do not use Gray below 14px, and never for interactive labels). Bone on Ink 15.9:1 (AAA).
+Contrast (canonical, on Ink): Bone 15.9:1 (AAA); Bone-72% comfortably AAA for body; Bone-50% is for non-essential/tertiary text only, never for interactive labels. Light/print alternate: Ink on Paper 17.6:1 (AAA); Gray on Paper 4.6:1 (AA, not below 14px, never for interactive labels).
 
 ### Type — Figtree only
 
@@ -170,12 +200,22 @@ Negative tracking above 28px, positive below 20px. No uppercase anywhere.
 
 ### Motion
 
-- **Breath loop 11s**: 4s in, 1s hold, 5s out, 1s rest, `cubic-bezier(.37,0,.63,1)`.
-- Enter `cubic-bezier(.16,1,.3,1)`; exit `cubic-bezier(.4,0,1,1)`.
-- Tap 120ms · select 220ms · screen change 480ms crossfade · setup→generating 900ms dissolve.
-- Transitions fade and settle; they do not slide. Opacity plus a ≤8px lift only. Nothing overshoots or bounces.
-- Audio leads: the soundscape fades in 1.2s before the player finishes composing itself.
-- `prefers-reduced-motion`: hold the breathing element still and cross-fade the "breathe in / breathe out" caption pair on the same 11s cadence.
+Shipped values (these are the source of truth):
+
+- **Breath loop 14.5s**: 6s in, 2.5s hold, 6s out, `cubic-bezier(.37,0,.63,1)`. One
+  clock drives both the orb and the "breathe in / hold / breathe out" caption; it
+  advances only while playing, so pausing freezes the orb mid-breath and resumes in
+  phase.
+- **UI micro-interactions 0.34s**, a single soft decelerate `cubic-bezier(.16,.84,.44,1)`
+  with no overshoot or bounce. This one curve is the app's motion signature (tabs,
+  chips, inputs, buttons, selection).
+- **Screen change**: a calm crossfade (~480ms); the screen subtree remounts and
+  fades in on each transition.
+- Transitions fade and settle; they do not slide. Opacity plus a ≤8px lift only.
+- Audio leads: the soundscape blooms in (sparse, then fills over ~30s) as the
+  session begins.
+- `prefers-reduced-motion`: hold the breathing element still and cross-fade the
+  "breathe in / breathe out" caption pair on the same 14.5s cadence.
 
 ### Accessibility
 

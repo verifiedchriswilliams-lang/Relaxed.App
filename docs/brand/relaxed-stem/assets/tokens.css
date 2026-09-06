@@ -1,12 +1,28 @@
-/* relaxed — "stem" identity tokens */
+/* relaxed — "stem" identity tokens (source of truth: the shipped product).
+   relaxed.app is dark-only. The dark scale below is what the app runs on and is
+   canonical. --rx-paper and the flat --rx-gray are retained only for light/print
+   surfaces (light-mode favicons, print, merch) and are NOT used in the app. */
 :root {
-  /* neutrals — the entire palette. there is no accent colour. */
-  --rx-ink:    #121110;  /* primary surface (dark), primary text (light) */
-  --rx-bone:   #EFEBE3;  /* primary surface (light), primary text (dark) */
-  --rx-paper:  #FAF9F7;  /* app background, light mode */
-  --rx-gray:   #8B857C;  /* subdued text, ".app" suffix — 4.6:1 on paper */
-  --rx-line:   rgba(18,17,16,0.08);   /* hairlines on light */
-  --rx-line-d: rgba(239,235,227,0.14); /* hairlines on dark */
+  /* base neutrals — the entire palette. there is no accent colour. */
+  --rx-ink:    #121110;  /* app ground (dark); primary text on light surfaces */
+  --rx-bone:   #EFEBE3;  /* primary text/marks on dark; light surface */
+  --rx-gray:   #8B857C;  /* light/print surfaces only (4.6:1 on paper) */
+  --rx-paper:  #FAF9F7;  /* light/print surfaces only — the product ships dark-only */
+
+  /* ---- dark scale: the canonical, shipped app palette ---- */
+  --rx-ground:          #121110;                 /* app background (Ink) */
+  --rx-text:            #EFEBE3;                  /* primary text/marks (Bone) */
+  --rx-text-secondary:  rgba(239,235,227,0.72);  /* secondary text */
+  --rx-text-tertiary:   rgba(239,235,227,0.50);  /* tertiary, ".app" suffix, placeholders */
+  --rx-surface:         #1C1B18;                  /* raised surface, a hair above Ink */
+  --rx-line:            rgba(239,235,227,0.14);   /* hairline on dark */
+  --rx-line-strong:     rgba(239,235,227,0.24);   /* stronger hairline */
+  --rx-selected:        #EFEBE3;                  /* selected / primary fill = Bone */
+  --rx-inverted-text:   #121110;                  /* Ink text on a Bone fill */
+  --rx-hover:           rgba(239,235,227,0.06);   /* hover wash */
+  --rx-scrim:           rgba(0,0,0,0.50);         /* sheet/backdrop scrim */
+  --rx-bloom:           rgba(239,235,227,0.10);   /* soft light-bloom on Ink */
+  --rx-shadow:          0 12px 30px -14px rgba(0,0,0,0.6);
 
   /* type */
   --rx-font: 'Figtree', system-ui, -apple-system, sans-serif;
@@ -20,9 +36,10 @@
   --rx-r-pill: 999px;
   --rx-r-tile: 23%;   /* app icon tile only */
 
-  /* motion */
-  --rx-breath: 11s;
+  /* motion — the shipped signature: a slow breath and a single soft decelerate */
+  --rx-breath: 14.5s;                             /* 6s in · 2.5s hold · 6s out */
   --rx-ease-breath: cubic-bezier(.37, 0, .63, 1);
-  --rx-ease-enter:  cubic-bezier(.16, 1, .3, 1);
-  --rx-ease-exit:   cubic-bezier(.4, 0, 1, 1);
+  --rx-ui: 0.34s;                                 /* UI micro-interactions */
+  --rx-ease-ui: cubic-bezier(.16, .84, .44, 1);   /* gentle decelerate, no overshoot */
+  --rx-screen: 480ms;                             /* screen crossfade */
 }
