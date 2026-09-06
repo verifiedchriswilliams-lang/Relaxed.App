@@ -8,12 +8,33 @@ function capacitor(): any {
   return typeof window !== "undefined" ? (window as any).Capacitor : undefined;
 }
 
+// Resolve the native Haptics plugin. Because this web bundle deliberately does
+// NOT import @capacitor/haptics (it's shared with the non-native ElevenMind
+// build), the plugin proxy isn't auto-registered on the JS side. On the remote
+// page loaded by the iOS shell we therefore ask the injected bridge for it:
+// Capacitor.Plugins.Haptics if the bridge already exposes it, otherwise
+// registerPlugin("Haptics") which returns a proxy that forwards to the natively
+// registered plugin. Returns undefined in a plain browser (no bridge).
+function hapticsPlugin(): any {
+  const cap = capacitor();
+  if (!cap) return undefined;
+  if (cap.Plugins && cap.Plugins.Haptics) return cap.Plugins.Haptics;
+  if (typeof cap.registerPlugin === "function") {
+    try {
+      return cap.registerPlugin("Haptics");
+    } catch {
+      /* bridge present but registration unsupported */
+    }
+  }
+  return undefined;
+}
+
 export type Haptic = "light" | "medium" | "heavy" | "success";
 
 // A subtle taptic on the moments that matter (session begin, play/pause, close).
 export function haptic(kind: Haptic = "light"): void {
   try {
-    const H = capacitor()?.Plugins?.Haptics;
+    const H = hapticsPlugin();
     if (H) {
       if (kind === "success") H.notification({ type: "SUCCESS" });
       else H.impact({ style: kind.toUpperCase() });
