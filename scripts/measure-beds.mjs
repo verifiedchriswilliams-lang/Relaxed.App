@@ -74,24 +74,56 @@ async function measure(path) {
   };
 }
 
+// The four tray-audition clips (played by previewVoice), which are separate
+// recordings from the session voice and are NOT normalized in the app — so
+// they need their own measured, level-matched gains.
+const VOICES = [
+  { id: "female-us", file: "female-us.mp3" },
+  { id: "female-uk", file: "female-uk.mp3" },
+  { id: "male-us", file: "male-us.mp3" },
+  { id: "male-uk", file: "male-uk.mp3" },
+];
+
 const tmp = localDir ? null : await mkdtemp(join(tmpdir(), "beds-"));
+
+// Resolve a file to a local path: a folder passed with --dir, else download it
+// from the Blob base under the given subdir.
+async function pathFor(subdir, file, id) {
+  if (localDir) return join(localDir, file);
+  const url = `${base}/${subdir}/${file}`;
+  const res = await fetch(url);
+  if (!res.ok) {
+    console.error(`skip ${id}: ${res.status} ${url}`);
+    return null;
+  }
+  const p = join(tmp, file);
+  await writeFile(p, Buffer.from(await res.arrayBuffer()));
+  return p;
+}
+
 const rows = [];
 for (const b of BEDS) {
-  let path;
-  if (localDir) {
-    path = join(localDir, b.file);
-  } else {
-    const res = await fetch(`${base}/sounds/${b.file}`);
-    if (!res.ok) {
-      console.error(`skip ${b.id}: ${res.status} ${base}/sounds/${b.file}`);
-      continue;
-    }
-    path = join(tmp, b.file);
-    await writeFile(path, Buffer.from(await res.arrayBuffer()));
-  }
+  const path = await pathFor("sounds", b.file, b.id);
+  if (!path) continue;
   const m = await measure(path);
   rows.push({ ...b, ...m, excess: m.lufs - b.rms });
 }
+
+// Voice previews: level them to a comfortable common LUFS, capped so peaks stay
+// under -1 dBFS. Output a linear gain to plug into previewVoice.
+const PREVIEW_TARGET_LUFS = -18;
+const voiceRows = [];
+for (const v of VOICES) {
+  const path = await pathFor("voice-previews", v.file, v.id);
+  if (!path) continue;
+  const m = await measure(path);
+  const db = Number.isFinite(m.lufs)
+    ? Math.min(PREVIEW_TARGET_LUFS - m.lufs, -1 - m.peak)
+    : NaN;
+  const gain = Number.isFinite(db) ? Math.round(Math.pow(10, db / 20) * 100) / 100 : NaN;
+  voiceRows.push({ ...v, ...m, gain });
+}
+
 if (tmp) await rm(tmp, { recursive: true, force: true });
 
 // Perceptual excess = how much louder a bed reads (LUFS) than its raw RMS. The
@@ -112,3 +144,16 @@ for (const r of rows) {
   );
 }
 console.log("\nReference (median) perceived excess:", med.toFixed(1), "dB — trims are relative to it.\n");
+
+console.log("VOICE PREVIEWS (level-matched audition gains)");
+console.log("id           LUFS     truePeak   preview gain (linear)");
+for (const r of voiceRows) {
+  console.log(
+    r.id.padEnd(12),
+    String(r.lufs).padStart(6),
+    String(r.peak).padStart(8),
+    "   ",
+    Number.isFinite(r.gain) ? r.gain : "measure FAILED"
+  );
+}
+console.log("");
