@@ -72,6 +72,15 @@
   background-attachment: fixed;
 }
 
+/* Single-screen app: the page itself never scrolls or rubber-band bounces in
+   the native shell (WKWebView). Content is designed to fit one screen; inner
+   scrollers (the transcript, the soundscape rail) keep their own overflow. */
+:root[data-brand="relaxed"],
+[data-brand="relaxed"] body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 /* The earned moment: a soft glow breathes behind the mark while a session is
    composing or playing. Monochrome, so it belongs to the stem world. */
 [data-brand="relaxed"] .gen-orb,
