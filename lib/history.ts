@@ -17,18 +17,24 @@ export interface RecentSession {
 }
 
 const RECENT_KEY = "relaxed.recent.v1";
+const FAV_KEY = "relaxed.favs.v1";
 const MOOD_KEY = "relaxed.moods.v1";
-const RECENT_MAX = 3;
+// Recent is a rolling window — the last ten sessions, reverse-chronological.
+// Anything older rolls off. Favorites are the escape hatch: a starred session
+// is kept indefinitely and never rolls off, however long ago it ran.
+const RECENT_MAX = 10;
+const FAV_MAX = 100;
 
 // Two sessions are "the same" if every choice that shapes them matches, so
-// replaying keeps one entry that floats to the top rather than piling up.
-function sig(r: RecentSession): string {
+// replaying keeps one entry that floats to the top rather than piling up, and a
+// favorite can be matched back to the recent it was starred from.
+export function sessionSig(r: RecentSession): string {
   return [r.context, r.duration, r.voice, r.accent, r.soundscape, r.customText ?? ""].join("|");
 }
 
-export function loadRecent(): RecentSession[] {
+function readList(key: string): RecentSession[] {
   try {
-    const raw = localStorage.getItem(RECENT_KEY);
+    const raw = localStorage.getItem(key);
     const list = raw ? (JSON.parse(raw) as RecentSession[]) : [];
     return Array.isArray(list) ? list : [];
   } catch {
@@ -36,10 +42,18 @@ export function loadRecent(): RecentSession[] {
   }
 }
 
+export function loadRecent(): RecentSession[] {
+  return readList(RECENT_KEY);
+}
+
+export function loadFavs(): RecentSession[] {
+  return readList(FAV_KEY);
+}
+
 // Record a session as it begins, most recent first, de-duplicated. Returns the
 // new list so the caller can update state without a re-read.
 export function pushRecent(s: RecentSession): RecentSession[] {
-  const list = loadRecent().filter((r) => sig(r) !== sig(s));
+  const list = loadRecent().filter((r) => sessionSig(r) !== sessionSig(s));
   list.unshift(s);
   const capped = list.slice(0, RECENT_MAX);
   try {
@@ -48,6 +62,28 @@ export function pushRecent(s: RecentSession): RecentSession[] {
     /* storage unavailable; the in-memory list is still returned */
   }
   return capped;
+}
+
+// Whether a session is currently saved (present in the favorites list).
+export function isFav(favs: RecentSession[], s: RecentSession): boolean {
+  const k = sessionSig(s);
+  return favs.some((f) => sessionSig(f) === k);
+}
+
+// Star / unstar a session. If it's already saved it's removed; otherwise it's
+// added to the front (most-recently-saved first) and kept indefinitely. Returns
+// the new favorites list so the caller can update state without a re-read.
+export function toggleFav(s: RecentSession): RecentSession[] {
+  const k = sessionSig(s);
+  const existing = loadFavs();
+  const without = existing.filter((f) => sessionSig(f) !== k);
+  const next = without.length === existing.length ? [s, ...without].slice(0, FAV_MAX) : without;
+  try {
+    localStorage.setItem(FAV_KEY, JSON.stringify(next));
+  } catch {
+    /* best-effort */
+  }
+  return next;
 }
 
 export interface MoodEntry {

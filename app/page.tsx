@@ -12,12 +12,15 @@ import {
 } from "@/lib/contexts";
 import { asset } from "@/lib/assets";
 import { BRAND } from "@/lib/brand";
-import { StemGlyph } from "@/lib/mark";
+import { StemGlyph, OrbitGlyph } from "@/lib/mark";
 import { SoundMotif } from "@/lib/soundMotifs";
 import { haptic, setNowPlaying, setPlaybackState, clearNowPlaying } from "@/lib/native";
 import {
   loadRecent,
+  loadFavs,
   pushRecent,
+  toggleFav,
+  isFav,
   recordMood,
   type RecentSession,
 } from "@/lib/history";
@@ -55,6 +58,41 @@ function Wordmark() {
         <span>{BRAND.light}</span>
       </span>
     </div>
+  );
+}
+
+// Terse, lowercase "how long ago" for a history row (e.g. "now", "20m", "3h",
+// "2d", "1w"). Kept short so it never crowds the session line.
+function timeAgo(at: number): string {
+  const s = Math.max(0, (Date.now() - at) / 1000);
+  if (s < 45) return "now";
+  const m = s / 60;
+  if (m < 60) return `${Math.round(m)}m`;
+  const h = m / 60;
+  if (h < 24) return `${Math.round(h)}h`;
+  const d = h / 24;
+  if (d < 7) return `${Math.round(d)}d`;
+  const w = d / 7;
+  if (w < 5) return `${Math.round(w)}w`;
+  return `${Math.round(d / 30)}mo`;
+}
+
+// The save/favorite star: a thin Bone outline when not saved, filled Bone when
+// saved. Line-art in the stem language, currentColor so it inherits row colour.
+function StarGlyph({ filled }: { filled: boolean }) {
+  return (
+    <svg
+      width={19}
+      height={19}
+      viewBox="0 0 24 24"
+      fill={filled ? "currentColor" : "none"}
+      stroke="currentColor"
+      strokeWidth={filled ? 0 : 1.7}
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 3.4l2.63 5.33 5.88.86-4.25 4.15 1 5.86L12 17.7l-5.26 2.76 1-5.86-4.25-4.15 5.88-.86z" />
+    </svg>
   );
 }
 
@@ -1053,7 +1091,7 @@ function DurationSlider({
   );
 }
 
-type Screen = "setup" | "generating" | "player" | "complete";
+type Screen = "setup" | "history" | "generating" | "player" | "complete";
 
 function greetingFor(): string {
   const h = new Date().getHours();
@@ -1132,6 +1170,9 @@ export default function Home() {
   // Recent sessions (on-device) for one-tap replay, and the post-session
   // feedback the user taps on the closing screen. No accounts, no network.
   const [recent, setRecent] = useState<RecentSession[]>([]);
+  // Saved (favorited) sessions, kept indefinitely on-device — the escape hatch
+  // from the rolling ten-deep recent window.
+  const [favs, setFavs] = useState<RecentSession[]>([]);
   const [mood, setMood] = useState<string | null>(null);
 
   const engineRef = useRef<AudioEngine>(new AudioEngine());
@@ -1247,6 +1288,7 @@ export default function Home() {
       /* ignore */
     }
     setRecent(loadRecent());
+    setFavs(loadFavs());
   }, []);
 
   useEffect(() => {
@@ -1500,7 +1542,8 @@ export default function Home() {
   }
 
   // One-tap replay: restore every choice from a past session and open the tray
-  // pre-filled, ready to begin (or tweak).
+  // pre-filled, ready to begin (or tweak). Works from the home or the history
+  // page, so it returns to setup first before opening the tray.
   function replay(r: RecentSession) {
     ev("session_replay", { context: r.context, duration: r.duration });
     engineRef.current.stopPreview();
@@ -1514,7 +1557,14 @@ export default function Home() {
     setSoundPicked(true);
     setSoundTab(catOf(r.soundscape as Soundscape));
     setCustomText(r.customText ?? "");
+    setScreen("setup");
     setTrayOpen(true);
+  }
+
+  // Star / unstar a session so it's kept indefinitely, off the rolling window.
+  function toggleFavorite(r: RecentSession) {
+    haptic("light");
+    setFavs(toggleFav(r));
   }
 
   // The post-session reflection: one tap, stored on-device, never blocking.
@@ -2089,12 +2139,101 @@ export default function Home() {
         </div>
       </main>
     );
+  } else if (screen === "history") {
+    // ---- History: recent (rolling ten) + saved (kept indefinitely) ----
+    // A saved session is shown only in Saved, so it never appears twice.
+    const savedList = favs;
+    const recentList = recent.filter((r) => !isFav(favs, r));
+    const row = (r: RecentSession, i: number) => {
+      const saved = isFav(favs, r);
+      return (
+        <div className="hs-row" key={`${r.context}-${r.at}-${i}`}>
+          <button className="hs-main" onClick={() => replay(r)}>
+            <span className="hs-top">
+              <span className="hs-label">{r.label}</span>
+              <span className="hs-time">{timeAgo(r.at)}</span>
+            </span>
+            <span className="hs-sub">{r.sub}</span>
+          </button>
+          <button
+            className={`hs-star ${saved ? "on" : ""}`}
+            onClick={() => toggleFavorite(r)}
+            aria-label={saved ? "Remove from saved" : "Save this session"}
+            aria-pressed={saved}
+          >
+            <StarGlyph filled={saved} />
+          </button>
+        </div>
+      );
+    };
+    content = (
+      <main className="wrap">
+        <div className="topbar history-bar">
+          <button
+            className="hb-back"
+            onClick={() => setScreen("setup")}
+            aria-label="Back"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M15 5l-7 7 7 7"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          <Wordmark />
+          <span className="hb-spacer" />
+        </div>
+
+        <div className="history">
+          <div className="hh">
+            <OrbitGlyph size={24} className="hh-mark" />
+            <span className="hh-title">recent</span>
+          </div>
+
+          {savedList.length > 0 && (
+            <section className="hsec">
+              <div className="hsec-label">saved</div>
+              {savedList.map(row)}
+            </section>
+          )}
+
+          <section className="hsec">
+            <div className="hsec-label">recent</div>
+            {recentList.length > 0 ? (
+              recentList.map(row)
+            ) : (
+              <div className="hs-empty">
+                {savedList.length > 0
+                  ? "Nothing new since your saved sessions."
+                  : "Your recent sessions will appear here."}
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
+    );
   } else {
     // ---- Setup: the night home ----
     content = (
       <main className="wrap">
         <div className="topbar">
           <Wordmark />
+          {IS_RELAXED && (recent.length > 0 || favs.length > 0) && (
+            <button
+              className="recent-entry"
+              onClick={() => {
+                haptic("light");
+                setScreen("history");
+              }}
+              aria-label="Recent sessions"
+            >
+              <OrbitGlyph size={22} />
+            </button>
+          )}
         </div>
 
         <div className="hero">
@@ -2147,23 +2286,6 @@ export default function Home() {
             ))}
           </div>
 
-          {recent.length > 0 && (
-            <div className="recent">
-              <div className="recent-label">recent</div>
-              <div className="recent-row">
-                {recent.map((r, i) => (
-                  <button
-                    key={i}
-                    className="recent-chip"
-                    onClick={() => replay(r)}
-                  >
-                    <span className="rc-label">{r.label}</span>
-                    <span className="rc-sub">{r.sub}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="footnote">

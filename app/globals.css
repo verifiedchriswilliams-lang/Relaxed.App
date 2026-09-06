@@ -930,11 +930,65 @@ button {
   animation: done-in 0.6s ease both;
 }
 
-/* Recent sessions on the home screen: one-tap replay. */
-.recent {
-  margin-top: 22px;
+/* Recent/history: a small orbit-mark entry point in the home top-right that
+   opens a dedicated history page (recent + saved), replacing the old home
+   recents stack. */
+.recent-entry,
+.history-bar .hb-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  color: var(--ink-0);
+  opacity: 0.7;
+  cursor: pointer;
+  transition: opacity var(--t-ui) var(--ease-ui), background var(--t-ui) var(--ease-ui);
 }
-.recent-label {
+.recent-entry {
+  margin: -8px -6px -8px 0;
+}
+.history-bar .hb-back {
+  margin: -8px 0 -8px -8px;
+}
+.recent-entry:hover,
+.recent-entry:focus-visible,
+.history-bar .hb-back:hover,
+.history-bar .hb-back:focus-visible {
+  opacity: 1;
+  background: var(--glass);
+}
+/* Balances the back button so the wordmark stays centered in the history bar. */
+.hb-spacer {
+  width: 40px;
+  flex: 0 0 auto;
+}
+
+/* History page */
+.history {
+  margin-top: 30px;
+}
+.hh {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px;
+}
+.hh-mark {
+  opacity: 0.85;
+  color: var(--ink-0);
+}
+.hh-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink-0);
+}
+.hsec {
+  margin-bottom: 26px;
+}
+.hsec-label {
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.09em;
@@ -942,49 +996,83 @@ button {
   color: var(--ink-2);
   margin-bottom: 10px;
 }
-/* relaxed chrome is lowercase: keep the label as typed ("recent"). */
-[data-brand="relaxed"] .recent-label {
+/* relaxed chrome is lowercase. */
+[data-brand="relaxed"] .hsec-label {
   text-transform: none;
 }
-.recent-row {
+.hs-row {
   display: flex;
-  flex-direction: column;
+  align-items: stretch;
   gap: 8px;
+  margin-bottom: 8px;
 }
-.recent-chip {
-  width: 100%;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
+.hs-main {
+  flex: 1;
+  min-width: 0;
   text-align: left;
   cursor: pointer;
   background: var(--glass);
   border: 1px solid var(--glass-line);
   border-radius: 14px;
-  padding: 12px 15px;
-  transition: all var(--t-ui) var(--ease-ui);
+  padding: 11px 15px;
+  transition: border-color var(--t-ui) var(--ease-ui),
+    transform var(--t-ui) var(--ease-ui);
 }
-.recent-chip:hover,
-.recent-chip:focus-visible {
-  background: var(--glass-strong);
-  border-color: rgba(255, 255, 255, 0.4);
+.hs-main:hover,
+.hs-main:focus-visible {
+  border-color: var(--ink-1);
   transform: translateY(-1px);
 }
-.rc-label {
+.hs-top {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.hs-label {
   flex: 1;
   min-width: 0;
   font-size: 14.5px;
   font-weight: 600;
-  color: #fff;
+  color: var(--ink-0);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.rc-sub {
+.hs-time {
   flex: 0 0 auto;
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+.hs-sub {
+  display: block;
+  margin-top: 3px;
   font-size: 12px;
   color: var(--ink-2);
+}
+.hs-star {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  border-radius: 14px;
+  color: var(--ink-0);
+  opacity: 0.38;
+  cursor: pointer;
+  transition: opacity var(--t-ui) var(--ease-ui), background var(--t-ui) var(--ease-ui);
+}
+.hs-star:hover,
+.hs-star:focus-visible {
+  opacity: 0.8;
+  background: var(--glass);
+}
+.hs-star.on {
+  opacity: 0.95;
+}
+.hs-empty {
+  font-size: 13px;
+  color: var(--ink-2);
+  padding: 2px 2px;
 }
 
 .err {

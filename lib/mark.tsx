@@ -43,3 +43,39 @@ export function StemGlyph({
     </svg>
   );
 }
+
+// The "recent" mark: a single Bone stroke that turns counterclockwise — the orb's
+// orbit run backward — with an arrowhead leading down-left to read as going back
+// in time. Line art in the stem language (currentColor, round caps), never a
+// fill. Used for the history entry point and the history page header.
+export function OrbitGlyph({
+  size = 22,
+  strokeWidth = 1.8,
+  className,
+  title,
+}: {
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+  title?: string;
+}) {
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={strokeWidth}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      role={title ? "img" : undefined}
+      aria-hidden={title ? undefined : true}
+      aria-label={title}
+    >
+      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+      <path d="M3 3v5h5" />
+    </svg>
+  );
+}
