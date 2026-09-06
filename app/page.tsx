@@ -188,17 +188,9 @@ function soundDef(id: Soundscape): SoundDef | undefined {
   return SOUNDSCAPES.find((s) => s.id === id);
 }
 
-// A curated soundscape per intention, pre-selected when the tray opens so a bed
-// is always ready (no "Off", no disabled Begin) and the starting point feels
-// considered rather than arbitrary. The user can still audition and change it.
-const DEFAULT_SOUND: Record<ContextId, Soundscape> = {
-  meditation: "pad", // soft ambient
-  sleep: "rain",
-  flow: "lofi",
-  relax: "ocean",
-  "stress-relief": "rain",
-  custom: "pad",
-};
+// The calm nature bed that sits underneath a first-time tray (Nature tab, nothing
+// preselected) so Begin still works if the user never picks a soundscape.
+const FIRST_TIME_SOUND: Soundscape = "rain";
 
 type Accent = "us" | "uk";
 
@@ -1233,8 +1225,15 @@ export default function Home() {
   // What the collapsed "Customize" row summarizes, so the defaults are visible
   // at a glance without opening anything.
   const voiceWord = voice === "none" ? "Sounds only" : voice === "male" ? "Him" : "Her";
+  const accentFlag = accent === "us" ? "🇺🇸" : "🇬🇧";
+  // The collapsed "Customize" summary, built only from what's actually chosen so
+  // it always matches the highlighted controls inside. A chosen voice names its
+  // accent (Her 🇺🇸 vs Her 🇬🇧); nothing chosen yet stays neutral.
+  const voiceSummary = voice === "none" ? "Sounds only" : `${voiceWord} ${accentFlag}`;
   const customizeSummary =
-    voice === "none" ? `Sounds only · ${soundLabel}` : `${voiceWord} · ${soundLabel}`;
+    [voicePicked ? voiceSummary : null, soundPicked ? soundLabel : null]
+      .filter(Boolean)
+      .join(" · ") || "Voice and soundscape";
   const totalSecs = duration * 60;
   // The named guide for the current voice + accent (null when "None").
   const guide =
@@ -1458,17 +1457,36 @@ export default function Home() {
     }
   }
 
+  // Does this device have remembered preferences? Returning users see their
+  // saved voice/accent/soundscape as the active choices; first-timers get a
+  // clean slate with nothing preselected.
+  function hasSavedPrefs(): boolean {
+    try {
+      return !!localStorage.getItem(PREFS_KEY);
+    } catch {
+      return false;
+    }
+  }
+
   function chooseIntention(id: ContextId) {
     setContext(id);
     setError(null);
-    setVoicePicked(false); // open with no voice highlighted (preview on first tap)
-    // Soundscape gets a contextual default, pre-selected, so there's always a
-    // bed and Begin is never blocked. (Voice stays unselected on purpose.)
-    const ds = DEFAULT_SOUND[id] ?? "rain";
-    setSoundscape(ds);
-    setSoundPicked(true);
-    setSoundTab(catOf(ds));
-    setCustomizeOpen(false); // open as a calm, minimal ritual
+    setCustomizeOpen(false); // a calm, minimal ritual; the summary reflects state
+    if (hasSavedPrefs()) {
+      // Returning: surface the remembered voice + accent + soundscape as the
+      // active choices, on the soundscape's own tab. Nothing is reset.
+      setVoicePicked(true);
+      setSoundPicked(true);
+      setSoundTab(catOf(soundscape));
+    } else {
+      // First time: nothing preselected, opened on Nature, so the first tap both
+      // selects and previews (same as voice). A calm nature bed sits underneath
+      // so Begin still works even if they never pick one.
+      setVoicePicked(false);
+      setSoundPicked(false);
+      setSoundscape(FIRST_TIME_SOUND);
+      setSoundTab("nature");
+    }
     setTrayOpen(true);
   }
 
