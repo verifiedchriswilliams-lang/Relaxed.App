@@ -132,17 +132,23 @@ const BED_SOLO = -19; // louder for a no-voice, sounds-only session (~10% up)
 const PEAK_CEIL = -1.5; // never let a peak go above this
 
 // Measured over 28 lines per voice. `trim` is a small perceptual adjustment on
-// top of RMS matching: a compressed / dense voice sounds louder than its RMS
-// suggests, so we aim it a little lower. (female-uk has the lowest crest factor,
-// so she reads loudest at equal RMS and needs the most trim.)
+// top of RMS matching, because equal RMS is not equal loudness:
+//  - A compressed / dense voice sounds louder than its RMS suggests, so we aim
+//    it a little lower (negative trim). female-uk has the lowest crest factor,
+//    so she reads loudest at equal RMS and needs the most trim.
+//  - A lower-pitched voice carries more low-frequency energy, which the ear
+//    hears as quieter at the same measured level (equal-loudness contours), so
+//    the male voices sound softer than the women even when matched by RMS. We
+//    give them a positive trim to aim a couple dB hotter — capped by the peak
+//    ceiling in normGain, so no clipping.
 const VOICE_STATS: Record<
   string,
   { rms: number; peak: number; trim?: number }
 > = {
   "female-us": { rms: -18.5, peak: -1.6 },
-  "male-us": { rms: -25.1, peak: -5.1 },
+  "male-us": { rms: -25.1, peak: -5.1, trim: 2.5 },
   "female-uk": { rms: -14.8, peak: -1.3, trim: -3.5 },
-  "male-uk": { rms: -24.5, peak: -4.3 },
+  "male-uk": { rms: -24.5, peak: -4.3, trim: 2.5 },
 };
 
 // Linear gain to move a signal (rms/peak dBFS) toward a target loudness, capped
