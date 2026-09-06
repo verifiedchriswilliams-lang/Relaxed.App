@@ -2144,6 +2144,17 @@ export default function Home() {
     // A saved session is shown only in Saved, so it never appears twice.
     const savedList = favs;
     const recentList = recent.filter((r) => !isFav(favs, r));
+    // Build the detail line from the stored choices (not the saved `sub` string),
+    // so every row shows length, voice, accent, and soundscape — and older
+    // entries upgrade to the fuller line too. Voiceless sessions read "sounds only".
+    const metaLine = (r: RecentSession) => {
+      const mins = `${r.duration} min`;
+      if (r.voice === "none") return `${mins} · sounds only`;
+      const who = r.voice === "male" ? "Him" : "Her";
+      const acc = r.accent === "uk" ? "UK" : "US";
+      const snd = SOUNDSCAPES.find((s) => s.id === r.soundscape)?.label ?? "";
+      return [mins, who, acc, snd].filter(Boolean).join(" · ");
+    };
     const row = (r: RecentSession, i: number) => {
       const saved = isFav(favs, r);
       return (
@@ -2153,7 +2164,7 @@ export default function Home() {
               <span className="hs-label">{r.label}</span>
               <span className="hs-time">{timeAgo(r.at)}</span>
             </span>
-            <span className="hs-sub">{r.sub}</span>
+            <span className="hs-sub">{metaLine(r)}</span>
           </button>
           <button
             className={`hs-star ${saved ? "on" : ""}`}
@@ -2194,15 +2205,9 @@ export default function Home() {
             <span className="hh-title">recent</span>
           </div>
 
-          {savedList.length > 0 && (
-            <section className="hsec">
-              <div className="hsec-label">saved</div>
-              {savedList.map(row)}
-            </section>
-          )}
-
+          {/* The header already says "recent", so this group carries no eyebrow;
+              the recent sessions sit directly beneath it. */}
           <section className="hsec">
-            <div className="hsec-label">recent</div>
             {recentList.length > 0 ? (
               recentList.map(row)
             ) : (
@@ -2213,6 +2218,13 @@ export default function Home() {
               </div>
             )}
           </section>
+
+          {savedList.length > 0 && (
+            <section className="hsec">
+              <div className="hsec-label">saved</div>
+              {savedList.map(row)}
+            </section>
+          )}
         </div>
       </main>
     );

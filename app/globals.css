@@ -941,6 +941,14 @@ button {
   width: 40px;
   height: 40px;
   border-radius: 999px;
+  /* Reset the native iOS button chrome (a filled gray pill) so only the glyph
+     shows. The app's other buttons set their own background; these did not. */
+  background: transparent;
+  border: 0;
+  padding: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
   color: var(--ink-0);
   opacity: 0.7;
   cursor: pointer;
@@ -1056,6 +1064,13 @@ button {
   justify-content: center;
   width: 44px;
   border-radius: 14px;
+  /* Reset the native iOS button chrome so only the star shows. */
+  background: transparent;
+  border: 0;
+  padding: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
   color: var(--ink-0);
   opacity: 0.38;
   cursor: pointer;
