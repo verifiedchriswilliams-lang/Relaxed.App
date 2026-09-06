@@ -15,6 +15,13 @@ import { BRAND } from "@/lib/brand";
 import { StemGlyph } from "@/lib/mark";
 import { SoundMotif } from "@/lib/soundMotifs";
 import { haptic, setNowPlaying, setPlaybackState, clearNowPlaying } from "@/lib/native";
+import {
+  loadRecent,
+  pushRecent,
+  recordMood,
+  type RecentSession,
+} from "@/lib/history";
+import { ev } from "@/lib/analytics";
 
 // Which visual world are we in? relaxed swaps the aurora + coloured discs for
 // the flat, no-accent "stem" identity; ElevenMind keeps its night sky.
@@ -165,6 +172,24 @@ const DEFAULT_SOUND: Record<ContextId, Soundscape> = {
 
 type Accent = "us" | "uk";
 
+// The normalized voice gain and the bed's file + level for a given selection,
+// shared by every playback path so loudness can't drift between them. `solo`
+// (no voice) plays the bed louder; otherwise it sits under the voice.
+function bedAndVoice(voice: VoiceChoice, accent: Accent, soundscape: Soundscape) {
+  const vs = VOICE_STATS[`${voice}-${accent}`];
+  const voiceGain = vs ? normGain(vs.rms, vs.peak, VOICE_TARGET + (vs.trim ?? 0)) : 1;
+  const def = soundDef(soundscape);
+  const src = def && !def.soon ? asset(def.src) : undefined;
+  let level: number | undefined;
+  if (src && def?.rms != null && def?.peak != null) {
+    const target = voice === "none" ? BED_SOLO : BED_UNDER_VOICE;
+    level = normGain(def.rms, def.peak, target);
+  } else if (src) {
+    level = voice === "none" ? 0.85 : 0.4;
+  }
+  return { voiceGain, src, level };
+}
+
 interface Prefs {
   name: string;
   voice: VoiceChoice;
@@ -181,6 +206,14 @@ const VOICE_RATE = 1.0;
 // personally composed rather than pulled off a shelf.
 const MIN_GENERATING_MS = 8500;
 
+// Timeline cursor carried through streamInto, so a second batch of lines (the
+// Custom body, after the arrival) chains straight onto the first.
+interface StreamState {
+  started: boolean;
+  cursor: number;
+  lastSrc: AudioBufferSourceNode | null;
+}
+
 // ---------------------------------------------------------------------------
 // One audio engine for the whole session. Both the synthesized soundscape and
 // the spoken voice play through a single Web Audio context, so on mobile they
@@ -190,6 +223,14 @@ const MIN_GENERATING_MS = 8500;
 class AudioEngine {
   ctx: AudioContext | null = null;
   ambientMaster: GainNode | null = null;
+  // A gain node downstream of the master that the bed passes through, used only
+  // for voice ducking: it dips the whole bed a few dB while the guide speaks and
+  // swells it back up in the long meditative pauses. Kept separate from the
+  // master so it never fights the master's fade-in bloom or the closing fade.
+  private ambientDuck: GainNode | null = null;
+  // The bed level the duck envelope is holding just before the next attack, so
+  // each line's ramp starts from a known anchor (avoids clicks / long ramps).
+  private duckHold = 1;
   ambientNodes: AudioNode[] = [];
   voiceSegs: AudioBufferSourceNode[] = [];
   voiceGainValue = 1; // per-voice loudness normalization, set before playSegments
@@ -309,7 +350,9 @@ class AudioEngine {
           src.start(t);
           this.voiceSegs.push(src);
           lastSrc = src;
-          t += d.buffer.duration / VOICE_RATE;
+          const dur = d.buffer.duration / VOICE_RATE;
+          this.duckForLine(t, dur, d.pauseAfter);
+          t += dur;
         } catch {
           return;
         }
@@ -319,25 +362,74 @@ class AudioEngine {
     if (lastSrc) lastSrc.onended = () => this.onVoiceEnded?.();
   }
 
-  // Streaming variant for Custom: we have the whole script (text + pauses) up
-  // front, but synthesize the audio line by line so playback can START as soon
-  // as the first line is ready. Each line is scheduled on the AudioContext clock
-  // the moment it decodes; because meditation pauses are long, synthesis stays
-  // well ahead of playback. Reuses lineStarts/playStartTime, so the karaoke
-  // transcript, pause handling, and completion all work exactly as for presets.
-  async playStream(
-    segments: { text: string; pauseAfter: number }[],
-    fetchAudio: (text: string) => Promise<ArrayBuffer | null>
+  // Instant-start Custom: the personalized body isn't written yet when the user
+  // taps Begin, so we open with a short, fixed arrival (spoken through the same
+  // TTS path) the moment playback starts, then stream the body lines in behind
+  // it once Claude returns them. The bed + breathing (started by the caller) are
+  // already running, so there's no wait — the guide simply joins a beat later.
+  // Timeline, transcript sync and completion continue seamlessly across the two
+  // phases because both write into the same lineStarts / cursor state.
+  async playCustomStream(
+    arrival: { text: string; pauseAfter: number }[],
+    bodyPromise: Promise<{ text: string; pauseAfter: number }[]>,
+    fetchAudio: (text: string) => Promise<ArrayBuffer | null>,
+    onBody?: (body: { text: string; pauseAfter: number }[]) => void
   ) {
-    if (!segments?.length) return;
     const ctx = this.ensureCtx();
     await ctx.resume().catch(() => {});
+    const voiceBus = this.makeVoiceBus(ctx);
+    this.lineStarts = [];
+    const state: StreamState = {
+      started: false,
+      cursor: ctx.currentTime + 0.2,
+      lastSrc: null,
+    };
 
+    // Phase A — the arrival, playing right away.
+    if (arrival.length) {
+      await this.streamInto(ctx, voiceBus, arrival, fetchAudio, state);
+    }
+    if (this.ctx !== ctx) return; // ended during the arrival
+
+    // Phase B — the personalized body, once it's written.
+    let body: { text: string; pauseAfter: number }[] = [];
+    try {
+      body = await bodyPromise;
+    } catch {
+      body = [];
+    }
+    if (this.ctx !== ctx) return; // ended while waiting on the script
+    onBody?.(body);
+    if (body.length) {
+      await this.streamInto(ctx, voiceBus, body, fetchAudio, state);
+      // Only fade out at the true end of the guided body. If the body never
+      // arrived, we leave the bed running so it degrades to a sounds-only
+      // session rather than fading to silence after the arrival.
+      if (this.ctx === ctx && state.lastSrc) {
+        state.lastSrc.onended = () => this.onVoiceEnded?.();
+      }
+    }
+  }
+
+  private makeVoiceBus(ctx: AudioContext): GainNode {
     const voiceBus = ctx.createGain();
     voiceBus.gain.value = this.voiceGainValue;
     voiceBus.connect(ctx.destination);
     this.ambientNodes.push(voiceBus);
+    return voiceBus;
+  }
 
+  // Core streaming loop for playCustomStream: synthesize a batch of lines with a
+  // small worker pool, then schedule them in order as each decodes, chaining the
+  // timeline from `state.cursor`. Appending a second batch (the body, after the
+  // arrival) is just another call with the same state.
+  private async streamInto(
+    ctx: AudioContext,
+    voiceBus: GainNode,
+    segments: { text: string; pauseAfter: number }[],
+    fetchAudio: (text: string) => Promise<ArrayBuffer | null>,
+    state: StreamState
+  ) {
     // One promise per line, resolved by the fetch/decode workers below.
     const settle: Array<(b: AudioBuffer | null) => void> = [];
     const ready: Promise<AudioBuffer | null>[] = segments.map(
@@ -361,19 +453,14 @@ class AudioEngine {
     const CONCURRENCY = 3;
     for (let k = 0; k < Math.min(CONCURRENCY, segments.length); k++) worker();
 
-    // Schedule lines in order as each becomes available, chaining the timeline.
-    this.lineStarts = [];
-    let started = false;
-    let cursor = ctx.currentTime + 0.2;
-    let lastSrc: AudioBufferSourceNode | null = null;
     for (let i = 0; i < segments.length; i++) {
       const buf = await ready[i];
       if (this.ctx !== ctx) return; // stopped while waiting
       const now = ctx.currentTime;
-      const startAt = Math.max(cursor, now + 0.05);
-      if (!started) {
+      const startAt = Math.max(state.cursor, now + 0.05);
+      if (!state.started) {
         this.playStartTime = startAt;
-        started = true;
+        state.started = true;
       }
       this.lineStarts.push(startAt - this.playStartTime);
       let dur = 0;
@@ -385,15 +472,15 @@ class AudioEngine {
           src.connect(voiceBus);
           src.start(startAt);
           this.voiceSegs.push(src);
-          lastSrc = src;
+          state.lastSrc = src;
           dur = buf.duration / VOICE_RATE;
+          this.duckForLine(startAt, dur, segments[i].pauseAfter);
         } catch {
           return;
         }
       }
-      cursor = startAt + dur + segments[i].pauseAfter;
+      state.cursor = startAt + dur + segments[i].pauseAfter;
     }
-    if (lastSrc) lastSrc.onended = () => this.onVoiceEnded?.();
   }
 
   // Which line is being spoken right now (or just spoken, during its pause).
@@ -416,13 +503,20 @@ class AudioEngine {
     const ctx = this.ensureCtx();
     const master = ctx.createGain();
     master.gain.value = 0;
-    master.connect(ctx.destination);
+    // bed sources -> master (level + fades) -> duck (voice ducking) -> out.
+    const duck = ctx.createGain();
+    duck.gain.value = 1;
+    this.duckHold = 1;
+    master.connect(duck);
+    duck.connect(ctx.destination);
     this.ambientMaster = master;
+    this.ambientDuck = duck;
+    this.ambientNodes.push(duck);
 
     // A hosted looping bed (ElevenLabs nature/music track).
     if (src) {
       this.startFile(ctx, src, master);
-      master.gain.linearRampToValueAtTime(level ?? 0.4, ctx.currentTime + 3);
+      this.bloomMaster(master, ctx, level ?? 0.4);
       return;
     }
 
@@ -541,7 +635,78 @@ class AudioEngine {
         break;
     }
 
-    master.gain.linearRampToValueAtTime(level ?? target, ctx.currentTime + 3);
+    this.bloomMaster(master, ctx, level ?? target);
+  }
+
+  // Bed intensity arc: come in present but sparse over a few seconds (the
+  // arrival), then keep blooming to full richness over the next half-minute, so
+  // the space fills in gently rather than snapping to full the instant it opens.
+  private bloomMaster(master: GainNode, ctx: AudioContext, level: number) {
+    const t = ctx.currentTime;
+    master.gain.cancelScheduledValues(t);
+    master.gain.setValueAtTime(0, t);
+    master.gain.linearRampToValueAtTime(level * 0.82, t + 3);
+    master.gain.linearRampToValueAtTime(level, t + 30);
+  }
+
+  // Voice ducking: dip the bed while a line is spoken and, when the pause after
+  // it is long enough to be worth it, swell it back up so the silence breathes.
+  // Ramps chain from duckHold (the level held before this line) so there are no
+  // clicks and short pauses simply stay ducked instead of pumping.
+  private duckForLine(startAt: number, dur: number, pauseAfter: number) {
+    const duck = this.ambientDuck;
+    if (!duck) return;
+    const DUCK = 0.55; // bed sits ~5 dB down under the voice
+    const ATTACK = 0.3; // how quickly it dips as a line begins
+    const UNDUCK_MIN = 2; // only recover in pauses at least this long
+    const g = duck.gain;
+    // Never anchor in the past: when synthesis lags, startAt is ~now, so clamp
+    // the attack to now (the dip just happens a touch quicker) instead of
+    // scheduling a setValueAtTime behind the clock.
+    const now = this.ctx ? this.ctx.currentTime : startAt;
+    const attackStart = Math.max(startAt - ATTACK, this.playStartTime, now);
+    g.setValueAtTime(this.duckHold, attackStart);
+    g.linearRampToValueAtTime(DUCK, Math.max(startAt, attackStart + 0.01));
+    this.duckHold = DUCK;
+    const lineEnd = startAt + dur;
+    if (pauseAfter >= UNDUCK_MIN) {
+      const recStart = lineEnd + 0.25;
+      const recEnd = lineEnd + pauseAfter - 0.4;
+      if (recEnd > recStart) {
+        g.setValueAtTime(DUCK, recStart);
+        g.linearRampToValueAtTime(1, recEnd);
+        this.duckHold = 1;
+      }
+    }
+  }
+
+  // A soft singing-bowl bell, synthesized (no asset): a warm fundamental with a
+  // couple of quiet partials and a long exponential tail. Used as a gentle
+  // start and end cue. Nodes are tracked so stop() silences a ringing tail.
+  playBell(opts?: { gain?: number; f0?: number; decay?: number; when?: number }) {
+    const ctx = this.ensureCtx();
+    const t0 = ctx.currentTime + (opts?.when ?? 0);
+    const gain = opts?.gain ?? 0.07;
+    const f0 = opts?.f0 ?? 396;
+    const decay = opts?.decay ?? 5;
+    const partials: [number, number][] = [
+      [1, 1],
+      [2.01, 0.42],
+      [2.77, 0.16],
+    ];
+    for (const [ratio, rel] of partials) {
+      const osc = ctx.createOscillator();
+      osc.type = "sine";
+      osc.frequency.value = f0 * ratio;
+      const ge = ctx.createGain();
+      ge.gain.setValueAtTime(0.0001, t0);
+      ge.gain.linearRampToValueAtTime(gain * rel, t0 + 0.02);
+      ge.gain.exponentialRampToValueAtTime(0.0001, t0 + decay);
+      osc.connect(ge).connect(ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + decay + 0.1);
+      this.ambientNodes.push(osc, ge);
+    }
   }
 
   suspend() {
@@ -573,6 +738,8 @@ class AudioEngine {
     });
     this.ambientNodes = [];
     this.ambientMaster = null;
+    this.ambientDuck = null;
+    this.duckHold = 1;
   }
 
   // Audition a clip while choosing (a voice greeting, or a taste of a bed).
@@ -890,6 +1057,10 @@ function easeInOut(x: number): number {
   return x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
 }
 
+// The one-tap post-session reflection. Warm, low-pressure, all positive-or-
+// neutral so it never feels like a grade.
+const MOODS = ["much calmer", "a little calmer", "about the same"] as const;
+
 // For a position t seconds into playback, the eased breath amount (0 = fully
 // exhaled, 1 = fully inhaled / held at the top) and which phase we're in. The
 // orb scales with `pb`; the cue words read from `phase` — one source of truth,
@@ -936,6 +1107,14 @@ export default function Home() {
   const [genStep, setGenStep] = useState(0);
   const [activeLine, setActiveLine] = useState(-1);
   const [breathPhase, setBreathPhase] = useState<"in" | "hold" | "out">("in");
+  // Recent sessions (on-device) for one-tap replay, and the post-session
+  // feedback the user taps on the closing screen. No accounts, no network.
+  const [recent, setRecent] = useState<RecentSession[]>([]);
+  const [mood, setMood] = useState<string | null>(null);
+  // Onboarding as ritual: the tray opens with just the intention, duration and
+  // Begin. Voice and soundscape (excellent defaults already) live behind a
+  // "Customize" disclosure so it reads as entering a space, not filling a form.
+  const [customizeOpen, setCustomizeOpen] = useState(false);
 
   const engineRef = useRef<AudioEngine>(new AudioEngine());
   // Breathing: one smooth clock (seconds of playing time) drives both the orb
@@ -1021,6 +1200,11 @@ export default function Home() {
   const selected = getContext(context) ?? CONTEXTS[0];
   const soundLabel =
     SOUNDSCAPES.find((s) => s.id === soundscape)?.label ?? "Off";
+  // What the collapsed "Customize" row summarizes, so the defaults are visible
+  // at a glance without opening anything.
+  const voiceWord = voice === "none" ? "Sounds only" : voice === "male" ? "Him" : "Her";
+  const customizeSummary =
+    voice === "none" ? `Sounds only · ${soundLabel}` : `${voiceWord} · ${soundLabel}`;
   const totalSecs = duration * 60;
   // The named guide for the current voice + accent (null when "None").
   const guide =
@@ -1049,6 +1233,7 @@ export default function Home() {
     } catch {
       /* ignore */
     }
+    setRecent(loadRecent());
   }, []);
 
   useEffect(() => {
@@ -1253,7 +1438,61 @@ export default function Home() {
     setSoundscape(ds);
     setSoundPicked(true);
     setSoundTab(catOf(ds));
+    setCustomizeOpen(false); // open as a calm, minimal ritual
     setTrayOpen(true);
+  }
+
+  // Save the session that's starting to on-device history, so it can be replayed
+  // later with one tap. Called from begin() for every kind of session.
+  function rememberSession() {
+    const phrase = customText.trim();
+    const label = selected.custom
+      ? phrase
+        ? `“${phrase}”`
+        : selected.label
+      : selected.label;
+    const soundBit = voice === "none" ? "sounds only" : soundLabel;
+    setRecent(
+      pushRecent({
+        context,
+        label,
+        sub: `${duration} min · ${soundBit}`,
+        duration,
+        voice,
+        accent,
+        soundscape,
+        customText: selected.custom ? phrase : undefined,
+        at: Date.now(),
+      })
+    );
+  }
+
+  // One-tap replay: restore every choice from a past session and open the tray
+  // pre-filled, ready to begin (or tweak).
+  function replay(r: RecentSession) {
+    ev("session_replay", { context: r.context, duration: r.duration });
+    engineRef.current.stopPreview();
+    setError(null);
+    setContext(r.context as ContextId);
+    setDuration(r.duration as Duration);
+    setVoice(r.voice as VoiceChoice);
+    setVoicePicked(true);
+    setAccent(r.accent as Accent);
+    setSoundscape(r.soundscape as Soundscape);
+    setSoundPicked(true);
+    setSoundTab(catOf(r.soundscape as Soundscape));
+    setCustomText(r.customText ?? "");
+    setCustomizeOpen(false); // the summary line already shows the restored choices
+    setTrayOpen(true);
+  }
+
+  // The post-session reflection: one tap, stored on-device, never blocking.
+  function chooseMood(m: string) {
+    if (mood) return;
+    haptic("light");
+    setMood(m);
+    recordMood({ mood: m, context, custom: !!selected.custom });
+    ev("feedback", { mood: m, context, custom: !!selected.custom });
   }
 
   // Let all three composing steps reach their green "done" state, including the
@@ -1274,9 +1513,14 @@ export default function Home() {
 
     setError(null);
     persistPrefs();
+    rememberSession();
+    setMood(null); // fresh reflection for this session
     setElapsed(0);
     setShowTranscript(true);
     setTrayOpen(false);
+
+    const kind = voice === "none" ? "sounds" : selected.custom ? "custom" : "preset";
+    ev("session_start", { kind, context, duration, voice, accent, soundscape });
 
     // No-voice: a pure soundscape session. Skip generation and the voice
     // entirely; go straight to the player with the soundscape + breathing visual.
@@ -1289,10 +1533,10 @@ export default function Home() {
       return;
     }
 
-    // Custom: a bespoke session written live for the user's phrase, then voiced
-    // and streamed line by line so playback starts within seconds.
+    // Custom: instant start — straight to the player, bed + breathing now, and
+    // the guide streams in behind a short arrival (see beginCustom).
     if (selected.custom) {
-      await beginCustom();
+      beginCustom();
       return;
     }
 
@@ -1341,110 +1585,45 @@ export default function Home() {
     }
   }
 
-  // Custom flow: ask Claude for the bespoke script, then stream the voice.
-  async function beginCustom() {
-    setScreen("generating");
-    setGenStep(0);
-    const started = Date.now();
-    const stepA = window.setTimeout(() => setGenStep(1), 1600);
-    const stepB = window.setTimeout(() => setGenStep(2), 3600);
-    try {
-      const res = await fetch("/api/custom-script", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          phrase: customText.trim(),
-          durationMin: duration,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok)
-        throw new Error(data.error || `Request failed (${res.status})`);
-      const segs: { text: string; pauseAfter: number }[] = Array.isArray(
-        data.segments
-      )
-        ? data.segments
-        : [];
-      if (!segs.length) throw new Error("Empty session");
-
-      setScript(segs.map((s) => s.text).join("\n"));
-      setNote("");
-      setIsPreview(Boolean(data.mock));
-      // A short floor so the composing beat reads, but far shorter than the
-      // presets: streaming means the voice starts moments after this.
-      const wait = 3200 - (Date.now() - started);
-      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-      window.clearTimeout(stepA);
-      window.clearTimeout(stepB);
-      await finishComposing();
-      setScreen("player");
-      startPlaybackStream(segs);
-    } catch (e) {
-      window.clearTimeout(stepA);
-      window.clearTimeout(stepB);
-      setError(e instanceof Error ? e.message : "Something went wrong.");
-      setScreen("setup");
-    }
+  // Custom flow, instant start: no "composing" screen and no wait. We go
+  // straight to the player, start the bed + breathing immediately, speak a short
+  // fixed arrival while Claude writes the personalized body, then stream the
+  // body lines in behind the arrival (see AudioEngine.playCustomStream). If the
+  // voice is set to None it's a pure soundscape, so this path doesn't apply.
+  function customArrival(): { text: string; pauseAfter: number }[] {
+    const who = name.trim();
+    return [
+      { text: who ? `Let's begin, ${who}.` : "Let's begin.", pauseAfter: 2.4 },
+      {
+        text: "Settle into a position you can rest in, and when you feel ready, let your eyes close.",
+        pauseAfter: 3.2,
+      },
+      { text: "Take a slow breath in. And gently let it go.", pauseAfter: 4 },
+    ];
   }
 
-  function startPlayback(
-    segments: { audio: string | null; pauseAfter: number }[]
-  ) {
-    haptic("medium");
-    const eng = engineRef.current;
-    eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
-
-    // Normalize this voice to the common target so all four sound equally loud
-    // (plus a small per-voice perceptual trim).
-    const vs = VOICE_STATS[`${voice}-${accent}`];
-    eng.voiceGainValue = vs
-      ? normGain(vs.rms, vs.peak, VOICE_TARGET + (vs.trim ?? 0))
-      : 1;
-
-    // Normalize the bed to a common level: quiet under the voice, louder solo.
-    const def = soundDef(soundscape);
-    const src = def && !def.soon ? asset(def.src) : undefined;
-    let level: number | undefined;
-    if (src && def?.rms != null && def?.peak != null) {
-      const target = voice === "none" ? BED_SOLO : BED_UNDER_VOICE;
-      level = normGain(def.rms, def.peak, target);
-    } else if (src) {
-      level = voice === "none" ? 0.85 : 0.4;
-    }
-    eng.startAmbient(soundscape, src, level);
-    eng.playSegments(segments);
-    clockStart();
-    setPlaying(true);
-    setElapsed(0);
-    startTick();
-    acquireWakeLock();
+  function beginCustom() {
+    const arrival = customArrival();
+    setNote("");
+    setIsPreview(false);
+    // Show the arrival lines right away so the transcript isn't empty; the body
+    // is appended in onBody once it's written.
+    setScript(arrival.map((a) => a.text).join("\n"));
+    setScreen("player");
+    startCustomInstant(arrival);
   }
 
-  // Streaming playback for Custom: same bed + loudness as a preset, but the
-  // voice lines are synthesized on demand (via /api/tts) and played as they
-  // arrive, so the guide begins within seconds.
-  function startPlaybackStream(
-    segments: { text: string; pauseAfter: number }[]
-  ) {
+  // Kick off the instant Custom session: bed + breathing + clock start now, and
+  // the arrival/body stream through the same normalized voice bus as a preset.
+  function startCustomInstant(arrival: { text: string; pauseAfter: number }[]) {
     haptic("medium");
     const eng = engineRef.current;
-    eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
 
-    const vs = VOICE_STATS[`${voice}-${accent}`];
-    eng.voiceGainValue = vs
-      ? normGain(vs.rms, vs.peak, VOICE_TARGET + (vs.trim ?? 0))
-      : 1;
-
-    const def = soundDef(soundscape);
-    const src = def && !def.soon ? asset(def.src) : undefined;
-    let level: number | undefined;
-    if (src && def?.rms != null && def?.peak != null) {
-      level = normGain(def.rms, def.peak, BED_UNDER_VOICE);
-    } else if (src) {
-      level = 0.4;
-    }
+    const { voiceGain, src, level } = bedAndVoice(voice, accent, soundscape);
+    eng.voiceGainValue = voiceGain;
     eng.startAmbient(soundscape, src, level);
+    eng.playBell({ gain: 0.06, f0: 396, decay: 4.5 }); // soft "enter" cue
+    eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
 
     const fetchAudio = async (text: string): Promise<ArrayBuffer | null> => {
       try {
@@ -1459,8 +1638,76 @@ export default function Home() {
         return null;
       }
     };
-    eng.playStream(segments, fetchAudio);
 
+    // Reserve the arrival's spoken + pause time on the server so the body fills
+    // (duration - arrival) and the two together land on the chosen length,
+    // rather than the guide overrunning into the closing bell.
+    const leadSeconds = Math.round(
+      arrival.reduce(
+        (a, s) => a + s.text.trim().split(/\s+/).length / 2.2 + s.pauseAfter,
+        0
+      )
+    );
+
+    const bodyPromise = (async () => {
+      const res = await fetch("/api/custom-script", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          phrase: customText.trim(),
+          durationMin: duration,
+          leadSeconds,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+      if (typeof data.mock === "boolean") setIsPreview(data.mock);
+      return Array.isArray(data.segments)
+        ? (data.segments as { text: string; pauseAfter: number }[])
+        : [];
+    })();
+    // playCustomStream awaits this inside a try/catch, but it may early-return
+    // (session ended during the arrival) before it ever does; mark it handled so
+    // a rejected script fetch can't surface as an unhandled rejection.
+    bodyPromise.catch(() => {});
+
+    eng.playCustomStream(arrival, bodyPromise, fetchAudio, (body) => {
+      if (body.length) {
+        setScript(
+          [...arrival.map((a) => a.text), ...body.map((s) => s.text)].join("\n")
+        );
+      } else {
+        // The guide couldn't be written/reached; keep the bed going so it lands
+        // as a calm sounds-only session rather than an error bounce.
+        setNote(
+          "We couldn't reach your guide just now, so let the sounds carry this one. Tap End whenever you're ready."
+        );
+        ev("custom_no_body", { context, duration });
+      }
+    });
+
+    clockStart();
+    setPlaying(true);
+    setElapsed(0);
+    startTick();
+    acquireWakeLock();
+  }
+
+  function startPlayback(
+    segments: { audio: string | null; pauseAfter: number }[]
+  ) {
+    haptic("medium");
+    const eng = engineRef.current;
+    eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
+
+    // Shared loudness normalization: voice to the common target, bed quiet under
+    // the voice or louder solo (see bedAndVoice).
+    const { voiceGain, src, level } = bedAndVoice(voice, accent, soundscape);
+    eng.voiceGainValue = voiceGain;
+    eng.startAmbient(soundscape, src, level);
+    eng.playBell({ gain: 0.06, f0: 396, decay: 4.5 }); // soft "enter" cue
+    eng.playSegments(segments);
     clockStart();
     setPlaying(true);
     setElapsed(0);
@@ -1472,7 +1719,14 @@ export default function Home() {
   // little, ease into the closing screen (the audio keeps fading underneath).
   function completeSession() {
     haptic("success");
+    ev("session_complete", {
+      kind: voice === "none" ? "sounds" : selected.custom ? "custom" : "preset",
+      context,
+      duration,
+    });
     clockPause();
+    // A soft closing bell, a fifth below the opening one, as the bed winds down.
+    engineRef.current.playBell({ gain: 0.055, f0: 264, decay: 6 });
     engineRef.current.fadeOutAmbient(6);
     stopTick();
     setPlaying(false);
@@ -1502,6 +1756,16 @@ export default function Home() {
   }
 
   function end() {
+    // Left the player before the session completed → an abandon (with how far
+    // in). Completing flips completedRef first, so a natural finish isn't logged
+    // here. No free text, just the shape.
+    if (screen === "player" && !completedRef.current) {
+      ev("session_abandon", {
+        context,
+        duration,
+        elapsedSec: Math.floor(elapsedSecs()),
+      });
+    }
     engineRef.current.stop();
     clockPause();
     runStartRef.current = null;
@@ -1748,6 +2012,26 @@ export default function Home() {
           <div className="done-sub">
             Take a moment before you go. The calm is yours to keep.
           </div>
+          <div className="mood-check">
+            {mood ? (
+              <div className="mood-thanks">Thank you. Noted, just for you.</div>
+            ) : (
+              <>
+                <div className="mood-prompt">How do you feel?</div>
+                <div className="mood-row">
+                  {MOODS.map((m) => (
+                    <button
+                      key={m}
+                      className="mood-btn"
+                      onClick={() => chooseMood(m)}
+                    >
+                      {m}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
           <button
             className="done-btn"
             onClick={end}
@@ -1828,6 +2112,24 @@ export default function Home() {
               </button>
             ))}
           </div>
+
+          {recent.length > 0 && (
+            <div className="recent">
+              <div className="recent-label">recent</div>
+              <div className="recent-row">
+                {recent.map((r, i) => (
+                  <button
+                    key={i}
+                    className="recent-chip"
+                    onClick={() => replay(r)}
+                  >
+                    <span className="rc-label">{r.label}</span>
+                    <span className="rc-sub">{r.sub}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="footnote">
@@ -1935,6 +2237,31 @@ export default function Home() {
             )}
 
             <div className="opt">
+              <div className="ol">Duration</div>
+              <DurationSlider
+                stops={DURATIONS}
+                value={duration}
+                onChange={(v) => setDuration(v as Duration)}
+              />
+            </div>
+
+            <button
+              type="button"
+              className="customize"
+              onClick={() => setCustomizeOpen((v) => !v)}
+              aria-expanded={customizeOpen}
+            >
+              <span className="cz-label">Customize</span>
+              <span className="cz-summary">{customizeSummary}</span>
+              <span
+                className={`cz-chev ${customizeOpen ? "open" : ""}`}
+                aria-hidden="true"
+              />
+            </button>
+
+            {customizeOpen && (
+              <div className="cz-panel">
+            <div className="opt">
               <div className="ol">Voice</div>
               <div className="voicerow">
                 <div className="seg seg3">
@@ -2010,15 +2337,6 @@ export default function Home() {
             </div>
 
             <div className="opt">
-              <div className="ol">Duration</div>
-              <DurationSlider
-                stops={DURATIONS}
-                value={duration}
-                onChange={(v) => setDuration(v as Duration)}
-              />
-            </div>
-
-            <div className="opt">
               <div className="ol">Soundscape</div>
               <div className="soundtabs">
                 {SOUND_CATS.map((t) => (
@@ -2072,6 +2390,8 @@ export default function Home() {
                 <span className="knob" />
               </button>
             </div>
+              </div>
+            )}
 
             {error && <div className="err">{error}</div>}
 
