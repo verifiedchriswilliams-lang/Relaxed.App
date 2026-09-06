@@ -1,6 +1,6 @@
 # relaxed.app — Roadmap
 
-Living doc. relaxed.app is the standalone brand; elevenmind.io is the same
+Part of the [documentation set](./README.md). Living doc. relaxed.app is the standalone brand; elevenmind.io is the same
 codebase forked by `NEXT_PUBLIC_BRAND` (see `lib/brand.ts`). Keep scope changes
 brand-aware.
 
@@ -20,7 +20,8 @@ bigger catalog, it's "tell relaxed what you need and it makes one for you."
 - Voice Her/Him x US/UK, or None. 15 soundscapes across Nature/Music/Frequencies,
   each with a line motif in the player ring.
 - Full "stem" identity, dark-only. Breathing orb synced to the breath cue.
-- Native iOS app (Capacitor shell over the hosted site) — in App Store review.
+- Native iOS app (Capacitor shell over the hosted site) — **live on the App Store**
+  (v1.1 released; v1.1.1 in review). See [CHANGELOG.md](./CHANGELOG.md).
 - Privacy page; anonymous Vercel analytics; US + Canada; `support@relaxed.app` live;
   in-app Contact + Privacy links.
 

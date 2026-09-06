@@ -15,7 +15,7 @@ deploy, and the native app is packaging + polish.
 - A **Mac** with the latest **Xcode** (from the App Store).
 - **CocoaPods**: `sudo gem install cocoapods` (or `brew install cocoapods`).
 - An active **Apple Developer Program** membership ($99/yr).
-- **Node 18+** and this repo cloned locally.
+- **Node 22** (matches CI) and this repo cloned locally.
 
 ---
 

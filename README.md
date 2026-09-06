@@ -1,115 +1,83 @@
 # relaxed.app
 
-**AI-personalized mindfulness.** Every session is written fresh for you — your name, what you need (meditation, sleep, flow, relax, stress relief), how long, and which voice — then voiced aloud. Two AIs in a trench coat: **Claude** writes the meditation script, **ElevenLabs** speaks it.
+**AI-personalized mindfulness.** Every session is written fresh for you, your
+name, what you need (meditate, sleep, flow, relax), how long, and which voice, or
+simply what you type in your own words, then voiced aloud over an ambient
+soundscape with a breathing visual. **Claude** writes the meditation script;
+**ElevenLabs** speaks it.
 
-Built with Next.js. Runs on the web today; wraps to iOS later.
+Next.js on Vercel, live on the web at [relaxed.app](https://relaxed.app) and on the
+iOS App Store (a thin Capacitor shell over the hosted site).
 
----
-
-## How it works
-
-```
-You pick: name · goal · length · voice · soundscape
-        │
-        ▼
-Claude  ─ writes a meditation script tailored to you, with pacing/pause tags
-        │
-        ▼
-ElevenLabs ─ turns the script into a spoken voice (MP3)
-        │
-        ▼
-Browser ─ plays the voice over a synthesized soundscape,
-          with a breathing-circle visual, and remembers your prefs
-```
-
-The five session types live in `lib/contexts.ts` — each one just reshapes the tone of the script; the pipeline is identical. Soundscapes (rain / ocean / drone) are **synthesized in the browser** with the Web Audio API, so there are no audio files to license or host.
+> **📚 Full documentation:** see [`docs/`](./docs/README.md) — architecture,
+> product spec, the audio engine, data & privacy, infrastructure, security,
+> operations runbook, and more. This README is just the quick start.
 
 ---
+
+## How it works (in one breath)
+
+```
+You pick: name · intention · length · voice · soundscape   (or type a phrase)
+        │
+        ▼
+Claude   ─ writes the script (bespoke path) / templates (presets)
+        │
+        ▼
+ElevenLabs ─ voices the lines (cache-first for presets)
+        │
+        ▼
+Browser ─ plays voice + real silence over an ambient bed, with a breathing orb;
+          the custom path starts instantly and streams the body in behind a
+          spoken arrival. All prefs & history stay on the device.
+```
+
+Presets reuse pre-voiced lines from Vercel Blob, so they are fast and nearly free;
+only the bespoke "In your words" path does a full live generation. The
+"Frequencies" soundscapes are synthesized in the browser (no files); Nature and
+Music beds are hosted audio. Full detail: [docs/audio-engine.md](./docs/audio-engine.md).
 
 ## Quick start
 
 ```bash
-# 1. Install
 npm install
-
-# 2. Add your keys
-cp .env.example .env.local
-#    then open .env.local and paste in the two keys (see below)
-
-# 3. Run it
-npm run dev
-#    → open http://localhost:3000
+cp .env.example .env.local     # then paste in the keys you have
+npm run dev                    # http://localhost:3000
 ```
 
-**No keys yet?** The app still runs in **preview mode** — Claude/ElevenLabs are skipped, you get a sample script on screen and the soundscape + breathing visual, so you can feel the whole flow before spending a cent.
+**No keys?** The app runs in **preview mode**, guided silence with the script on
+screen (and a generic fallback for the custom path), so you can feel the whole
+flow before spending a cent.
 
----
+For the relaxed brand locally, set `NEXT_PUBLIC_BRAND=relaxed`. The two keys that
+unlock full behavior are `ANTHROPIC_API_KEY` (scripts) and `ELEVENLABS_API_KEY`
+(voice). The **complete environment-variable reference** is in
+[docs/infrastructure.md](./docs/infrastructure.md#3-environment-variables--complete-reference).
 
-## Getting the two API keys
+## Deploy
 
-### 1. Anthropic (Claude) — writes the script
+Production deploys automatically on push to `main` (Vercel). Set the environment
+variables in the Vercel project; keys stay server-side and never reach the browser.
+See [docs/operations-runbook.md](./docs/operations-runbook.md).
 
-1. Go to **https://console.anthropic.com** and sign in / sign up.
-2. Add a little credit (Settings → Billing — a few dollars covers a lot of testing; each session is a fraction of a cent of script).
-3. Settings → **API Keys** → **Create Key**, copy it.
-4. Paste into `.env.local` as `ANTHROPIC_API_KEY=...`
-
-### 2. ElevenLabs — speaks the script
-
-1. Go to **https://elevenlabs.io** and sign up. The **free tier** gives you monthly characters — plenty for a proof of concept. (For real usage the **Starter/Creator** plan is the one to watch; TTS is billed per character.)
-2. Click your avatar → **Profile + API key** → copy the key.
-3. Paste into `.env.local` as `ELEVENLABS_API_KEY=...`
-4. *(Optional)* Pick your two voices: open the **Voices** library, choose a male and a female voice you like, copy each voice ID, and set `ELEVENLABS_VOICE_MALE` / `ELEVENLABS_VOICE_FEMALE`. The built-in fallbacks are ElevenLabs' free preset voices "Adam" and "Rachel".
-
-**Selected production voices** (baked into the app as defaults — no env vars needed, just the API key):
-
-| Slot | Name | Voice ID |
-|------|------|----------|
-| Her · US | — | `7AvtJrjTNyBhBxEvNPIZ` |
-| Him · US | — | `6bPfTtSpgxgD0GeBVfqu` |
-| Her · UK | — | `bgU7lBMo69PNEOWHFqxM` |
-| Him · UK | Theo | `UmQN7jS1Ee8B1czsUtQh` |
-
-The user picks Her/Him and a US or UK accent in the tray; the app sends both to `/api/generate`, which resolves the right voice. Each slot can be overridden with `ELEVENLABS_VOICE_{FEMALE,MALE}_{US,UK}`. These voices live in a private ElevenLabs collection, so the account's own API key must be the one in use for them to resolve; otherwise ElevenLabs falls back to a preset voice.
-
-> **Cost note:** meditations are mostly *silence*, so the script uses `<break/>` pause tags rather than paying to synthesize quiet. A 10-minute session is only ~1,000 spoken words. Cheap per session — worth watching as users scale.
-
----
-
-## Deploy (Vercel)
-
-1. Push this repo to GitHub.
-2. Import it at **https://vercel.com/new**.
-3. Add the two environment variables (`ANTHROPIC_API_KEY`, `ELEVENLABS_API_KEY`) in the Vercel project settings.
-4. Deploy. Point `relaxed.app` at it in the domains tab.
-
-Keys live only on the server (in the `/api/generate` route) — they are never exposed to the browser.
-
----
-
-## Project layout
+## Project layout (short)
 
 ```
-app/
-  page.tsx            The whole experience: setup → generating → player
-  layout.tsx          App shell + metadata
-  globals.css         Styling (a calm first pass — Claude Design refines this)
-  api/generate/
-    route.ts          Server: Claude (script) → ElevenLabs (voice)
-lib/
-  contexts.ts         The 5 session types + the script-writer prompt
-.env.example          Copy to .env.local and fill in
+app/    Next.js routes: page.tsx (the whole app + audio engine), 3 API routes, images
+lib/    Logic: contexts, session templates, tts, voice cache, brand, marks, history, native
+scripts/ Voice-cache / preview / blob-upload / loudness tools
+docs/   Full documentation set (start at docs/README.md)
 ```
 
-## Known limitations (it's a POC)
+A file-by-file map is in [docs/repository-map.md](./docs/repository-map.md).
 
-- **Pacing** relies on ElevenLabs `<break/>` tags (max 3s each). Real minute-long silences need padding — the soundscape covers the gap after the voice ends and fades at your chosen duration. Good enough to feel the magic; a later version can stitch true silence.
-- **No accounts** — preferences are saved in `localStorage` on the device. Add auth (e.g. Supabase) when you want cross-device + saved sessions.
-- **Generate-then-play** — a session takes ~10–40s to produce. Fine for a POC; streaming/pre-generation is a later optimization.
+## Two brands, one codebase
 
-## Roadmap
+`NEXT_PUBLIC_BRAND` selects **relaxed.app** (the standalone product) or
+**ElevenMind** (the ElevenLabs demo) at build time. Keep brand-scoped changes
+brand-aware. See [docs/design-system.md](./docs/design-system.md).
 
-- **Voice + soundscape previews — shipped.** Tapping a soundscape auditions a few seconds of that bed (level-matched, fades in/out); tapping Her / Him (or switching accent) plays a short greeting clip of that voice. Soundscape previews reuse the existing beds. Voice greetings are one small cached clip per voice slot — generate them with `npm run build:previews` (or the **Build voice cache** Action, which now builds previews too); the UI stays silent for a voice until its clip exists.
-- Claude Design pass on the UI (`globals.css` + `page.tsx`).
-- Decide on accounts + saved/favorite sessions.
-- Later: Capacitor/native wrapper for the App Store.
+## License
+
+No open-source license is granted; this is proprietary software, all rights
+reserved. See [docs/third-party-ip.md](./docs/third-party-ip.md).

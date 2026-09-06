@@ -6,8 +6,13 @@ to a **Vercel Blob** store; the app resolves every audio path through
 `NEXT_PUBLIC_BLOB_BASE_URL` (see `lib/assets.ts`).
 
 The code is written so this is **safe and reversible**: while the env var is
-unset, everything is served from `/public` exactly as before. Nothing breaks
-until you flip it on — and the MP3s stay in git until you confirm Blob works.
+unset, everything is served from `/public` exactly as before.
+
+> **Status: complete.** This migration has already been done. All MP3s are
+> gitignored (only `lib/voiceCacheManifest.json` is tracked), audio is served from
+> Vercel Blob, and `NEXT_PUBLIC_BLOB_BASE_URL` is set in the Vercel project. The
+> steps below are kept as the runbook for standing up Blob again (new
+> environment, new store, or a fresh clone).
 
 Small images (`public/aurora.jpg`, the OG images) stay in git — this is only
 about the large audio.
@@ -49,13 +54,11 @@ about the large audio.
    The app now streams audio from Blob. Test a session end to end — pick a
    soundscape, generate, confirm the voice and bed both play.
 
-## Remove the MP3s from git (after it's confirmed working)
+## Remove the MP3s from git (done)
 
-7. Tell me it's working and I'll push a commit that `git rm`s
-   `public/sounds/*.mp3` + `public/voice-cache/*.mp3` and adds a `.gitignore`
-   so they never creep back in. That's the commit that actually shrinks the
-   repo — held until you've confirmed Blob is live so there's always a working
-   fallback.
+7. **Complete.** The MP3s are removed from git and `.gitignore` excludes all
+   audio (`*.mp3`, `public/sounds/`, `public/voice-cache/`, `public/voice-previews/`),
+   so they never creep back in. Only `lib/voiceCacheManifest.json` is tracked.
 
 ## How it works afterward
 

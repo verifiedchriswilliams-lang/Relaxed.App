@@ -1,5 +1,11 @@
 # Phase 0 web — QA checklist (`phase0-web` preview)
 
+> **Historical record.** Phase 0 shipped to production; this is the checklist that
+> was used to validate the `phase0-web` preview before merge. It is kept as a
+> template for manual QA of future releases (there is no automated test suite yet,
+> see [risks-tech-debt.md](./risks-tech-debt.md#testing)). Adapt the preview URL
+> and items per release.
+
 Run this on the **Vercel preview** for `phase0-web`, ideally on a **real phone**
 (the audio and haptics need a device, not a desktop tab). Nothing here is live on
 relaxed.app until the branch is merged.
