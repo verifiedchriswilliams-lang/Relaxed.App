@@ -19,6 +19,9 @@ interface Body {
   // start). Subtracted from the fill target so the body plus the arrival add up
   // to the chosen length, and the closing line isn't clipped by the timer.
   leadSeconds?: number;
+  // The exact arrival lines already spoken to the user (instant start), so the
+  // body can continue seamlessly instead of greeting/settling a second time.
+  arrivalText?: string;
 }
 
 export interface CustomSegment {
@@ -75,18 +78,33 @@ function fitToDuration(
   });
 }
 
-function buildPrompt(name: string, phrase: string, durationMin: number): string {
+function buildPrompt(
+  name: string,
+  phrase: string,
+  durationMin: number,
+  arrivalText?: string
+): string {
   const band = getDurationBand(durationMin);
   // Enough separate spoken lines to anchor a session of this length: the pauses
   // between them fill the time, but there must be enough lines to spread across
   // it (too few and the session cannot reach its duration).
   const lineTarget = Math.max(8, Math.min(28, Math.round(durationMin * 1.2) + 4));
+  // Instant start plays a fixed arrival first (greeting + settling breath). When
+  // present, the body must CONTINUE from it, not restart with a second greeting.
+  const opening = arrivalText
+    ? [
+        `IMPORTANT — the session has ALREADY BEGUN. The person was just greeted and guided to settle in with these exact spoken lines: "${arrivalText}"`,
+        `Continue seamlessly from there. Do NOT greet them again, do NOT re-introduce yourself, and do NOT repeat the settling-in or the first breath. Your FIRST line should go straight to gently acknowledging what they named (paraphrase it warmly, in your own words, not verbatim), then guide plain, secular breath-and-body mindfulness shaped to that situation, and let the close speak back to it. Use their name again only in the very last line, a warm closing.`,
+      ]
+    : [
+        `Build the whole session around their words. Open by gently acknowledging what they named (paraphrase it warmly, in your own words, do not just repeat it back verbatim), then guide plain, secular breath-and-body mindfulness shaped to that situation, and let the close speak back to it. Greet them by name near the start, and make the very last line a warm closing that addresses them by name again.`,
+      ];
   return [
     `Name: ${name}`,
     `Session type: Custom, written live for what this person is carrying right now.`,
     `What they typed (a short phrase): "${phrase}"`,
     ``,
-    `Build the whole session around their words. Open by gently acknowledging what they named (paraphrase it warmly, in your own words, do not just repeat it back verbatim), then guide plain, secular breath-and-body mindfulness shaped to that situation, and let the close speak back to it. Greet them by name near the start, and make the very last line a warm closing that addresses them by name again.`,
+    ...opening,
     `SAFETY: If their words suggest they may be in crisis or thinking of harming themselves, keep the session especially gentle and grounding, make no attempt at therapy or advice, and include one soft line that reaching out to someone they trust, or a helpline, is a strong and kind thing to do. Otherwise do not mention helplines. Never diagnose, and never promise an outcome.`,
     `Target length: ${durationMin} minutes`,
     `Pacing for this length: ${band.guidance}`,
@@ -97,9 +115,15 @@ function buildPrompt(name: string, phrase: string, durationMin: number): string 
 }
 
 // A no-key fallback so Custom still demonstrates end to end in preview mode.
-function fallbackScript(name: string, phrase: string): CustomSegment[] {
+function fallbackScript(
+  name: string,
+  phrase: string,
+  hasArrival = false
+): CustomSegment[] {
   const who = name || "there";
-  return [
+  const lines: CustomSegment[] = [
+    // Opening (greeting + settle + first breath). Dropped when the client's
+    // instant-start arrival has already done this, so we don't double-intro.
     { text: `Hello, ${who}. Let's take this time for what you're carrying.`, pauseAfter: 6 },
     { text: `Settle into a comfortable position, and let the eyes close.`, pauseAfter: 8 },
     { text: `Take one slow breath in, and let it go completely.`, pauseAfter: 10 },
@@ -108,6 +132,7 @@ function fallbackScript(name: string, phrase: string): CustomSegment[] {
     { text: `There is nothing to fix right now. Only this breath, and the next.`, pauseAfter: 14 },
     { text: `When you're ready, ${who}, let the eyes open, gently.`, pauseAfter: 4 },
   ];
+  return hasArrival ? lines.slice(3) : lines;
 }
 
 export async function POST(req: NextRequest) {
@@ -127,6 +152,7 @@ export async function POST(req: NextRequest) {
     Math.max(0, Number(body.leadSeconds) || 0),
     durationMin * 20
   );
+  const arrivalText = (body.arrivalText || "").replace(/\s+/g, " ").trim().slice(0, 300) || undefined;
   if (!phrase) return NextResponse.json({ error: "No phrase" }, { status: 400 });
 
   const who = name || "friend";
@@ -134,7 +160,7 @@ export async function POST(req: NextRequest) {
 
   // Preview mode: no key, still return a coherent (generic) bespoke-ish session.
   if (!apiKey) {
-    const segs = fitToDuration(fallbackScript(name, phrase), durationMin, leadSeconds);
+    const segs = fitToDuration(fallbackScript(name, phrase, !!arrivalText), durationMin, leadSeconds);
     return NextResponse.json({ segments: segs, mock: true });
   }
 
@@ -144,7 +170,9 @@ export async function POST(req: NextRequest) {
       model: DEFAULT_MODEL,
       max_tokens: 1600,
       system: SCRIPT_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: buildPrompt(who, phrase, durationMin) }],
+      messages: [
+        { role: "user", content: buildPrompt(who, phrase, durationMin, arrivalText) },
+      ],
     });
     const raw = msg.content
       .filter((b): b is Anthropic.TextBlock => b.type === "text")
@@ -155,7 +183,7 @@ export async function POST(req: NextRequest) {
     let segs = fitToDuration(parseBreaks(raw), durationMin, leadSeconds);
     if (segs.length < 3) {
       // Model returned something unusable; fall back so the session still plays.
-      segs = fitToDuration(fallbackScript(name, phrase), durationMin, leadSeconds);
+      segs = fitToDuration(fallbackScript(name, phrase, !!arrivalText), durationMin, leadSeconds);
     }
     return NextResponse.json({ segments: segs });
   } catch (e) {

@@ -1689,6 +1689,9 @@ export default function Home() {
           phrase: customText.trim(),
           durationMin: duration,
           leadSeconds,
+          // The exact arrival already spoken, so the body continues from it
+          // instead of greeting/settling a second time.
+          arrivalText: arrival.map((a) => a.text).join(" "),
         }),
       });
       const data = await res.json();
