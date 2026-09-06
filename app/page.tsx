@@ -1471,8 +1471,11 @@ export default function Home() {
   function chooseIntention(id: ContextId) {
     setContext(id);
     setError(null);
-    setCustomizeOpen(false); // a calm, minimal ritual; the summary reflects state
-    if (hasSavedPrefs()) {
+    const returning = hasSavedPrefs();
+    // Collapsed only for remembered users (their voice/sound are saved defaults);
+    // anyone not being remembered opens expanded to set up their session.
+    setCustomizeOpen(!returning);
+    if (returning) {
       // Returning: surface the remembered voice + accent + soundscape as the
       // active choices, on the soundscape's own tab. Nothing is reset.
       setVoicePicked(true);
