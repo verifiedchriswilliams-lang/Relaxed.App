@@ -51,16 +51,23 @@ if (!localDir && !base) {
   process.exit(1);
 }
 
-// Run ffmpeg's ebur128 and parse integrated loudness (I) + true peak.
+// Run ffmpeg's ebur128 and parse integrated loudness (I) + true peak. ffmpeg
+// logs the summary to stderr and exits 0 on success, so read stderr from BOTH
+// the resolved result and any error, with a big buffer for the per-frame logs.
 async function measure(path) {
-  let stderr = "";
+  let out = "";
   try {
-    await run("ffmpeg", ["-hide_banner", "-nostats", "-i", path, "-af", "ebur128=peak=true", "-f", "null", "-"]);
+    const r = await run(
+      "ffmpeg",
+      ["-hide_banner", "-nostats", "-i", path, "-af", "ebur128=peak=true", "-f", "null", "-"],
+      { maxBuffer: 1024 * 1024 * 128 }
+    );
+    out = (r.stderr || "") + (r.stdout || "");
   } catch (e) {
-    stderr = e.stderr || "";
+    out = (e.stderr || "") + (e.stdout || "");
   }
-  const lufs = stderr.match(/I:\s*(-?\d+(?:\.\d+)?)\s*LUFS/g)?.pop();
-  const peak = stderr.match(/Peak:\s*(-?\d+(?:\.\d+)?)\s*dBFS/g)?.pop();
+  const lufs = out.match(/I:\s*(-?\d+(?:\.\d+)?)\s*LUFS/g)?.pop();
+  const peak = out.match(/Peak:\s*(-?\d+(?:\.\d+)?)\s*dBFS/g)?.pop();
   return {
     lufs: lufs ? parseFloat(lufs.match(/(-?\d+(?:\.\d+)?)/)[1]) : NaN,
     peak: peak ? parseFloat(peak.match(/(-?\d+(?:\.\d+)?)/)[1]) : NaN,
