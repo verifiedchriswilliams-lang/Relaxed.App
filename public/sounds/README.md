@@ -1,49 +1,40 @@
 # Soundscape audio files (ElevenLabs)
 
-The **Frequencies** tab (Brown Noise, 432 Hz, Binaural, Delta, Theta) is
-synthesized live in the browser and needs no files.
+All 15 soundscape beds are ElevenLabs recordings served as looping MP3s. They are
+**not** committed to git; they live in Vercel Blob and are resolved at runtime
+through `NEXT_PUBLIC_BLOB_BASE_URL` (see `lib/assets.ts` and
+[../../docs/infrastructure.md](../../docs/infrastructure.md)). This folder holds
+this README plus any beds you keep locally for offline dev.
 
-The **Nature** and **Music** tabs use looping audio files. A few are synthesized
-today (Rain, Ocean Waves, Wind, Ambient); the rest are marked **soon** in the app
-until their file is dropped in here. To light one up: add the file at the exact
-path below, then flip `soon: true` off for that entry in `app/page.tsx`
-(the `SOUNDSCAPES` array). Send me the files and I'll wire them in.
+The three families (Nature / Music / Frequencies) are all file-based today. The
+Web Audio engine still contains procedural generators (noise, tones, binaural),
+but no current soundscape uses them, so they are effectively legacy.
 
-## Files to add
+## The beds (paths are relative to `/sounds/`)
 
-| Tab | Option | Save the file as |
-|-----|--------|------------------|
-| Nature | Thunderstorm | `public/sounds/nature/thunderstorm.mp3` |
-| Nature | Windchimes | `public/sounds/nature/windchimes.mp3` |
-| Music | Piano | `public/sounds/music/piano.mp3` |
-| Music | LoFi | `public/sounds/music/lofi.mp3` |
-| Music | Singing Bowls | `public/sounds/music/singing-bowls.mp3` |
-| Music | Strings | `public/sounds/music/strings.mp3` |
+| Family | Options (files) |
+|--------|-----------------|
+| Nature | `Rain.mp3`, `Ocean.mp3`, `Wind.mp3`, `Thunderstorm.mp3`, `WindChimes.mp3` |
+| Music | `Ambient.mp3`, `Piano.mp3`, `LoFi.mp3`, `Singing-Bowl.mp3`, `Harp.mp3` |
+| Frequencies | `BrownNoise.mp3`, `432Hz.mp3`, `Binaural.mp3`, `Delta.mp3`, `Theta.mp3` |
 
-Optional: you can also replace the synthesized ones with ElevenLabs versions by
-adding `rain.mp3` / `ocean.mp3` / `wind.mp3` (Nature) and `ambient.mp3` (Music),
-and pointing those entries at the files.
+The `src`, family, and measured loudness (`rms`/`peak`/`trim`) for each live in the
+`SOUNDSCAPES` array in `app/page.tsx`.
+
+## Adding or replacing a bed
+
+1. Produce a seamless ~60s loop (see guidance below) and name it to match the
+   `src` in `SOUNDSCAPES` (or add a new entry there + a motif in
+   `lib/soundMotifs.tsx`).
+2. Upload it to Blob: `node scripts/upload-blob.mjs public/sounds` (see
+   [../../docs/operations-runbook.md](../../docs/operations-runbook.md)).
+3. Measure and set its loudness trim: `node scripts/measure-beds.mjs`.
 
 ## What makes a good file
 
 - **Format:** `.mp3` (or `.m4a`), mono or stereo, ~128 kbps is plenty.
-- **Length:** about **60 seconds**. The app loops it seamlessly, so it should
-  **loop cleanly** — no obvious click, fade, or "seam" at the wrap point. In the
-  ElevenLabs catalog these are usually labelled as loops; when generating, ask
-  for a seamless/loopable ambient bed.
-- **Level:** consistent, no big volume swings or a loud transient right at the
-  start. The app already mixes these under the voice.
-- **Keep it calm:** no sudden peaks (a thunderclap is fine, but keep it gentle
-  and spread out, not a jump-scare).
-
-## How to get them from ElevenLabs
-
-Either route works:
-1. **Catalog / library:** download a ~1-minute loopable ambient track (e.g.
-   "ambient rain for meditation") and save it under the matching name above.
-2. **Generate:** use Sound Effects for nature (thunderstorm, windchimes) and
-   Music for the musical beds (piano, LoFi, singing bowls, strings), request a
-   loopable ~60s clip, and save it under the matching name.
-
-Drop the files in these folders (or send them to me) and they go live on the
-next deploy.
+- **Length:** about **60 seconds**, looping cleanly (no click/fade/seam at the
+  wrap). When generating in ElevenLabs, ask for a seamless/loopable ambient bed.
+- **Level:** consistent, no big swings or a loud transient at the start (the app
+  mixes these under the voice and applies a measured trim).
+- **Keep it calm:** no sudden peaks or jump-scares.

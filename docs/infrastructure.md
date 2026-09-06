@@ -7,8 +7,9 @@
 
 - **Web app:** Next.js 14.2.35 on **Vercel**. `next.config.mjs` is empty (no custom
   rewrites, headers, image config, or output mode). API routes run as Node.js
-  serverless functions; the image routes (`icon`, `apple-icon`, `opengraph-image`,
-  `twitter-image`, `artwork`) run on the edge runtime.
+  serverless functions; the `opengraph-image`, `twitter-image`, and `artwork`
+  routes declare the edge runtime, while `icon` and `apple-icon` use the default
+  runtime (both build brand-aware PNGs via `next/og`).
 - **Deploy trigger:** push to `main` → Vercel builds and deploys to production.
   Web changes reach every user immediately, including installed iOS apps (the app
   is a shell over the hosted site).
@@ -99,8 +100,10 @@ are handled by Vercel's Git integration on push to `main`.
 
 ## 7. Runtimes & limits worth knowing
 
-- `/api/generate`: Node runtime, `maxDuration 300s`; inline audio kept under
-  Vercel's ~4.5 MB response cap by using a compact format for live lines.
+- `/api/generate`: Node runtime, `maxDuration 300s`. Cached lines are Blob URLs
+  (off the payload); a not-yet-cached common line is synthesized inline in a
+  compact format (`mp3_22050_32`) to stay under Vercel's ~4.5 MB response cap,
+  while the live name line is inline at full fidelity (`mp3_44100_128`).
 - `/api/custom-script`: Node runtime, `maxDuration 60s`.
 - `/api/tts`: Node runtime, `maxDuration 60s`, `Cache-Control: no-store`.
 

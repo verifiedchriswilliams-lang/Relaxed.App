@@ -1,0 +1,23 @@
+name: Docs check
+
+# Guards against documentation drift: broken internal links, and pinned facts
+# (model default, voice-cache size, breath cadence, stem-mark path, versions,
+# storage keys, brand colours) that changed in the code but not in docs/.
+# See scripts/check-docs.mjs.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Check documentation is in sync with the code
+        run: node scripts/check-docs.mjs

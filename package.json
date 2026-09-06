@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "check:docs": "node scripts/check-docs.mjs",
     "build:voices": "node scripts/build-voice-cache.mjs",
     "build:previews": "node scripts/build-voice-previews.mjs",
     "ios:assets": "capacitor-assets generate --ios --assetPath assets",

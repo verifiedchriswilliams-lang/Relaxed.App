@@ -88,8 +88,10 @@ Presets are made nearly free by pre-voicing their reusable lines:
   URL (free, fast); the **name line and any uncached line** are synthesized live.
   A bounded worker pool (`TTS_CONCURRENCY`, default 4, max 6) does the live calls;
   a per-line failure yields `null` audio (the pause is kept).
-- Inline live audio uses a compact format (`mp3_22050_32`) to stay under Vercel's
-  ~4.5 MB response cap; the cache itself is higher quality (`mp3_44100_128`).
+- Live **name** lines are returned inline at full fidelity (`CACHE_FORMAT`,
+  `mp3_44100_128`); a not-yet-cached **common** line is synthesized inline in a
+  compact format (`mp3_22050_32`) to stay under Vercel's ~4.5 MB response cap.
+  Cached common lines are served as Blob URLs, off the payload entirely.
 - The cache is rebuilt by `scripts/build-voice-cache.mjs` (see
   [voice-cache.md](./voice-cache.md) and [operations-runbook.md](./operations-runbook.md)).
 
@@ -106,10 +108,13 @@ ambient bed (file loop or synth) ──► ambientMaster ──► ambientDuck �
 
 - **Voice bus:** one gain node per session at the normalized voice level; every
   spoken line is a `BufferSource` through it.
-- **Ambient bed:** either a hosted looping MP3 (`startFile`, `loop = true`) or a
-  procedurally synthesized bed for the "Frequencies" family — brown/white/pink
-  noise (Paul Kellet pink), filtered noise with an LFO swell, sine-partial tones,
-  and binaural (two panned carriers). No audio files needed for those.
+- **Ambient bed:** all 15 current soundscapes (Nature, Music, and Frequencies) are
+  hosted looping MP3s (`startFile`, `loop = true`) served from Blob. The engine
+  also contains procedural generators, brown/white/pink noise (Paul Kellet pink),
+  filtered noise with an LFO swell, sine-partial tones, and binaural (two panned
+  carriers), but **no current soundscape uses them** (every bed has a `src`), so
+  that synthesis path is effectively legacy/unused today. See
+  [risks-tech-debt.md](./risks-tech-debt.md).
 - **Bloom** (`bloomMaster`): the bed comes in sparse (0 → 82% of level over 3s)
   then fills to full over 30s, so a session opens quietly and settles.
 - **Ducking** (`duckForLine`): the bed dips to ~55% (~5 dB) under each spoken
@@ -163,10 +168,11 @@ with per-source perceptual trims measured offline.
 
 15 beds across three families:
 
-- **Nature** (rain, ocean, wind, thunderstorm, windchimes) and **Music** (ambient
-  pad, piano, lo-fi, singing bowls, harp): looping MP3 files served from Blob.
-- **Frequencies** (brown noise, 432 Hz, binaural, delta, theta): **synthesized
-  live in the browser** — no files.
+- **Nature** (rain, ocean, wind, thunderstorm, windchimes), **Music** (ambient
+  pad, piano, lo-fi, singing bowls, harp), and **Frequencies** (brown noise,
+  432 Hz, binaural, delta, theta) are **all looping MP3 files** (ElevenLabs
+  recordings) served from Blob. (The Frequencies beds were once browser-synthesized
+  but are now files, like the rest; the engine's synth generators are unused.)
 - `FIRST_TIME_SOUND = "rain"` is the default bed for a new user. A sounds-only
   session (voice = none) plays just the bed at the solo target with the breathing
   orb, calling neither AI provider.

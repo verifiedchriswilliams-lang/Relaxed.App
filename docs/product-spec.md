@@ -26,8 +26,8 @@ what you need and it makes one for you."
 
 - **Nature:** Rain, Ocean Waves, Wind, Thunderstorm, Windchimes.
 - **Music:** Ambient, Piano, LoFi, Singing Bowls, Harp.
-- **Frequencies:** Brown Noise, 432 Hz, Binaural, Delta, Theta (synthesized live
-  in the browser).
+- **Frequencies:** Brown Noise, 432 Hz, Binaural, Delta, Theta (ElevenLabs
+  recordings, like the other families).
 
 Each soundscape also has a bespoke **line motif** that animates inside the player's
 breathing ring (`lib/soundMotifs.tsx`).
@@ -101,8 +101,9 @@ Reached from the orbit mark. Two groups:
   intention/phrase, time-ago, and detail (`length · Her/Him · US/UK · soundscape`,
   or `length · sounds only`). Tap to replay (restores every choice and opens the
   tray).
-- **saved:** starred sessions, kept indefinitely (they do not roll off). Star from
-  any recent row; a saved session shows only under Saved so it never appears twice.
+- **saved:** starred sessions, kept indefinitely (they do not roll off the way
+  recent does; the store caps at 100). Star from any recent row; a saved session
+  shows only under Saved so it never appears twice.
 
 All history is on-device (`localStorage`); see [data-privacy.md](./data-privacy.md).
 

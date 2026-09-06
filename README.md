@@ -33,9 +33,9 @@ Browser ─ plays voice + real silence over an ambient bed, with a breathing orb
 ```
 
 Presets reuse pre-voiced lines from Vercel Blob, so they are fast and nearly free;
-only the bespoke "In your words" path does a full live generation. The
-"Frequencies" soundscapes are synthesized in the browser (no files); Nature and
-Music beds are hosted audio. Full detail: [docs/audio-engine.md](./docs/audio-engine.md).
+only the bespoke "In your words" path does a full live generation. All 15
+soundscape beds (Nature, Music, and Frequencies) are hosted audio served from
+Blob. Full detail: [docs/audio-engine.md](./docs/audio-engine.md).
 
 ## Quick start
 

@@ -63,11 +63,11 @@ This is the highest-value IP question after the source code.
   distribution (ElevenLabs voices carry per-voice usage terms; some are the
   customer's, some are ElevenLabs library voices with their own conditions). This
   should be documented per voice before close.
-- **Soundscape beds:** the Nature/Music beds are hosted MP3s (roadmap describes
-  them as ElevenLabs catalog loops or generated). **[confirm]** the source and
-  license of each bed file. The Frequencies family (brown noise, 432 Hz, binaural,
-  delta, theta) is **synthesized in-browser** with no files, so it carries no
-  third-party asset licensing.
+- **Soundscape beds:** **all 15 beds** (Nature, Music, and Frequencies) are hosted
+  MP3s described as ElevenLabs catalog loops or generated audio. **[confirm]** the
+  source and commercial license of each bed file, including the Frequencies family
+  (brown noise, 432 Hz, binaural, delta, theta), which are ElevenLabs recordings
+  too, not browser-synthesized, so they **do** carry third-party asset licensing.
 - **Bells** are synthesized in the Web Audio engine (no sample files).
 - **Fonts:** Manrope and Figtree are open-source (SIL Open Font License) **[confirm]**,
   loaded via `next/font` (Google Fonts).

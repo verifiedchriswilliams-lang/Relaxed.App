@@ -40,16 +40,38 @@ grounded in the actual code, with every non-obvious claim traceable to a file.
   handoff: mark geometry, palette, type, motion, and production SVG artwork + tokens.
 - `screenshots/` — reference captures of the main screens (home, tray, composing, player).
 
-## Conventions for keeping this living
+## Keeping this living (enforced, not just hoped)
 
-- **Source of truth is the code.** When a doc and the code disagree, the code
-  wins and the doc is wrong — fix the doc. Known discrepancies are tracked in
+Documentation is part of the definition of done, and there are mechanisms to keep
+it that way:
+
+- **`npm run check:docs`** ([scripts/check-docs.mjs](../scripts/check-docs.mjs))
+  validates every internal link and a set of pinned, drift-prone facts read live
+  from the code (Claude model default, voice-cache size, breath cadence, the
+  stem-mark path, dependency versions, on-device storage keys, brand colours). If
+  a pinned value changes in code but not in the docs, the check fails.
+- **CI** runs the same check on every push and PR
+  ([.github/workflows/docs-check.yml](../.github/workflows/docs-check.yml)), so
+  drift fails the build.
+- **[CLAUDE.md](../CLAUDE.md)** carries the working agreement and the **code → docs
+  map**: which doc to update when you touch a given part of the code. Since
+  development is AI-assisted, this is loaded every session.
+- **The PR template** ([.github/pull_request_template.md](../.github/pull_request_template.md))
+  carries a docs checklist.
+
+Conventions:
+
+- **Source of truth is the code** for behavior; the **brand package**
+  ([brand/relaxed-stem/](./brand/relaxed-stem/README.md)) is the source of truth
+  for identity. When a doc and the code disagree, fix the doc. Known items:
   [risks-tech-debt.md](./risks-tech-debt.md#documentation-reconciliation).
 - **Cite files.** Prefer `path:line` references over prose descriptions of code.
-- **Update on change.** A material change to a subsystem should update the
-  relevant doc in the same commit. Releases get a [CHANGELOG](./CHANGELOG.md) entry.
+- **Update in the same commit.** A material change updates its doc; user-facing
+  changes get a [CHANGELOG](./CHANGELOG.md) entry.
 - **No em dashes in user-facing product copy** (a brand rule). These internal
   docs are exempt, but the app's strings must use commas, periods, or "and".
+- **Add a pin.** When you add a value worth protecting from drift, add a check to
+  `scripts/check-docs.mjs` so it can never silently fall out of sync again.
 
 _Last full pass: 2026-09-07 (Sunday). Reconcile the items in
 [risks-tech-debt.md](./risks-tech-debt.md#documentation-reconciliation) when

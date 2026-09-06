@@ -29,12 +29,17 @@
 - 🟠 **One very large component.** `app/page.tsx` is ~2,580 lines holding the UI
   state machine and the `AudioEngine`. It works and is commented, but it should be
   decomposed (extract the engine and each screen) before the team grows.
-- 🟠 **No CI quality gate.** The two GitHub Actions are content-build utilities;
-  there is no automated build/lint/test check on PRs. Vercel catches build breaks
-  post-push, not pre-merge.
+- 🟠 **Limited CI quality gate.** A docs-drift check now runs in CI
+  (`.github/workflows/docs-check.yml`), but there is still no automated
+  build/lint/test check on PRs. Vercel catches build breaks post-push, not
+  pre-merge.
 - 🟢 **No committed ESLint config.** `npm run lint` would scaffold one on first
   run; there is no enforced ruleset today.
 - 🟢 **No dependency scanning.** No Dependabot/Snyk; low-cost to add.
+- 🟢 **Dead/legacy audio code.** The `AudioEngine` retains procedural bed
+  generators (noise/tones/binaural), but all 15 soundscapes are now files, so that
+  synthesis path is unused. Remove it, or re-wire a soundscape to it, to avoid
+  confusion.
 
 ## Security & abuse
 <a id="security--abuse"></a>
@@ -95,6 +100,21 @@ Discrepancies found during this documentation pass (code is authoritative):
   at this docs set.
 - 🟢 **Legacy storage key name.** On-device prefs use `elevenmind.prefs.v1` for both
   brands. Harmless, but confusing; consider a brand-neutral key with a migration.
+- 🟢 **`--rx-breath` undefined in the app.** `app/relaxed.css` references
+  `var(--rx-breath, 11s)` for the composing/closing ornamental pulse but never
+  defines `--rx-breath`, so that ornament runs at the 11s fallback while the
+  guided breath (player ring + cue) runs 14.5s. The brand token file lists the
+  guided breath as 14.5s. Decide whether the ornament should match 14.5s (define
+  the variable) or stay a distinct shorter loop; today it is an accidental
+  fallback, not an explicit choice.
+- 🟢 **Second regression pass (2026-09-07) corrections.** Fixed doc claims that the
+  Frequencies soundscapes are browser-synthesized (they are now ElevenLabs files,
+  which also has an IP-licensing implication in [third-party-ip.md](./third-party-ip.md)),
+  that `icon`/`apple-icon` run on the edge runtime (they do not), that all inline
+  live audio is compact (the name line is full-fidelity), that saved sessions are
+  uncapped (they cap at 100), and the screen-transition duration (shipped 0.9s,
+  the brand tokens said 480ms). `public/sounds/README.md` was rewritten (it
+  described pending "soon" beds and browser-synthesized Frequencies).
 
 ## Suggested first 90 days for an acquiring team
 

@@ -41,5 +41,5 @@
   --rx-ease-breath: cubic-bezier(.37, 0, .63, 1);
   --rx-ui: 0.34s;                                 /* UI micro-interactions */
   --rx-ease-ui: cubic-bezier(.16, .84, .44, 1);   /* gentle decelerate, no overshoot */
-  --rx-screen: 480ms;                             /* screen crossfade */
+  --rx-screen: 0.9s;                              /* screen fade-and-settle (rx-screen-in) */
 }

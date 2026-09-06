@@ -209,8 +209,8 @@ Shipped values (these are the source of truth):
 - **UI micro-interactions 0.34s**, a single soft decelerate `cubic-bezier(.16,.84,.44,1)`
   with no overshoot or bounce. This one curve is the app's motion signature (tabs,
   chips, inputs, buttons, selection).
-- **Screen change**: a calm crossfade (~480ms); the screen subtree remounts and
-  fades in on each transition.
+- **Screen change**: a calm 0.9s fade-and-settle (opacity + a small upward lift);
+  the screen subtree remounts and re-fires this on each transition (`rx-screen-in`).
 - Transitions fade and settle; they do not slide. Opacity plus a ≤8px lift only.
 - Audio leads: the soundscape blooms in (sparse, then fills over ~30s) as the
   session begins.
@@ -229,7 +229,7 @@ Shipped values (these are the source of truth):
 ## 4. In-app usage of the mark
 
 - **App header**: `relaxed-glyph-currentcolor.svg` at 22px, left of the wordmark at 17px type.
-- **Loading / composing state**: the glyph alone, centred, breathing on the 11s loop (scale 0.94 → 1.04, opacity 0.7 → 1). This is the one place the mark animates.
+- **Loading / composing state**: the glyph alone, centred, gently pulsing (the `rx-breathe` keyframe: scale 0.9 → 1.1, opacity 0.68 → 1). This ornamental pulse is a separate, gentler loop from the 14.5s guided breath; in the shipped app it currently runs at an ~11s fallback cadence (see the note below). This is the one place the mark animates.
 - **Player**: no mark. The screen is the session.
 - **Empty states**: the glyph at 40px in Gray, nothing else.
 
@@ -256,7 +256,6 @@ relaxed.app identity.dc.html       the earlier full brand system — screens (se
                                    the screen structure, interaction model and component
                                    inventory from it; take all colour, type and mark
                                    decisions from this README, which overrides it.
-support.js                         runtime for the .dc.html reference files
 ```
 
 Open the `.dc.html` files directly in a browser.
