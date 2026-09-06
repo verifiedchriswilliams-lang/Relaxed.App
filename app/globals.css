@@ -243,6 +243,83 @@ button {
   color: var(--ink-2);
 }
 
+/* Flagship: the bespoke "In your words" entry, elevated above the presets. A
+   prominent field with a primary go button, so "tell relaxed what you need" is
+   the headline of the home. */
+.flagship {
+  margin-top: 36px;
+  width: 320px;
+  max-width: 92%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.fs-lead {
+  font-size: 19px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink-0);
+  margin-bottom: 12px;
+}
+.fs-field {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  border-radius: 16px;
+  height: 54px;
+  padding: 0 6px 0 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: border-color var(--t-ui) var(--ease-ui);
+}
+.fs-field:focus-within {
+  border-color: var(--ink-1);
+}
+.fs-field input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  background: none;
+  border: 0;
+  outline: none;
+  color: var(--ink-0);
+  font-family: inherit;
+  font-size: 15px;
+}
+.fs-field input::placeholder {
+  color: var(--ink-2);
+}
+.fs-go {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--glass-strong);
+  color: var(--rx-invert-fg, #0b0d1a);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-ui) var(--ease-ui);
+}
+.fs-go:hover,
+.fs-go:focus-visible {
+  transform: translateX(1px);
+}
+.fs-hint {
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
 .prompt {
   margin-top: 46px;
   font-size: 12.5px;

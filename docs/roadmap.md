@@ -70,13 +70,23 @@ The remaining Phase 0 items are the native/App Store follow-ups noted at the end
 
 ## Phase 1 — make the AI genuinely special (the moat)
 
-- **Meditation Engine.** Have the system emit a structured session (emotional
-  objective, pacing, breath pattern, opening/body/visualization/reflection/close,
-  audio cues); Claude fills each part to explicit constraints. The app owns timing;
-  Claude owns language; ElevenLabs owns voice. Extends `assembleSession`.
-- **Scene-based sessions** (adaptive audio experiences, esp. sleep: voice thins out,
-  ambient continues).
-- **Make "In your words" the flagship** — "Tell relaxed what you need."
+**Built on the `phase1-engine` branch (in preview, not yet merged).** See
+[audio-engine.md](./audio-engine.md#9-the-meditation-engine-phase-1).
+
+- ✅ **Meditation Engine.** The app emits a structured session (an ordered arc of
+  scenes: settle / body / visualization / reflection / close), each with a share
+  of the length, a breath feel, and an objective; Claude fills each scene to those
+  constraints, and the app fits each scene's pauses to its own second target. The
+  app owns timing; Claude owns language; ElevenLabs owns voice. (`lib/engine.ts`,
+  driving the custom path; presets remain the cached templates for now.)
+- ✅ **Scene-based sessions.** A per-intention audio envelope shapes bed intensity
+  and voice presence over the session's progress; for **sleep the voice thins out**
+  toward the end while the bed continues. Applies to presets and custom.
+- ✅ **"In your words" is the flagship.** The home leads with "tell relaxed what you
+  need"; the presets sit below as "or choose a practice."
+- Later refinements (not in this branch): fold presets into full blueprints
+  (needs content re-authoring + a voice-cache rebuild); per-scene (not just
+  progress-based) audio cues; a visible session arc in the player.
 
 ## Phase 2 — private continuity (retention without gamification)
 

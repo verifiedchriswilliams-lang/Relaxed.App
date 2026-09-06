@@ -56,6 +56,9 @@ stateDiagram-v2
 - A time-based greeting ("Good morning/afternoon/evening"), optionally with the
   saved name.
 - A name field (persisted on-device).
+- **The flagship ("In your words").** On relaxed, the home leads with "tell relaxed
+  what you need" and an inline phrase field; entering it opens the tray in custom
+  mode with the phrase carried. The presets sit below under "or choose a practice."
 - The intention tiles. Tapping one opens the options tray.
 - An **orbit-mark entry point** (top-right) appears once the user has any history,
   opening the History screen.
@@ -112,9 +115,13 @@ All history is on-device (`localStorage`); see [data-privacy.md](./data-privacy.
 1. The user's choices shape which template or prompt is used.
 2. For presets, a template is assembled and pace-stretched to the chosen length;
    the name line is voiced live, the rest reused from cache.
-3. For "In your words," Claude writes a session around the phrase; it starts
-   instantly with a spoken arrival while the body streams in.
-4. Everything plays over the chosen bed with ducking, a bloom-in, and soft bells.
+3. For "In your words," the **Meditation Engine** gives Claude a structured arc
+   (settle → body → visualization → reflection → close) with per-scene targets;
+   Claude fills each scene, and it starts instantly with a spoken arrival while
+   the body streams in.
+4. Everything plays over the chosen bed with ducking, a bloom-in, soft bells, and
+   a **scene-based audio envelope**: for sleep the voice thins out toward the end
+   while the bed continues; other sessions soften gently at the close.
 
 Technical detail: [audio-engine.md](./audio-engine.md).
 

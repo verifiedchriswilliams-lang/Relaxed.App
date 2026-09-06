@@ -6,6 +6,7 @@ import {
   DURATIONS,
   getContext,
   CUSTOM_MAX_CHARS,
+  CUSTOM_ENABLED,
   type ContextId,
   type Duration,
   type VoiceChoice,
@@ -25,6 +26,7 @@ import {
   type RecentSession,
 } from "@/lib/history";
 import { ev } from "@/lib/analytics";
+import { audioProfile, type AudioProfile } from "@/lib/engine";
 
 // Which visual world are we in? relaxed swaps the aurora + coloured discs for
 // the flat, no-accent "stem" identity; ElevenMind keeps its night sky.
@@ -291,6 +293,13 @@ class AudioEngine {
   // The bed level the duck envelope is holding just before the next attack, so
   // each line's ramp starts from a known anchor (avoids clicks / long ramps).
   private duckHold = 1;
+  // Scene-based audio (Phase 1): a gain downstream of the master carries the
+  // per-progress bed intensity envelope, and the current session's voice bus is
+  // kept so its gain can be rolled as the voice thins out (e.g. toward sleep).
+  private ambientScene: GainNode | null = null;
+  private voiceBus: GainNode | null = null;
+  private profile: AudioProfile | null = null;
+  private sessionTotalSec = 0;
   ambientNodes: AudioNode[] = [];
   voiceSegs: AudioBufferSourceNode[] = [];
   voiceGainValue = 1; // per-voice loudness normalization, set before playSegments
@@ -392,6 +401,7 @@ class AudioEngine {
     voiceBus.gain.value = this.voiceGainValue;
     voiceBus.connect(ctx.destination);
     this.ambientNodes.push(voiceBus);
+    this.voiceBus = voiceBus;
 
     this.playStartTime = ctx.currentTime + 0.15;
     this.lineStarts = [];
@@ -401,6 +411,7 @@ class AudioEngine {
       // Each line's start offset, whether or not it has audio (so the read-along
       // still follows along in preview / read-along mode).
       this.lineStarts.push(t - this.playStartTime);
+      this.applyEnvelope(t);
       if (d.buffer) {
         try {
           const src = ctx.createBufferSource();
@@ -476,7 +487,38 @@ class AudioEngine {
     voiceBus.gain.value = this.voiceGainValue;
     voiceBus.connect(ctx.destination);
     this.ambientNodes.push(voiceBus);
+    this.voiceBus = voiceBus;
     return voiceBus;
+  }
+
+  // Scene-based audio (Phase 1): the per-context envelope + the session length,
+  // set once per session (after startAmbient) so applyEnvelope can shape the bed
+  // and voice as the session progresses. Null profile = no envelope (flat).
+  setSession(profile: AudioProfile | null, totalSec: number) {
+    this.profile = profile;
+    this.sessionTotalSec = Math.max(0, totalSec);
+  }
+
+  // Roll the bed intensity and voice presence toward the envelope's values for
+  // this point in the session, anchored to a line's start time. Called as each
+  // line is scheduled, so a Sleep session's voice thins out over the second half
+  // while the bed stays present, and every session softens gently at the close.
+  private applyEnvelope(at: number) {
+    if (!this.profile || !this.sessionTotalSec || !this.ctx) return;
+    const p = Math.max(0, Math.min(1, (at - this.playStartTime) / this.sessionTotalSec));
+    const anchor = Math.max(this.ctx.currentTime, at - 0.05);
+    if (this.voiceBus) {
+      const g = this.voiceBus.gain;
+      g.cancelScheduledValues(anchor);
+      g.setValueAtTime(g.value, anchor);
+      g.linearRampToValueAtTime(this.voiceGainValue * this.profile.voice(p), at + 0.25);
+    }
+    if (this.ambientScene) {
+      const g = this.ambientScene.gain;
+      g.cancelScheduledValues(anchor);
+      g.setValueAtTime(g.value, anchor);
+      g.linearRampToValueAtTime(this.profile.bed(p), at + 2);
+    }
   }
 
   // Core streaming loop for playCustomStream: synthesize a batch of lines with a
@@ -523,6 +565,7 @@ class AudioEngine {
         state.started = true;
       }
       this.lineStarts.push(startAt - this.playStartTime);
+      this.applyEnvelope(startAt);
       let dur = 0;
       if (buf) {
         try {
@@ -563,15 +606,21 @@ class AudioEngine {
     const ctx = this.ensureCtx();
     const master = ctx.createGain();
     master.gain.value = 0;
-    // bed sources -> master (level + fades) -> duck (voice ducking) -> out.
+    // bed sources -> master (level + fades) -> scene (intensity envelope) ->
+    // duck (voice ducking) -> out. Scene is separate from the master so the
+    // per-progress intensity arc never fights the arrival bloom or closing fade.
+    const scene = ctx.createGain();
+    scene.gain.value = this.profile ? this.profile.bed(0) : 1;
     const duck = ctx.createGain();
     duck.gain.value = 1;
     this.duckHold = 1;
-    master.connect(duck);
+    master.connect(scene);
+    scene.connect(duck);
     duck.connect(ctx.destination);
     this.ambientMaster = master;
+    this.ambientScene = scene;
     this.ambientDuck = duck;
-    this.ambientNodes.push(duck);
+    this.ambientNodes.push(scene, duck);
 
     // A hosted looping bed (ElevenLabs nature/music track).
     if (src) {
@@ -798,7 +847,11 @@ class AudioEngine {
     });
     this.ambientNodes = [];
     this.ambientMaster = null;
+    this.ambientScene = null;
     this.ambientDuck = null;
+    this.voiceBus = null;
+    this.profile = null;
+    this.sessionTotalSec = 0;
     this.duckHold = 1;
   }
 
@@ -1703,6 +1756,9 @@ export default function Home() {
     const { voiceGain, src, level } = bedAndVoice(voice, accent, soundscape);
     eng.voiceGainValue = voiceGain;
     eng.startAmbient(soundscape, src, level);
+    // Scene-based audio: the per-intention envelope shapes the bed + voice over
+    // the session's length (e.g. the voice thins out toward sleep).
+    eng.setSession(audioProfile(context), duration * 60);
     eng.playBell({ gain: 0.06, f0: 396, decay: 4.5 }); // soft "enter" cue
     eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
 
@@ -1790,6 +1846,9 @@ export default function Home() {
     const { voiceGain, src, level } = bedAndVoice(voice, accent, soundscape);
     eng.voiceGainValue = voiceGain;
     eng.startAmbient(soundscape, src, level);
+    // Scene-based audio: shape the bed + voice over the session (e.g. the voice
+    // thins out toward the end of a Sleep session while the bed carries on).
+    eng.setSession(audioProfile(context), duration * 60);
     eng.playBell({ gain: 0.06, f0: 396, decay: 4.5 }); // soft "enter" cue
     eng.playSegments(segments);
     clockStart();
@@ -2270,9 +2329,50 @@ export default function Home() {
             />
           </div>
 
-          <div className="prompt">What would you like to do?</div>
+          {/* "In your words" is the flagship on relaxed: a bespoke session, written
+              live for this moment, front and center. Presets sit below it. */}
+          {IS_RELAXED && CUSTOM_ENABLED && (
+            <div className="flagship">
+              <div className="fs-lead">tell relaxed what you need</div>
+              <div className="fs-field glass">
+                <input
+                  value={customText}
+                  onChange={(e) => setCustomText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") chooseIntention("custom");
+                  }}
+                  placeholder="a few words about now"
+                  maxLength={CUSTOM_MAX_CHARS}
+                  aria-label="What you need"
+                />
+                <button
+                  className="fs-go"
+                  onClick={() => chooseIntention("custom")}
+                  aria-label="Make your own session"
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M5 12h14M13 6l6 6-6 6"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div className="fs-hint">a session written for you, starting in seconds.</div>
+            </div>
+          )}
+
+          <div className="prompt">
+            {IS_RELAXED && CUSTOM_ENABLED ? "or choose a practice" : "What would you like to do?"}
+          </div>
           <div className="states">
-            {CONTEXTS.map((c) => (
+            {(IS_RELAXED && CUSTOM_ENABLED
+              ? CONTEXTS.filter((c) => !c.custom)
+              : CONTEXTS
+            ).map((c) => (
               <button
                 key={c.id}
                 className="state"

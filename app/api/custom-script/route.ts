@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getDurationBand, SCRIPT_SYSTEM_PROMPT } from "@/lib/contexts";
+import { blueprintFor, type Blueprint, type SceneKey } from "@/lib/engine";
 
 // Writes a fully bespoke meditation for a short phrase the user typed, live via
-// Claude. Returns the script as timed segments (text + the silence after each),
-// which the client then voices per-line and streams. This is the one path that
-// generates a script on demand; the presets use the cached templates.
+// Claude, on the Meditation Engine (Phase 1). The app hands Claude a structured
+// arc (settle -> body -> visualization -> reflection -> close) with a per-scene
+// objective and word budget; Claude fills each scene, and we fit each scene's
+// pauses to its own second target so the session is balanced end to end. Returns
+// scene-tagged, timed segments (text + the silence after each), which the client
+// voices per-line and streams.
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
@@ -27,6 +31,7 @@ interface Body {
 export interface CustomSegment {
   text: string; // spoken words for this line
   pauseAfter: number; // seconds of stillness after it
+  scene?: SceneKey; // which movement of the arc this line belongs to
 }
 
 const clean = (v: string | undefined) => v?.replace(/[^\x21-\x7E]/g, "") || undefined;
@@ -56,83 +61,122 @@ function parseBreaks(raw: string): CustomSegment[] {
   return segs;
 }
 
-// Stretch (or gently compress) the pauses so speech + silence fills the chosen
-// length, leaving a short tail of quiet at the end. Mirrors lib/sessions.
-// leadSeconds reserves time for a spoken arrival the client plays first, so the
-// body targets (length - arrival) and the two together land on the duration.
-function fitToDuration(
-  segs: CustomSegment[],
-  durationMin: number,
-  leadSeconds = 0
-): CustomSegment[] {
+// Fit one scene's pauses to fill its own second target, leaving a short tail of
+// quiet. Mirrors the session assembler, scoped to a single movement so the whole
+// arc stays balanced (the app owns timing; each scene keeps its share).
+function fitScene(segs: CustomSegment[], targetSeconds: number): CustomSegment[] {
   if (!segs.length) return segs;
-  const target = Math.max(durationMin * 60 - Math.max(0, leadSeconds), 60);
+  const target = Math.max(targetSeconds, 20);
   const speech = segs.reduce((a, s) => a + speechSecs(s.text), 0);
   const weight = segs.reduce((a, s) => a + Math.max(s.pauseAfter, 0.5), 0) || 1;
-  const tail = Math.min(0.08 * target, 25);
+  const tail = Math.min(0.05 * target, 8);
   const budget = Math.max(target - speech - tail, segs.length * 2);
   return segs.map((s) => {
     const w = Math.max(s.pauseAfter, 0.5);
     const p = Math.max(2, Math.min(120, (w / weight) * budget));
-    return { text: s.text, pauseAfter: Math.round(p * 10) / 10 };
+    return { text: s.text, pauseAfter: Math.round(p * 10) / 10, scene: s.scene };
   });
+}
+
+// Whole-script fallback fit (used when the model doesn't emit scene markers), so
+// the session still fills its length. Targets (length - arrival) like the arc.
+function fitWhole(
+  segs: CustomSegment[],
+  durationMin: number,
+  leadSeconds = 0
+): CustomSegment[] {
+  const target = Math.max(durationMin * 60 - Math.max(0, leadSeconds), 60);
+  return fitScene(segs, target);
+}
+
+// Parse a scene-tagged script into scene-scoped, per-scene-fit segments. The
+// model is asked to prefix each movement with an exact [scene:key] marker; we
+// split on those and fit each chunk to its planned seconds. Returns null if no
+// markers are present so the caller can fall back to a whole-script fit.
+function parseScenes(raw: string, blueprint: Blueprint): CustomSegment[] | null {
+  const parts = raw.split(/\[scene:\s*([a-z]+)\s*\]/i);
+  if (parts.length < 3) return null; // no markers found
+  const byKey = new Map<string, number>();
+  blueprint.scenes.forEach((s) => byKey.set(s.key, s.targetSeconds));
+  const out: CustomSegment[] = [];
+  // parts = [pre, key1, chunk1, key2, chunk2, ...]; ignore any preamble.
+  for (let i = 1; i < parts.length; i += 2) {
+    const key = parts[i].toLowerCase() as SceneKey;
+    const chunk = parts[i + 1] ?? "";
+    const segs = parseBreaks(chunk).map((s) => ({ ...s, scene: key }));
+    if (!segs.length) continue;
+    const target = byKey.get(key) ?? blueprint.bodyTargetSeconds / blueprint.scenes.length;
+    out.push(...fitScene(segs, target));
+  }
+  return out.length >= 3 ? out : null;
 }
 
 function buildPrompt(
   name: string,
   phrase: string,
-  durationMin: number,
+  blueprint: Blueprint,
   arrivalText?: string
 ): string {
-  const band = getDurationBand(durationMin);
-  // Enough separate spoken lines to anchor a session of this length: the pauses
-  // between them fill the time, but there must be enough lines to spread across
-  // it (too few and the session cannot reach its duration).
-  const lineTarget = Math.max(8, Math.min(28, Math.round(durationMin * 1.2) + 4));
-  // Instant start plays a fixed arrival first (greeting + settling breath). When
-  // present, the body must CONTINUE from it, not restart with a second greeting.
+  const band = getDurationBand(blueprint.bodyTargetSeconds / 60);
+  const arc = blueprint.scenes
+    .map(
+      (s) =>
+        `[scene:${s.key}] ${s.title} (about ${s.wordBudget} spoken words, ~${s.targetSeconds}s). ${s.objective} Breath here: ${s.breath}.`
+    )
+    .join("\n");
   const opening = arrivalText
-    ? [
-        `IMPORTANT — the session has ALREADY BEGUN. The person was just greeted and guided to settle in with these exact spoken lines: "${arrivalText}"`,
-        `Continue seamlessly from there. Do NOT greet them again, do NOT re-introduce yourself, and do NOT repeat the settling-in or the first breath. Your FIRST line should go straight to gently acknowledging what they named (paraphrase it warmly, in your own words, not verbatim), then guide plain, secular breath-and-body mindfulness shaped to that situation, and let the close speak back to it. Use their name again only in the very last line, a warm closing.`,
-      ]
-    : [
-        `Build the whole session around their words. Open by gently acknowledging what they named (paraphrase it warmly, in your own words, do not just repeat it back verbatim), then guide plain, secular breath-and-body mindfulness shaped to that situation, and let the close speak back to it. Greet them by name near the start, and make the very last line a warm closing that addresses them by name again.`,
-      ];
+    ? `IMPORTANT — the session has ALREADY BEGUN. The person was just greeted and guided to settle with these exact spoken lines: "${arrivalText}". Continue seamlessly. Do NOT greet them again, do NOT re-introduce yourself, and do NOT repeat the settling-in or the first breath. Your very first line (the start of [scene:settle]) goes straight on from there.`
+    : `Open by gently acknowledging what they named, then move through the arc below.`;
   return [
     `Name: ${name}`,
     `Session type: Custom, written live for what this person is carrying right now.`,
     `What they typed (a short phrase): "${phrase}"`,
     ``,
-    ...opening,
-    `SAFETY: If their words suggest they may be in crisis or thinking of harming themselves, keep the session especially gentle and grounding, make no attempt at therapy or advice, and include one soft line that reaching out to someone they trust, or a helpline, is a strong and kind thing to do. Otherwise do not mention helplines. Never diagnose, and never promise an outcome.`,
-    `Target length: ${durationMin} minutes`,
-    `Pacing for this length: ${band.guidance}`,
-    `Write roughly ${lineTarget} short spoken lines, each a sentence or two, separated by the pause tags. Spread them across the whole session so the pauses can carry the time; do not front-load all the words.`,
+    opening,
     ``,
-    `Write the spoken mindfulness script now, spoken words plus <break time="2.5s" /> tags only. Fill the time mainly with silence and returns to the breath, not with extra words.`,
+    `Write the session as the arc below, IN THIS ORDER. Begin each movement with its exact marker on its own line (for example "[scene:body]"), then the spoken words for that movement with <break> pause tags. The word counts are approximate targets, not limits; the app owns exact timing, so favor fewer words and more silence. Acknowledge and speak back to what they named across the body, visualization, and reflection; never give advice, diagnoses, or promises.`,
+    ``,
+    arc,
+    ``,
+    `SAFETY: If their words suggest they may be in crisis or thinking of harming themselves, keep the session especially gentle and grounding, make no attempt at therapy or advice, and include one soft line that reaching out to someone they trust, or a helpline, is a strong and kind thing to do. Otherwise do not mention helplines. Never diagnose, and never promise an outcome.`,
+    `Overall pacing for this length: ${band.guidance}`,
+    ``,
+    `Output ONLY the scene markers and the spoken words plus <break time="2.5s" /> tags. No other headings, no commentary. Fill the time mainly with silence and returns to the breath, not with extra words.`,
   ].join("\n");
 }
 
-// A no-key fallback so Custom still demonstrates end to end in preview mode.
+// A no-key fallback so Custom still demonstrates end to end in preview mode. A
+// small scene-tagged arc, fit per scene like the live path.
 function fallbackScript(
   name: string,
-  phrase: string,
+  blueprint: Blueprint,
   hasArrival = false
 ): CustomSegment[] {
   const who = name || "there";
+  const s = (text: string, scene: SceneKey): CustomSegment => ({ text, pauseAfter: 4, scene });
   const lines: CustomSegment[] = [
-    // Opening (greeting + settle + first breath). Dropped when the client's
-    // instant-start arrival has already done this, so we don't double-intro.
-    { text: `Hello, ${who}. Let's take this time for what you're carrying.`, pauseAfter: 6 },
-    { text: `Settle into a comfortable position, and let the eyes close.`, pauseAfter: 8 },
-    { text: `Take one slow breath in, and let it go completely.`, pauseAfter: 10 },
-    { text: `Whatever brought you here, you can set it down for these few minutes.`, pauseAfter: 12 },
-    { text: `Just feel the breath, arriving, and leaving.`, pauseAfter: 14 },
-    { text: `There is nothing to fix right now. Only this breath, and the next.`, pauseAfter: 14 },
-    { text: `When you're ready, ${who}, let the eyes open, gently.`, pauseAfter: 4 },
+    // Opening (dropped when the client arrival already greeted + settled).
+    s(`Hello, ${who}. Let's take this time for what you're carrying.`, "settle"),
+    s(`Settle into a comfortable position, and let the eyes close.`, "settle"),
+    s(`Take one slow breath in, and let it go completely.`, "settle"),
+    s(`Feel the breath arriving, and leaving. Nothing to fix right now.`, "body"),
+    s(`Whatever brought you here, you can set it down for these few minutes.`, "body"),
+    s(`If it helps, picture a place where you feel a little more at ease.`, "visualization"),
+    s(`Notice how the body feels now, a touch softer than a moment ago.`, "reflection"),
+    s(`When you're ready, ${who}, let the eyes open, gently.`, "close"),
   ];
-  return hasArrival ? lines.slice(3) : lines;
+  const chosen = hasArrival ? lines.slice(3) : lines;
+  const byKey = new Map<string, number>();
+  blueprint.scenes.forEach((sc) => byKey.set(sc.key, sc.targetSeconds));
+  // Group by scene and fit each group to its planned seconds.
+  const out: CustomSegment[] = [];
+  const keys = [...new Set(chosen.map((l) => l.scene!))];
+  for (const k of keys) {
+    const grp = chosen.filter((l) => l.scene === k);
+    const target = byKey.get(k) ?? blueprint.bodyTargetSeconds / blueprint.scenes.length;
+    out.push(...fitScene(grp, target));
+  }
+  return out;
 }
 
 export async function POST(req: NextRequest) {
@@ -157,11 +201,13 @@ export async function POST(req: NextRequest) {
 
   const who = name || "friend";
   const apiKey = clean(process.env.ANTHROPIC_API_KEY);
+  const blueprint = blueprintFor("custom", durationMin, { leadSeconds });
+  const scenes = blueprint.scenes.map((s) => ({ key: s.key, title: s.title }));
 
   // Preview mode: no key, still return a coherent (generic) bespoke-ish session.
   if (!apiKey) {
-    const segs = fitToDuration(fallbackScript(name, phrase, !!arrivalText), durationMin, leadSeconds);
-    return NextResponse.json({ segments: segs, mock: true });
+    const segs = fallbackScript(name, blueprint, !!arrivalText);
+    return NextResponse.json({ segments: segs, scenes, mock: true });
   }
 
   try {
@@ -171,7 +217,7 @@ export async function POST(req: NextRequest) {
       max_tokens: 1600,
       system: SCRIPT_SYSTEM_PROMPT,
       messages: [
-        { role: "user", content: buildPrompt(who, phrase, durationMin, arrivalText) },
+        { role: "user", content: buildPrompt(who, phrase, blueprint, arrivalText) },
       ],
     });
     const raw = msg.content
@@ -180,12 +226,13 @@ export async function POST(req: NextRequest) {
       .join("")
       .trim();
 
-    let segs = fitToDuration(parseBreaks(raw), durationMin, leadSeconds);
+    // Prefer the scene-tagged parse (per-scene timing); fall back to a whole
+    // script fit if the model didn't emit markers, then to the canned script.
+    let segs = parseScenes(raw, blueprint) ?? fitWhole(parseBreaks(raw), durationMin, leadSeconds);
     if (segs.length < 3) {
-      // Model returned something unusable; fall back so the session still plays.
-      segs = fitToDuration(fallbackScript(name, phrase, !!arrivalText), durationMin, leadSeconds);
+      segs = fallbackScript(name, blueprint, !!arrivalText);
     }
-    return NextResponse.json({ segments: segs });
+    return NextResponse.json({ segments: segs, scenes });
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Generation failed" },

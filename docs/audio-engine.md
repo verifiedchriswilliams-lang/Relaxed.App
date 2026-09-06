@@ -31,15 +31,17 @@ hand-authored templates, not written live:
 
 ### B. Live bespoke ("In your words", `/api/custom-script`)
 
-The user's typed phrase (≤70 chars) becomes a session written on demand by Claude:
+The user's typed phrase (≤70 chars) becomes a session written on demand by Claude,
+now on the **Meditation Engine** (see [§9](#9-the-meditation-engine-phase-1)):
 
 - Model: `ANTHROPIC_MODEL` env, **code default `claude-sonnet-5`**
   (`app/api/custom-script/route.ts:12`). `max_tokens: 1600`, a fixed
-  `SCRIPT_SYSTEM_PROMPT` (`lib/contexts.ts`), and a per-request user prompt from
-  `buildPrompt()`.
-- Claude returns prose with `<break time="Xs"/>` tags; `parseBreaks()` splits it
-  into `{ text, pauseAfter }` segments; `fitToDuration()` stretches pauses to the
-  target using the same `words/2.2` + `8%/25s tail` model as presets.
+  `SCRIPT_SYSTEM_PROMPT` (`lib/contexts.ts`), and a per-request user prompt built
+  from the session **blueprint** (`buildPrompt()` + `lib/engine.ts`).
+- The prompt hands Claude the arc scene by scene; the response is split on
+  `[scene:key]` markers and each scene's prose is parsed with `parseBreaks()` and
+  fit to that scene's own second target (`fitScene`), so the arc stays balanced.
+  If no markers are emitted, it falls back to a whole-script fit.
 - **Instant-start awareness:** the request carries `leadSeconds` (how many
   seconds of spoken "arrival" the client already played) and `arrivalText` (the
   exact arrival lines), so the body targets `duration − arrival` and Claude is
@@ -194,3 +196,57 @@ playing, so pausing freezes the orb mid-breath and resumes in phase; a single
 | Empty custom body | Degrades to sounds-only; emits `custom_no_body`. |
 | Screen locks (web) | A wake lock is requested; true background/locked playback needs the native app. |
 | Screen locks (iOS app) | Background audio keeps playing (Info.plist `audio` mode). |
+
+## 9. The Meditation Engine (Phase 1)
+
+> Built on the `phase1-engine` branch. `lib/engine.ts` is the structure; the
+> custom-script route fills it with Claude; the AudioEngine plays it with a
+> per-intention audio envelope.
+
+### Structure (the app owns it)
+
+`lib/engine.ts` defines an ordered **arc of scenes** for a session:
+`settle → body → visualization → reflection → close` (sleep uses its own shape:
+settle → softening → drift → trail-off). Each `Scene` carries a `share` of the
+length, a `breath` feel, and an `objective`. `blueprintFor(context, durationMin,
+{ leadSeconds })` turns that into a `Blueprint`: each scene gets a concrete
+`targetSeconds` (its share of the writeable body, after reserving the spoken
+arrival) and a rough `wordBudget` (`targetSeconds × 0.33 × 2.2`).
+
+### Language (Claude fills it)
+
+`/api/custom-script` hands Claude the blueprint scene by scene (each with its
+objective, breath, and word budget) and asks it to emit each movement prefixed by
+an exact `[scene:key]` marker, continuing from the spoken arrival. The response is
+split on those markers; each scene's prose is parsed into `{text, pauseAfter}`
+segments and **fit to that scene's `targetSeconds`** (`fitScene`), so the arc is
+balanced rather than front-loaded. If the model omits markers, it falls back to a
+whole-script fit; if that is unusable, to a scene-tagged canned script. The
+response is `{ segments: [{text, pauseAfter, scene}], scenes: [{key, title}] }`.
+
+### Audio (the browser plays it) — scene-based envelope
+
+Scene-based audio is a separate, progress-driven layer that applies to **every**
+session (presets and custom), so presets get it without re-authoring. `lib/engine.ts`
+exports an `AudioProfile` per context, `bed(progress)` and `voice(progress)`
+multipliers over 0..1:
+
+- **Sleep:** `voice` falls from 1 to ~0.35 across the second half while `bed`
+  stays present (~0.95 → 0.85) — the guidance recedes and the sound carries the
+  sleeper. This is the headline "voice thins out, ambient continues."
+- **Relax / Breathe:** ease out a little sooner and softer.
+- **Default:** steady, with a gentle softening in the last stretch.
+
+In the `AudioEngine`, a new `ambientScene` gain node sits between the master
+(bloom) and the duck: `bed → master → ambientScene → ambientDuck → destination`.
+`setSession(profile, totalSec)` is called after `startAmbient`; then, as each line
+is scheduled, `applyEnvelope(at)` computes `progress = (at − playStartTime) /
+totalSec` and ramps the session voice bus toward `voiceGain × voice(progress)` and
+`ambientScene` toward `bed(progress)`. The bloom and closing fade (on the master)
+and the voice ducking (on the duck) are untouched, each node keeps one job.
+
+### Flagship entry
+
+On relaxed, the home leads with a "tell relaxed what you need" field (the bespoke
+path), with presets below under "or choose a practice." See
+[product-spec.md](./product-spec.md).
