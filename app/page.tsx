@@ -162,6 +162,19 @@ const VOICE_STATS: Record<
   "male-uk": { rms: -24.5, peak: -4.3, trim: 2.5 },
 };
 
+// Tray-audition gains for the voice PREVIEW clips (previewVoice). These are
+// separate recordings from the session voice and were played at a flat gain, so
+// the male clips read far quieter than the female ones. Measured by LUFS
+// (scripts/measure-beds.mjs) and matched to a common audition loudness, capped
+// so peaks stay under -1 dBFS. male-uk is peak-limited so it lands ~2 dB shy of
+// the rest, but that's far closer than the ~12 dB raw gap.
+const PREVIEW_GAIN: Record<string, number> = {
+  "female-us": 1.19,
+  "female-uk": 0.65,
+  "male-us": 1.95,
+  "male-uk": 2.04,
+};
+
 // Linear gain to move a signal (rms/peak dBFS) toward a target loudness, capped
 // so the peak stays under the ceiling.
 function normGain(rms: number, peak: number, targetRms: number): number {
@@ -1192,7 +1205,7 @@ export default function Home() {
       return;
     }
     engineRef.current.preview(asset(`/voice-previews/${v}-${a}.mp3`), {
-      gain: 0.85,
+      gain: PREVIEW_GAIN[`${v}-${a}`] ?? 0.85,
     });
   }
   function previewSound(id: Soundscape) {
