@@ -70,7 +70,11 @@ merged to production.
   intention" divider, with the common intentions as quiet rows below.
 - **Home header refined**: the name is an editable part of the headline (no
   standing box). First run asks "what should we call you?" with a field; a
-  remembered name shows the greeting with a tap-to-edit pencil.
+  remembered name shows the greeting with a tap-to-edit pencil. The intentions
+  section is pinned to a fixed position so it never shifts between states.
+- **Recent/history entry first-reveal hint**: the first time the orbit mark
+  appears (after the first session), it pulses with a small "history and saved"
+  tooltip, once ever.
 
 
 ### 2026-09-06 — History redesign, audio leveling, tray, instant-start fix

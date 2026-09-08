@@ -23,6 +23,8 @@ import {
   toggleFav,
   isFav,
   recordMood,
+  recentHintSeen,
+  markRecentHintSeen,
   type RecentSession,
 } from "@/lib/history";
 import { ev } from "@/lib/analytics";
@@ -1234,6 +1236,10 @@ export default function Home() {
   // from the rolling ten-deep recent window.
   const [favs, setFavs] = useState<RecentSession[]>([]);
   const [mood, setMood] = useState<string | null>(null);
+  // First-reveal hint on the recent/history entry: pulse + a small tooltip the
+  // first time it appears (after the first completed session), then never again.
+  const [hintRecent, setHintRecent] = useState(false);
+  const hintDoneRef = useRef(false);
 
   const engineRef = useRef<AudioEngine>(new AudioEngine());
   // Breathing: one smooth clock (seconds of playing time) drives both the orb
@@ -1353,6 +1359,20 @@ export default function Home() {
     setRecent(loadRecent());
     setFavs(loadFavs());
   }, []);
+
+  // The first time the recent/history entry appears (once there's history, e.g.
+  // after the first completed session lands the user back home), pulse it with a
+  // small tooltip so the newly-appeared glyph is intuitive. Once, ever.
+  useEffect(() => {
+    if (!IS_RELAXED || screen !== "setup" || hintDoneRef.current) return;
+    if (recent.length === 0 && favs.length === 0) return;
+    hintDoneRef.current = true;
+    if (recentHintSeen()) return;
+    markRecentHintSeen();
+    setHintRecent(true);
+    const t = window.setTimeout(() => setHintRecent(false), 5200);
+    return () => window.clearTimeout(t);
+  }, [screen, recent.length, favs.length]);
 
   useEffect(() => {
     const engine = engineRef.current;
@@ -2316,16 +2336,24 @@ export default function Home() {
         <div className="topbar">
           <Wordmark />
           {IS_RELAXED && (recent.length > 0 || favs.length > 0) && (
-            <button
-              className="recent-entry"
-              onClick={() => {
-                haptic("light");
-                setScreen("history");
-              }}
-              aria-label="Recent sessions"
-            >
-              <OrbitGlyph size={22} />
-            </button>
+            <div className="recent-entry-wrap">
+              <button
+                className={`recent-entry ${hintRecent ? "pulse" : ""}`}
+                onClick={() => {
+                  haptic("light");
+                  setHintRecent(false);
+                  setScreen("history");
+                }}
+                aria-label="Recent and saved sessions"
+              >
+                <OrbitGlyph size={22} />
+              </button>
+              {hintRecent && (
+                <span className="recent-hint" role="status">
+                  history and saved
+                </span>
+              )}
+            </div>
           )}
         </div>
 

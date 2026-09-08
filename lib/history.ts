@@ -19,6 +19,9 @@ export interface RecentSession {
 const RECENT_KEY = "relaxed.recent.v1";
 const FAV_KEY = "relaxed.favs.v1";
 const MOOD_KEY = "relaxed.moods.v1";
+// One-time flag: whether the "recent/history" entry point has been introduced
+// (it pulses with a tooltip the first time it appears, then never again).
+const HINT_KEY = "relaxed.recentHint.v1";
 // Recent is a rolling window — the last ten sessions, reverse-chronological.
 // Anything older rolls off. Favorites are the escape hatch: a starred session
 // is kept indefinitely and never rolls off, however long ago it ran.
@@ -102,6 +105,25 @@ export function recordMood(m: Omit<MoodEntry, "at">): void {
     const list = raw ? (JSON.parse(raw) as MoodEntry[]) : [];
     list.push({ ...m, at: Date.now() });
     localStorage.setItem(MOOD_KEY, JSON.stringify(list.slice(-50)));
+  } catch {
+    /* best-effort */
+  }
+}
+
+// Whether the recent/history entry point has already been introduced to this
+// device. Used to pulse it (with a tooltip) exactly once, the first time it
+// appears after a session.
+export function recentHintSeen(): boolean {
+  try {
+    return !!localStorage.getItem(HINT_KEY);
+  } catch {
+    return true; // if storage is unavailable, don't nag
+  }
+}
+
+export function markRecentHintSeen(): void {
+  try {
+    localStorage.setItem(HINT_KEY, "1");
   } catch {
     /* best-effort */
   }

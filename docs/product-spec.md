@@ -102,7 +102,10 @@ screen and go straight to the player.
 
 ### 3f. History
 
-Reached from the orbit mark. Two groups:
+Reached from the orbit mark (top-right of the home), which appears once there is
+any history. The first time it appears (typically after the first completed
+session), it pulses a few times with a small "history and saved" tooltip to
+introduce it, once ever (a one-time on-device flag). Two groups:
 
 - **recent:** the rolling last 10 sessions, reverse-chronological, each showing
   intention/phrase, time-ago, and detail (`length · Her/Him · US/UK · soundscape`,

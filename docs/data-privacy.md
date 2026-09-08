@@ -25,6 +25,7 @@
 | `relaxed.favs.v1` | Saved sessions (`RecentSession[]`, cap 100) | Same shape; kept indefinitely. |
 | `relaxed.moods.v1` | Last 50 post-session moods (`MoodEntry[]`) | `{ mood, context, custom, at }`; a fixed enum mood, not free text. |
 | `em_variant_seq` | Per-intention script-variant counter | Non-personal; ensures repeats vary. |
+| `relaxed.recentHint.v1` | One-time flag: the recent/history entry has been introduced | Non-personal; a single `"1"`. |
 
 Everything above is readable only by the site's own origin, is never sent to any
 server, and is cleared if the user clears site data or deletes the app. There is
