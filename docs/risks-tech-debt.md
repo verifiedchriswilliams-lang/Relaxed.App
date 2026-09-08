@@ -82,14 +82,15 @@
 
 Discrepancies found during this documentation pass (code is authoritative):
 
-- 🟢 **`ANTHROPIC_MODEL` default.** `.env.example` says `claude-opus-5`; the code
-  default is `claude-sonnet-5` (`app/api/custom-script/route.ts:12`). Decide the
-  intended production model and align `.env.example`.
-- 🟢 **`ELEVENLABS_OUTPUT_FORMAT` default.** `.env.example` says `mp3_22050_32`; the
-  code default is `mp3_44100_128` (the compact format is only the inline-line
-  fallback). Align `.env.example`.
-- 🟢 **`SILENCE_SCALE`** appears in `.env.example` but is not read anywhere in the
-  current code. Remove it or wire it up.
+- ✅ **`ANTHROPIC_MODEL` default (resolved 2026-09).** Production model decided:
+  **`claude-opus-5`**. The code default (`app/api/custom-script/route.ts`) and
+  `.env.example` now both say `claude-opus-5`; Vercel carries no override, so the
+  code default is what runs.
+- ✅ **`ELEVENLABS_OUTPUT_FORMAT` default (resolved 2026-09).** `.env.example` now
+  matches the code default `mp3_44100_128` (the `mp3_22050_32` compact format is an
+  internal inline-line constant, not this env var).
+- ✅ **`SILENCE_SCALE` (resolved 2026-09).** The unused knob was removed from
+  `.env.example`; nothing in the code reads it.
 - 🟢 **Stale doc bodies (now refreshed):** `voice-cache.md` previously instructed
   committing cache MP3s to git (contradicts `.gitignore` + the Blob flow);
   `blob-migration.md` read as if the git removal was still pending; `ios-build.md`

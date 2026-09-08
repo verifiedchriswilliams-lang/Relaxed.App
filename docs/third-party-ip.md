@@ -35,7 +35,7 @@ Dev (`devDependencies`):
 
 | Provider | Used for | Diligence items |
 |---|---|---|
-| **Anthropic (Claude)** | Writing bespoke scripts (custom path) | **[confirm]** commercial API terms, data-retention and no-training-on-inputs settings, rate limits, pricing. Model `claude-sonnet-5` (overridable). |
+| **Anthropic (Claude)** | Writing bespoke scripts (custom path) | **[confirm]** commercial API terms, data-retention and no-training-on-inputs settings, rate limits, pricing. Model `claude-opus-5` (overridable). |
 | **ElevenLabs** | Text-to-speech for all voiced sessions | **[confirm]** commercial usage rights for generated audio, per-character pricing tier, and — critically — **voice licensing** (see §4). |
 | **Vercel** | Hosting, serverless functions, Blob storage, Web Analytics | **[confirm]** plan tier, bandwidth/function limits, DPA. |
 

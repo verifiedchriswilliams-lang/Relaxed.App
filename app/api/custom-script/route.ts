@@ -13,7 +13,7 @@ import { blueprintFor, type Blueprint, type SceneKey } from "@/lib/engine";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const DEFAULT_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5";
+const DEFAULT_MODEL = process.env.ANTHROPIC_MODEL || "claude-opus-5";
 
 interface Body {
   name?: string;

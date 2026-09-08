@@ -37,7 +37,7 @@ flowchart TB
         ANALYTICS["Vercel Web Analytics"]
     end
 
-    Anthropic["Anthropic API<br/>Claude (claude-sonnet-5)"]
+    Anthropic["Anthropic API<br/>Claude (claude-opus-5)"]
     Eleven["ElevenLabs API<br/>eleven_multilingual_v2"]
 
     Browser -->|HTTPS| App

@@ -44,7 +44,7 @@ what you need and it makes one for you." The full strategy and phased plan live 
 | Framework | Next.js (App Router) | 14.2.35 | React 18.3.1. |
 | Language | TypeScript | ^5 | `strict: true`. |
 | Hosting | Vercel | — | Serverless functions for API routes; static + edge for images. |
-| Script AI | Anthropic Claude | SDK 0.68.0 | Model `claude-sonnet-5` (code default; overridable). |
+| Script AI | Anthropic Claude | SDK 0.68.0 | Model `claude-opus-5` (code default; overridable). |
 | Voice AI | ElevenLabs | REST | `eleven_multilingual_v2`. |
 | Media storage | Vercel Blob | SDK 2.8.0 | Soundscape beds, cached voice lines, previews. |
 | Client audio | Web Audio API | — | Custom mixer; no audio library. |

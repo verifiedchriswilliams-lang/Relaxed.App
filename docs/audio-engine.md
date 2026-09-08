@@ -34,8 +34,8 @@ hand-authored templates, not written live:
 The user's typed phrase (≤70 chars) becomes a session written on demand by Claude,
 now on the **Meditation Engine** (see [§9](#9-the-meditation-engine-phase-1)):
 
-- Model: `ANTHROPIC_MODEL` env, **code default `claude-sonnet-5`**
-  (`app/api/custom-script/route.ts:12`). `max_tokens: 1600`, a fixed
+- Model: `ANTHROPIC_MODEL` env, **code default `claude-opus-5`**
+  (`app/api/custom-script/route.ts`). `max_tokens: 1600`, a fixed
   `SCRIPT_SYSTEM_PROMPT` (`lib/contexts.ts`), and a per-request user prompt built
   from the session **blueprint** (`buildPrompt()` + `lib/engine.ts`).
 - The prompt hands Claude the arc scene by scene; the response is split on

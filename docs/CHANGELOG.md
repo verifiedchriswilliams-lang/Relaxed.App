@@ -55,11 +55,16 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
-### 2026-09-08 — History page scrolls
+### 2026-09-08 — History page scrolls; script model set to opus
 - **Scrollable sessions list.** On the single-screen relaxed shell, the history
   page's saved + recent list is now its own inner scroller: the back-button bar
   stays fixed while the sessions scroll, so a long saved list stays fully
   reachable. (ElevenMind, which scrolls its page normally, is unchanged.)
+- **Custom scripts now written by `claude-opus-5`.** The "In your words" path's
+  code-default model moved from `claude-sonnet-5` to `claude-opus-5` for the
+  richest script writing. `.env.example` and the docs were aligned, and the two
+  other stale env defaults (`ELEVENLABS_OUTPUT_FORMAT`, the unused `SILENCE_SCALE`)
+  were reconciled at the same time.
 
 ### Unreleased — `phase1-engine` branch (in preview)
 Phase 1: "make the AI genuinely special." Built on a branch for review, not yet

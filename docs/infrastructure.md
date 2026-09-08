@@ -36,7 +36,7 @@ deployment never disturbs the other.
 | Variable | Purpose | Default (code) |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | Claude auth (custom path only) | none (custom disabled if unset) |
-| `ANTHROPIC_MODEL` | Which Claude model writes the script | `claude-sonnet-5` |
+| `ANTHROPIC_MODEL` | Which Claude model writes the script | `claude-opus-5` |
 | `ELEVENLABS_API_KEY` | ElevenLabs TTS auth | none (voice disabled if unset) |
 | `ELEVENLABS_SPEED` | Speaking rate (clamped 0.7–1.2) | 1.0 |
 | `ELEVENLABS_STABILITY` | Delivery steadiness (0–1) | 0.85 |
@@ -58,12 +58,13 @@ deployment never disturbs the other.
 | `NEXT_PUBLIC_BLOB_BASE_URL` | Base origin for hosted audio; unset → serve from `/public` |
 | `NEXT_PUBLIC_ENABLE_CUSTOM` | Toggle the "Make Your Own" tile |
 
-> **Reconciliation note.** `.env.example` currently states different defaults for
-> `ANTHROPIC_MODEL` (`claude-opus-5`) and `ELEVENLABS_OUTPUT_FORMAT` (`mp3_22050_32`)
-> than the code. The **code defaults above are authoritative**; production behavior
-> depends on what is actually set in the Vercel project. Also note `SILENCE_SCALE`
-> appears in `.env.example` but is not read anywhere in the current code. These are
-> tracked in [risks-tech-debt.md](./risks-tech-debt.md#documentation-reconciliation).
+> **Model note.** The production model is **`claude-opus-5`** (the code default;
+> `.env.example` agrees). Vercel has no `ANTHROPIC_MODEL` override set, so the code
+> default is what runs; setting the var in the Vercel project would override it
+> per-environment. `ELEVENLABS_OUTPUT_FORMAT` and the code now agree on
+> `mp3_44100_128`, and the unused `SILENCE_SCALE` knob has been removed from
+> `.env.example`. History in
+> [risks-tech-debt.md](./risks-tech-debt.md#documentation-reconciliation).
 
 ## 4. Media storage — Vercel Blob
 
