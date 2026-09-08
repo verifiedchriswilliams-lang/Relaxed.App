@@ -25,9 +25,9 @@ no user-supplied file upload, and no admin surface.
 
 | Route | Input | Controls |
 |---|---|---|
-| `/api/generate` | name, context, duration, voice, accent, variantSeq | Inputs clamped (name ≤60, duration bounded, enums); output audio bounded; bounded TTS concurrency. |
-| `/api/custom-script` | name, phrase, duration, leadSeconds, arrivalText | Inputs clamped (phrase ≤70, arrivalText ≤300, duration 3–30); empty phrase rejected (400). |
-| `/api/tts` | text, voice, accent | Text ≤600; empty rejected (400); `no-store`. |
+| `/api/generate` | name, context, duration, voice, accent, variantSeq | Per-IP rate limit; inputs clamped (name ≤60, duration bounded, enums); output audio bounded; bounded TTS concurrency. |
+| `/api/custom-script` | name, phrase, duration, leadSeconds, arrivalText | Per-IP rate limit; inputs clamped (phrase ≤70, arrivalText ≤300, duration 3–30); empty phrase rejected (400). |
+| `/api/tts` | text, voice, accent | Per-IP rate limit; text ≤600; empty rejected (400); `no-store`. |
 
 Notable properties and residual risks:
 
@@ -36,11 +36,16 @@ Notable properties and residual risks:
   at 70 characters, which limits injection leverage, but a determined user could
   attempt to steer the script. Impact is low (the output is spoken meditation text
   played only to that user; no tools, no data access, no other users affected).
-- **Cost/abuse:** the routes are unauthenticated and call paid providers. There is
-  currently **no rate limiting or bot protection** at the application layer; abuse
-  protection relies on Vercel platform limits. This is the main cost-exposure risk
-  and is tracked in [risks-tech-debt.md](./risks-tech-debt.md#security--abuse).
+- **Cost/abuse:** the routes are unauthenticated and call paid providers, so they
+  now enforce an application-level **per-IP rate limit** (`lib/rateLimit.ts`) on all
+  three routes: a fixed-window counter keyed by `x-forwarded-for`, fail-open on
+  error, with per-route ceilings tunable via `RL_CUSTOM_PER_MIN` / `RL_TTS_PER_MIN`
+  / `RL_GENERATE_PER_MIN`. It is **best-effort per serverless instance** (in-memory,
+  not shared across instances), so it caps a burst on one warm instance but not a
+  fully distributed flood; the durable upgrade is a shared store (Vercel KV /
+  Upstash) behind the same interface, and platform bot protection can layer on top.
   Preset sessions are cheap (cache-first); the custom path is the costly one.
+  Tracked in [risks-tech-debt.md](./risks-tech-debt.md#security--abuse).
 - **No CSRF/session risk:** there is no authenticated session or cookie to forge;
   routes are pure content generators.
 - **Transport:** HTTPS only (`cleartext: false` in the native shell; Vercel TLS on
@@ -78,9 +83,11 @@ safety is a product-safety concern, not just a moderation one.
 
 ## 5. Recommended hardening (prioritized)
 
-1. **Rate limit** `/api/custom-script` and `/api/tts` (per-IP token bucket, or
-   Vercel's built-in protections) to cap provider spend under abuse.
-2. Add **dependency scanning** (Dependabot) and a minimal CI check.
+1. ✅ **Rate limit** the paid routes — done (per-IP fixed window, `lib/rateLimit.ts`).
+   Next: back it with a shared store (Vercel KV / Upstash) for durable
+   cross-instance limiting, and consider Vercel's bot protection on top.
+2. ◧ **CI check** — build + unit tests now run on PRs (`ci.yml`). Add **dependency
+   scanning** (Dependabot) and a lint gate.
 3. Consider a **safety classifier** on the custom phrase for a clinical-grade bar.
 4. Add **security headers** (CSP, etc.) via `next.config.mjs` (currently empty).
 5. Establish **key rotation cadence** and document last-rotated dates out of band.

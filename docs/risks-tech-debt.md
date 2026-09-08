@@ -22,17 +22,25 @@
 
 ## Engineering
 
-- 🔴 **No automated tests.** <a id="testing"></a> Zero unit, integration, or e2e
-  tests. QA is manual (the last checklist is [qa-phase0.md](./qa-phase0.md)). The
-  audio engine, loudness math, and duration-fitting are exactly the kind of logic
-  that benefits from tests. This is the highest engineering-quality gap.
-- 🟠 **One very large component.** `app/page.tsx` is ~2,580 lines holding the UI
-  state machine and the `AudioEngine`. It works and is commented, but it should be
-  decomposed (extract the engine and each screen) before the team grows.
-- 🟠 **Limited CI quality gate.** A docs-drift check now runs in CI
-  (`.github/workflows/docs-check.yml`), but there is still no automated
-  build/lint/test check on PRs. Vercel catches build breaks post-push, not
-  pre-merge.
+- 🟠 **Test coverage is unit-only (was 🔴 no tests).** <a id="testing"></a>
+  A Vitest suite (54 tests, `tests/`) now covers the pure logic that most
+  benefits: loudness normalization and bed/voice selection (`lib/audio/levels`),
+  the soundscape catalog, session-blueprint planning and the scene-based audio
+  envelope (`lib/engine`), the breath clock (`lib/breath`), history storage
+  (dedup, rolling cap, favorites), rate limiting, and the formatters. **Still
+  open:** the `AudioEngine` itself (Web Audio graph, ducking, streaming) and the
+  React UI have no automated coverage — they need a jsdom/browser or e2e harness,
+  and audio/haptics still require real-device QA ([qa-phase0.md](./qa-phase0.md)).
+- 🟠 **One large component (improving).** `app/page.tsx` is now ~1,920 lines (was
+  ~2,900): the `AudioEngine`, the audio domain (soundscapes, levels, types), and
+  the pure breath/format helpers were extracted to `lib/audio/*`, `lib/breath.ts`,
+  and `lib/format.ts`. What remains is the UI state machine and the screens; the
+  next step is to extract each screen (setup / tray / player / history / complete)
+  into its own component before the team grows.
+- 🟢 **CI quality gate (was 🟠).** CI now runs the production build **and** the
+  unit tests on every PR and push to main (`.github/workflows/ci.yml`), alongside
+  the docs-drift check (`docs-check.yml`). Still no lint gate (no committed ESLint
+  config, below) and no dependency scanning.
 - 🟢 **No committed ESLint config.** `npm run lint` would scaffold one on first
   run; there is no enforced ruleset today.
 - 🟢 **No dependency scanning.** No Dependabot/Snyk; low-cost to add.
@@ -44,11 +52,15 @@
 ## Security & abuse
 <a id="security--abuse"></a>
 
-- 🔴 **Unauthenticated paid routes, no rate limiting.** `/api/custom-script` and
-  `/api/tts` call paid providers with no application-level rate limiting or bot
-  protection. This is the main cost-exposure and abuse risk. Presets are cheap
-  (cache-first); the custom path is the exposure. Mitigation options are in
-  [security.md](./security.md#5-recommended-hardening-prioritized).
+- 🟠 **Paid routes now rate-limited (was 🔴).** `/api/custom-script`, `/api/tts`,
+  and `/api/generate` enforce a per-IP fixed-window limit (`lib/rateLimit.ts`,
+  tunable via `RL_*_PER_MIN`) so unauthenticated abuse can't freely run up
+  provider spend. **Caveat:** it is a best-effort **per-instance, in-memory**
+  limiter (fail-open on error), so a burst on one warm instance is capped but a
+  distributed flood across many cold instances is not fully bounded. For durable,
+  cross-instance limiting, back the same `rateLimit()` signature with a shared
+  store (Vercel KV / Upstash Redis). Bot protection (e.g. Vercel's) is still worth
+  layering. See [security.md](./security.md#5-recommended-hardening-prioritized).
 - 🟠 **Content safety is prompt-only.** The crisis-handling clause lives in the
   Claude prompt; there is no separate safety classifier or escalation surface.
   Adequate for the current positioning; a clinical-grade bar would want more.
@@ -117,9 +129,13 @@ Discrepancies found during this documentation pass (code is authoritative):
 
 ## Suggested first 90 days for an acquiring team
 
-1. Add rate limiting to the paid routes (🔴 cost/abuse).
-2. Introduce a test harness for the audio/timing/loudness logic (🔴 quality).
-3. Decompose `app/page.tsx` (🟠 maintainability).
-4. Stand up CI (build + lint + test + dependency scan) as a merge gate.
+1. ✅ Rate limiting on the paid routes (done, in-memory; upgrade to a shared store
+   for durable cross-instance limiting).
+2. ◧ Test harness for the audio/timing/loudness logic (done for the pure logic;
+   extend to the `AudioEngine` and the UI with a jsdom/e2e harness).
+3. ◧ Decompose `app/page.tsx` (engine + audio domain + helpers extracted; extract
+   the screens next).
+4. ◧ CI merge gate: build + test now run on PRs (`ci.yml`); add lint + dependency
+   scanning.
 5. Plan the accounts backend for cross-device continuity (🟠 retention).
 6. Complete the IP checklist in [third-party-ip.md](./third-party-ip.md#8-ip-diligence-checklist).

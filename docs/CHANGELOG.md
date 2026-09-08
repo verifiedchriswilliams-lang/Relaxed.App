@@ -55,6 +55,20 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### Unreleased — `hardening` branch (in preview)
+Engineering hardening from a diligence pass. Built on a branch for review.
+- **Rate limiting on the paid routes.** `/api/custom-script`, `/api/tts`, and
+  `/api/generate` now enforce a per-IP fixed-window limit (`lib/rateLimit.ts`,
+  tunable via `RL_*_PER_MIN`) so unauthenticated abuse can't run up provider
+  spend. Best-effort per serverless instance; a shared store is the durable
+  upgrade.
+- **First automated tests.** A Vitest suite (54 tests) covers the pure
+  audio/timing/loudness logic, history storage, and rate limiting; a CI workflow
+  runs the build + tests on every PR.
+- **`app/page.tsx` decomposed** from ~2,900 to ~1,920 lines: the `AudioEngine`,
+  the soundscape/loudness domain, and the breath/format helpers moved to
+  `lib/audio/**`, `lib/breath.ts`, and `lib/format.ts`. No behavior change.
+
 ### 2026-09-08 — History page scrolls; script model set to opus
 - **Scrollable sessions list.** On the single-screen relaxed shell, the history
   page's saved + recent list is now its own inner scroller: the back-button bar

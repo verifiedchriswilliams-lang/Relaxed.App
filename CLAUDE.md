@@ -48,7 +48,8 @@ When you touch the left, update the right (same commit):
 
 | If you change… | Update… |
 |---|---|
-| API routes (`app/api/**`), the pipeline, or the audio engine in `app/page.tsx` | [audio-engine.md](./docs/audio-engine.md), and [architecture.md](./docs/architecture.md) if a flow changes |
+| API routes (`app/api/**`), the pipeline, the audio engine/domain (`lib/audio/**`), or rate limiting (`lib/rateLimit.ts`) | [audio-engine.md](./docs/audio-engine.md) (and [security.md](./docs/security.md) for routes/limits), and [architecture.md](./docs/architecture.md) if a flow changes |
+| Pure logic with a test (`lib/**`, `tests/**`) | add/adjust the `tests/*.test.ts` case in the same change |
 | Screens / tray / history / onboarding in `app/page.tsx` | [product-spec.md](./docs/product-spec.md) |
 | `lib/history.ts`, `lib/analytics.ts` (storage keys, events) | [data-privacy.md](./docs/data-privacy.md) (and the storage/event tables) |
 | Env vars, `next.config.mjs`, `capacitor.config.ts`, CI workflows, `scripts/**` | [infrastructure.md](./docs/infrastructure.md), [operations-runbook.md](./docs/operations-runbook.md) |
@@ -72,17 +73,23 @@ When you touch the left, update the right (same commit):
 
 ## Testing / quality
 
-- There is no automated test suite yet; QA is manual (see
-  [qa-phase0.md](./docs/qa-phase0.md) for the template). Audio and haptics need a
-  real device, not a desktop tab. Adding tests for the audio/timing/loudness logic
-  is the top engineering-quality gap ([risks-tech-debt.md](./docs/risks-tech-debt.md#testing)).
-- `npm run build` must pass. `npm run check:docs` must pass.
+- A **Vitest** unit suite (`tests/`, run `npm test`) covers the pure logic:
+  loudness math + bed/voice selection (`lib/audio/levels`), the soundscape
+  catalog, session blueprints + the audio envelope (`lib/engine`), the breath
+  clock (`lib/breath`), history storage, rate limiting, and formatters. Add a test
+  alongside any change to that logic. The `AudioEngine` graph and the React UI
+  have no automated coverage yet, and audio/haptics still need real-device QA (see
+  [qa-phase0.md](./docs/qa-phase0.md)); extending coverage there is the top
+  remaining quality gap ([risks-tech-debt.md](./docs/risks-tech-debt.md#testing)).
+- `npm run build`, `npm test`, and `npm run check:docs` must all pass. CI runs the
+  build + tests (`ci.yml`) and the docs check on every PR.
 
 ## Common commands
 
 ```bash
 npm run dev          # local dev (preview mode works with no API keys)
 npm run build        # production build (pre-push sanity check)
+npm test             # Vitest unit tests (pure logic)
 npm run check:docs   # documentation drift + link check
 npm run lint         # next lint
 ```

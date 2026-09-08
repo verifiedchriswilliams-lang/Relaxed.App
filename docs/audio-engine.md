@@ -1,7 +1,7 @@
 # Audio Engine & AI Pipeline
 
 > This is the technical heart of the product: how a session is written, voiced,
-> mixed, and played. The client-side `AudioEngine` (`app/page.tsx:283`) and the
+> mixed, and played. The client-side `AudioEngine` (`lib/audio/engine.ts`) and the
 > loudness/timing model are the differentiating engineering. Architecture-level
 > flows are in [architecture.md](./architecture.md).
 
@@ -104,7 +104,15 @@ Presets are made nearly free by pre-voicing their reusable lines:
 - The cache is rebuilt by `scripts/build-voice-cache.mjs` (see
   [voice-cache.md](./voice-cache.md) and [operations-runbook.md](./operations-runbook.md)).
 
-## 4. The AudioEngine (`class AudioEngine`, `app/page.tsx:283`)
+## 4. The AudioEngine (`class AudioEngine`, `lib/audio/engine.ts`)
+
+> **Module layout.** The engine and its audio domain were extracted out of
+> `app/page.tsx` into `lib/audio/`: the class in `engine.ts`, the soundscape
+> catalog in `soundscapes.ts`, the loudness math + bed/voice selection in
+> `levels.ts`, and shared types in `types.ts`. The pure pieces (loudness
+> normalization, bed/voice selection, the soundscape catalog, the breath clock in
+> `lib/breath.ts`) are covered by unit tests in `tests/` (run `npm test`). The
+> `AudioEngine`'s Web Audio graph itself is still verified by manual device QA.
 
 A single Web Audio `AudioContext`, unlocked inside the Begin tap (and, on iOS, put
 into the `playback` category so sessions play through the mute switch). The graph:
