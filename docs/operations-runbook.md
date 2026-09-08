@@ -123,6 +123,50 @@ The tool writes nothing itself. Background: [audio-engine.md](./audio-engine.md#
    and in the GitHub Actions secret if CI uses it.
 3. Redeploy (push, or trigger a redeploy) so the new value is picked up.
 
+## Billing & cost monitoring
+
+Two independent provider accounts bill for generation. The **custom "In your
+words" path** is the only thing that spends Claude tokens; presets play from the
+voice cache and cost nothing at Anthropic. ElevenLabs bills separately for voice.
+
+### Where to check
+
+| Provider | Console | What to watch |
+|---|---|---|
+| Anthropic (Claude) | [console.anthropic.com](https://console.anthropic.com) → **Billing** (credit balance) and **Usage** (tokens/spend by key + model) | Credit balance; monthly spend; opus output-token volume |
+| ElevenLabs (voice) | [elevenlabs.io](https://elevenlabs.io) → Profile → **Subscription / Usage** | Remaining monthly character quota |
+
+### Don't get cut off
+
+- **Auto-reload (Anthropic) should stay ON.** When credits hit $0, custom
+  generation starts failing for users with no warning. Auto-reload (Billing →
+  the balance card) tops the balance up automatically so it can't run dry. It is
+  currently enabled; if it ever shows off, turn it back on.
+- Set a **usage/spend limit + email alert** in Anthropic Billing so a runaway
+  climb pages you before it matters. There is a monthly spend cap (a safety
+  ceiling, well above normal spend) plus alert thresholds.
+
+### Cost model (what actually drives the bill)
+
+- The model is **`claude-opus-5`** (`$5 / $25` per million input / output tokens).
+  **Output tokens dominate** each custom generation (a full script is ~1k output
+  tokens vs a few hundred input), so the bill scales with custom-session volume
+  and script length, not with input size.
+- **Prompt caching is enabled** on the system prompt (`cache_control` in
+  `app/api/custom-script/route.ts`), but it is a **modest, at-scale** saving, not
+  a lever you feel at low volume: it only discounts the reused system-prompt
+  prefix (~15% of per-call cost), output tokens are not cacheable, and a cache
+  **hit** only happens when two sessions land within the ~5-minute window. At low
+  sporadic volume most calls just write the cache (roughly neutral); the win
+  arrives when sessions cluster or volume grows. Per-request cache telemetry
+  (`cache_read` / `cache_write` token counts) is logged to the Vercel function
+  logs, so you can confirm it engages by running two sessions back to back.
+- **The biggest cost lever is the model itself.** `claude-opus-5` was chosen
+  deliberately for script quality; `claude-sonnet-5` is ~2.5× cheaper per token
+  (`$2 / $10`). To trade quality for cost, set `ANTHROPIC_MODEL=claude-sonnet-5`
+  in the Vercel project (overrides the code default) rather than editing code.
+  See the model note in [infrastructure.md](./infrastructure.md).
+
 ## Commit & branch conventions
 
 - Small, focused commits with a scannable subject (see the git history for the
@@ -140,4 +184,5 @@ The tool writes nothing itself. Background: [audio-engine.md](./audio-engine.md#
 | Custom path returns fallback text | No `ANTHROPIC_API_KEY` or Claude error | Check the key; check function logs. |
 | New splash/haptics missing in the app | `ios:assets`/`ios:sync` skipped, or launch-screen cache | Re-run both, re-archive; delete/reinstall the app. |
 | Audio 404s | `NEXT_PUBLIC_BLOB_BASE_URL` wrong or media not uploaded | Re-run `upload-blob.mjs`; verify the base URL. |
-| Provider cost spike | Unauthenticated custom/tts abuse | Add rate limiting (see [security.md](./security.md#5-recommended-hardening-prioritized)). |
+| Provider cost spike | Unauthenticated custom/tts abuse | Add rate limiting (see [security.md](./security.md#5-recommended-hardening-prioritized)); watch spend per [Billing & cost monitoring](#billing--cost-monitoring). |
+| Custom generation suddenly failing for everyone | Anthropic credits hit $0 | Check the balance ([console.anthropic.com](https://console.anthropic.com) → Billing); confirm auto-reload is on. See [Billing & cost monitoring](#billing--cost-monitoring). |
