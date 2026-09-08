@@ -102,20 +102,23 @@ screen and go straight to the player.
 
 ### 3f. History
 
-Reached from the orbit mark (top-right of the home), which appears once there is
-any history. The first time it appears (typically after the first completed
-session), it pulses a few times with a small "history and saved" tooltip to
-introduce it, once ever (a one-time on-device flag). Two groups:
+Titled "your sessions", reached from the orbit mark (top-right of the home),
+which appears once there is any history. The first time it appears (typically
+after the first completed session), it pulses a few times with a small "history
+and saved" tooltip to introduce it, once ever (a one-time on-device flag). Two
+groups, **saved on top, then recent**:
 
+- **saved:** starred sessions, kept indefinitely (they do not roll off the way
+  recent does; the store caps at 100). Star from any recent row; a saved session
+  shows only under Saved so it never appears twice.
 - **recent:** the rolling last 10 sessions, reverse-chronological, each showing
   intention/phrase, time-ago, and detail (`length · Her/Him · US/UK · soundscape`,
   or `length · sounds only`). Tap to replay (restores every choice and opens the
   tray).
-- **saved:** starred sessions, kept indefinitely (they do not roll off the way
-  recent does; the store caps at 100). Star from any recent row; a saved session
-  shows only under Saved so it never appears twice.
 
-All history is on-device (`localStorage`); see [data-privacy.md](./data-privacy.md).
+Any row **swipes left to reveal a delete action** (a trash button); tapping it
+removes that session, tapping the card or swiping back closes it. All history is
+on-device (`localStorage`); see [data-privacy.md](./data-privacy.md).
 
 ## 4. Personalization pipeline (user's view)
 

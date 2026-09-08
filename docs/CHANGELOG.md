@@ -74,7 +74,10 @@ merged to production.
   section is pinned to a fixed position so it never shifts between states.
 - **Recent/history entry first-reveal hint**: the first time the orbit mark
   appears (after the first session), it pulses with a small "history and saved"
-  tooltip, once ever.
+  tooltip that fades in and out on the soft ease, once ever.
+- **History page reworked**: titled "your sessions", **saved on top** then recent;
+  any row **swipes left to delete** it. Launch-screen mark ("r") reduced ~35% (a
+  native asset, lands in the next iOS build).
 
 
 ### 2026-09-06 — History redesign, audio leveling, tray, instant-start fix

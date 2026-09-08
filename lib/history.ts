@@ -89,6 +89,30 @@ export function toggleFav(s: RecentSession): RecentSession[] {
   return next;
 }
 
+// Delete a single session from recent or from saved (swipe-to-delete). Returns
+// the new list so the caller can update state without a re-read.
+export function removeRecent(s: RecentSession): RecentSession[] {
+  const k = sessionSig(s);
+  const next = loadRecent().filter((r) => sessionSig(r) !== k);
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+  } catch {
+    /* best-effort */
+  }
+  return next;
+}
+
+export function removeFav(s: RecentSession): RecentSession[] {
+  const k = sessionSig(s);
+  const next = loadFavs().filter((r) => sessionSig(r) !== k);
+  try {
+    localStorage.setItem(FAV_KEY, JSON.stringify(next));
+  } catch {
+    /* best-effort */
+  }
+  return next;
+}
+
 export interface MoodEntry {
   mood: string; // e.g. "calmer"
   context: string;
