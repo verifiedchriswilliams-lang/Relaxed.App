@@ -2334,47 +2334,54 @@ export default function Home() {
               standing box. relaxed: cold start shows the field; a remembered
               name shows the greeting with a tap-to-edit name. ElevenMind keeps
               its original greeting + name field. */}
-          {IS_RELAXED && nameCommitted && !editingName ? (
-            <div className="greeting">
-              {greetingFor()},{" "}
-              <button
-                className="name-chip"
-                onClick={() => setEditingName(true)}
-                aria-label="Edit your name"
-              >
-                <b>{name.trim()}</b>
-                <svg className="pencil" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path
-                    d="M14.5 5.5l4 4M4 20l1-4L16 5a2 2 0 0 1 3 3L8 19l-4 1z"
-                    stroke="currentColor"
-                    strokeWidth={1.6}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
+          {IS_RELAXED ? (
+            // Fixed-height header so everything below (the prompt + intentions)
+            // stays pinned regardless of state; the greeting sits on the same
+            // line the cold-start field occupies.
+            <div className="home-head">
+              {nameCommitted && !editingName ? (
+                <div className="greeting">
+                  {greetingFor()},{" "}
+                  <button
+                    className="name-chip"
+                    onClick={() => setEditingName(true)}
+                    aria-label="Edit your name"
+                  >
+                    <b>{name.trim()}</b>
+                    <svg className="pencil" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M14.5 5.5l4 4M4 20l1-4L16 5a2 2 0 0 1 3 3L8 19l-4 1z"
+                        stroke="currentColor"
+                        strokeWidth={1.6}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="ask-label">what should we call you?</div>
+                  <div className="namefield glass">
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          commitName();
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      onBlur={commitName}
+                      placeholder="your name"
+                      maxLength={40}
+                      autoFocus={editingName}
+                      aria-label="Your name"
+                    />
+                  </div>
+                </>
+              )}
             </div>
-          ) : IS_RELAXED ? (
-            <>
-              <div className="ask-label">what should we call you?</div>
-              <div className="namefield glass">
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      commitName();
-                      e.currentTarget.blur();
-                    }
-                  }}
-                  onBlur={commitName}
-                  placeholder="your name"
-                  maxLength={40}
-                  autoFocus={editingName}
-                  aria-label="Your name"
-                />
-              </div>
-            </>
           ) : (
             <>
               <div className="greeting">

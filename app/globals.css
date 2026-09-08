@@ -245,11 +245,24 @@ button {
 
 /* Home header: the cold-start "what should we call you?" label above the name
    field, and the returning-state editable name chip in the greeting. */
+/* Fixed-height header: reserves the tallest state's space so the prompt +
+   intentions below never shift between cold-start and returning. Content is
+   bottom-anchored, so the returning greeting lands on the same line the
+   cold-start field occupies. */
+.home-head {
+  height: 92px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+.home-head .greeting {
+  margin: 0 0 11px; /* center the one-line greeting on the field's band */
+}
 .ask-label {
-  margin-top: 6px;
   font-size: 14px;
   color: var(--ink-1);
-  margin-bottom: 0;
+  margin: 0;
 }
 .ask-label + .namefield {
   margin-top: 12px;
