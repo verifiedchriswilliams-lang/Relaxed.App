@@ -66,6 +66,7 @@ ElevenMind base in `globals.css`). relaxed is **deliberately dark-only.**
 | Token | Value | Role |
 |---|---|---|
 | `--rx-ease-breath` | `cubic-bezier(.37,0,.63,1)` | The breathing curve |
+| `--rx-breath` | `14.5s` | Ornamental pulse cadence (composing/closing glow); matches the 14.5s guided breath so the world breathes as one |
 | `--rx-ease-soft` | `cubic-bezier(.16,.84,.44,1)` | UI settle, no overshoot |
 | `--t-ui` | `0.34s` | ~2× the ElevenMind base (0.16s) |
 | `--ease-ui`, `--ease-spring` | remapped to `--rx-ease-soft` | Kills the springy overshoot |

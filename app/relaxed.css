@@ -41,6 +41,10 @@
   --rx-scrim: rgba(0, 0, 0, 0.5);
   --rx-shadow: 0 12px 30px -14px rgba(0, 0, 0, 0.6);
   --rx-ease-breath: cubic-bezier(0.37, 0, 0.63, 1);
+  /* Ornamental pulse cadence (composing/closing glow). Matches the guided breath
+     cycle (14.5s = 6s in + 2.5s hold + 6s out, the BREATH_* clock in page.tsx)
+     so the whole world breathes at one rhythm. */
+  --rx-breath: 14.5s;
   --rx-bloom: rgba(239, 235, 227, 0.1); /* soft light-bloom on Ink */
 
   /* ---- calmer motion ---------------------------------------------------- */
@@ -103,7 +107,7 @@
 /* Composing + closing glow: the identity's free-running breath. */
 [data-brand="relaxed"] .gen-orb::before,
 [data-brand="relaxed"] .done-orb::before {
-  animation: rx-breathe var(--rx-breath, 11s) var(--rx-ease-breath) infinite;
+  animation: rx-breathe var(--rx-breath, 14.5s) var(--rx-ease-breath) infinite;
 }
 /* Player glow breathes off the shared --pb clock (page.tsx), locked to the ring
    and the cue words. --pb: 0 = exhaled, 1 = inhaled. */
@@ -355,7 +359,7 @@
 /* ---- generating: the stem glyph breathes; steps stay monochrome --------- */
 [data-brand="relaxed"] .gen-glyph {
   color: var(--ink-0);
-  animation: rx-breathe var(--rx-breath, 11s) var(--rx-ease-breath) infinite;
+  animation: rx-breathe var(--rx-breath, 14.5s) var(--rx-ease-breath) infinite;
 }
 [data-brand="relaxed"] .step b {
   color: var(--ink-0);
@@ -382,7 +386,7 @@
   display: none;
 }
 [data-brand="relaxed"] .done-orb .disc {
-  animation: rx-breathe var(--rx-breath, 11s) var(--rx-ease-breath) infinite;
+  animation: rx-breathe var(--rx-breath, 14.5s) var(--rx-ease-breath) infinite;
 }
 /* The player ring breathes off the shared JS clock (--pb) rather than a
    free-running keyframe, so it expands exactly while the cue reads "Breathe in",

@@ -101,13 +101,11 @@ Discrepancies found during this documentation pass (code is authoritative):
   at this docs set.
 - 🟢 **Legacy storage key name.** On-device prefs use `elevenmind.prefs.v1` for both
   brands. Harmless, but confusing; consider a brand-neutral key with a migration.
-- 🟢 **`--rx-breath` undefined in the app.** `app/relaxed.css` references
-  `var(--rx-breath, 11s)` for the composing/closing ornamental pulse but never
-  defines `--rx-breath`, so that ornament runs at the 11s fallback while the
-  guided breath (player ring + cue) runs 14.5s. The brand token file lists the
-  guided breath as 14.5s. Decide whether the ornament should match 14.5s (define
-  the variable) or stay a distinct shorter loop; today it is an accidental
-  fallback, not an explicit choice.
+- ✅ **`--rx-breath` unified (resolved 2026-09).** `app/relaxed.css` now defines
+  `--rx-breath: 14.5s`, so the composing/closing ornamental pulse matches the
+  guided breath (player ring + cue) instead of running at the old 11s fallback.
+  The whole relaxed world now breathes on one cadence; recorded as a token in
+  [design-system.md](./design-system.md).
 - 🟢 **Second regression pass (2026-09-07) corrections.** Fixed doc claims that the
   Frequencies soundscapes are browser-synthesized (they are now ElevenLabs files,
   which also has an IP-licensing implication in [third-party-ip.md](./third-party-ip.md)),
