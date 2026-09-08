@@ -243,6 +243,108 @@ button {
   color: var(--ink-2);
 }
 
+/* Home header: the cold-start "what should we call you?" label above the name
+   field, and the returning-state editable name chip in the greeting. */
+/* Fixed-height header: reserves the tallest state's space so the prompt +
+   intentions below never shift between cold-start and returning. Content is
+   bottom-anchored, so the returning greeting lands on the same line the
+   cold-start field occupies. */
+.home-head {
+  height: 92px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+.home-head .greeting {
+  margin: 0 0 11px; /* center the one-line greeting on the field's band */
+}
+.ask-label {
+  font-size: 14px;
+  color: var(--ink-1);
+  margin: 0;
+}
+.ask-label + .namefield {
+  margin-top: 12px;
+}
+.name-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.name-chip b {
+  border-bottom: 1px dotted var(--rx-line-strong, rgba(255, 255, 255, 0.24));
+  padding-bottom: 1px;
+}
+.name-chip .pencil {
+  color: var(--ink-2);
+  opacity: 0.85;
+}
+.name-chip:hover .pencil,
+.name-chip:focus-visible .pencil {
+  opacity: 1;
+}
+
+/* "Make your own" flagship: a filled (Bone) primary above a labeled divider. */
+.hero-make {
+  width: 280px;
+  max-width: 92%;
+  margin-top: 16px;
+  text-align: left;
+  background: var(--glass-strong);
+  color: var(--rx-invert-fg, #0b0d1a);
+  border: 0;
+  border-radius: 16px;
+  padding: 15px 18px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-ui) var(--ease-ui);
+}
+.hero-make:hover,
+.hero-make:focus-visible {
+  transform: translateY(-1px);
+}
+.hero-make .hm-l {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+}
+.hero-make .hm-s {
+  display: block;
+  margin-top: 3px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  opacity: 0.62;
+}
+.hero-div {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 280px;
+  max-width: 92%;
+  margin-top: 17px;
+  color: var(--ink-2);
+  font-size: 11px;
+}
+.hero-div .l {
+  flex: 1;
+  height: 1px;
+  background: var(--glass-line);
+}
+.states-wide {
+  width: 280px;
+  max-width: 92%;
+}
+
 .prompt {
   margin-top: 46px;
   font-size: 12.5px;
@@ -971,6 +1073,71 @@ button {
 .hb-spacer {
   width: 40px;
   flex: 0 0 auto;
+}
+
+/* First-reveal hint on the recent/history entry: a few gentle pulses + a small
+   tooltip, shown once when the glyph first appears. */
+.recent-entry-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.recent-entry.pulse {
+  opacity: 1;
+  animation: rx-pulse 1.15s ease-in-out 3;
+}
+@keyframes rx-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 235, 227, 0);
+  }
+  50% {
+    transform: scale(1.14);
+    box-shadow: 0 0 0 6px rgba(239, 235, 227, 0.08);
+  }
+}
+.recent-hint {
+  position: absolute;
+  top: calc(100% + 9px);
+  right: 4px;
+  white-space: nowrap;
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  color: var(--ink-0);
+  font-size: 12px;
+  padding: 6px 11px;
+  border-radius: 10px;
+  box-shadow: var(--rx-shadow, 0 8px 22px rgba(0, 0, 0, 0.45));
+  pointer-events: none;
+  z-index: 5;
+  animation: rx-hint-in 0.3s var(--ease-ui) both;
+}
+.recent-hint::before {
+  content: "";
+  position: absolute;
+  top: -4px;
+  right: 12px;
+  width: 8px;
+  height: 8px;
+  background: var(--glass);
+  border-left: 1px solid var(--glass-line);
+  border-top: 1px solid var(--glass-line);
+  transform: rotate(45deg);
+}
+@keyframes rx-hint-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .recent-entry.pulse {
+    animation: none;
+  }
 }
 
 /* History page */

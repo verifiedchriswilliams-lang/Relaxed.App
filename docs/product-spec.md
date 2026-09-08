@@ -53,10 +53,17 @@ stateDiagram-v2
 
 ### 3a. Setup (home)
 
-- A time-based greeting ("Good morning/afternoon/evening"), optionally with the
-  saved name.
-- A name field (persisted on-device).
-- The intention tiles. Tapping one opens the options tray.
+- **Header (the name is an editable part of the headline, never a standing box).**
+  First run shows "what should we call you?" with a name field; once a name is set
+  (or remembered), the header becomes the time-based greeting with the name inline
+  and a small pencil to tap and edit ("good evening, Chris ✎"). ElevenMind keeps
+  its original greeting + name field.
+- **The flagship ("In your words").** On relaxed, under "What would you like to
+  do?", "make your own" is a filled (Bone) primary card ("Let us create a
+  personalized, guided session for whatever you need."), set apart above an
+  "or pick a common intention" divider.
+- The common intentions (meditate, sleep, flow, relax) follow as quiet rows.
+  Tapping any option (including make your own) opens the options tray.
 - An **orbit-mark entry point** (top-right) appears once the user has any history,
   opening the History screen.
 
@@ -95,7 +102,10 @@ screen and go straight to the player.
 
 ### 3f. History
 
-Reached from the orbit mark. Two groups:
+Reached from the orbit mark (top-right of the home), which appears once there is
+any history. The first time it appears (typically after the first completed
+session), it pulses a few times with a small "history and saved" tooltip to
+introduce it, once ever (a one-time on-device flag). Two groups:
 
 - **recent:** the rolling last 10 sessions, reverse-chronological, each showing
   intention/phrase, time-ago, and detail (`length · Her/Him · US/UK · soundscape`,
@@ -112,9 +122,13 @@ All history is on-device (`localStorage`); see [data-privacy.md](./data-privacy.
 1. The user's choices shape which template or prompt is used.
 2. For presets, a template is assembled and pace-stretched to the chosen length;
    the name line is voiced live, the rest reused from cache.
-3. For "In your words," Claude writes a session around the phrase; it starts
-   instantly with a spoken arrival while the body streams in.
-4. Everything plays over the chosen bed with ducking, a bloom-in, and soft bells.
+3. For "In your words," the **Meditation Engine** gives Claude a structured arc
+   (settle → body → visualization → reflection → close) with per-scene targets;
+   Claude fills each scene, and it starts instantly with a spoken arrival while
+   the body streams in.
+4. Everything plays over the chosen bed with ducking, a bloom-in, soft bells, and
+   a **scene-based audio envelope**: for sleep the voice thins out toward the end
+   while the bed continues; other sessions soften gently at the close.
 
 Technical detail: [audio-engine.md](./audio-engine.md).
 

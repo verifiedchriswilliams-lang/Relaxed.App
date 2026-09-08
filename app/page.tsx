@@ -6,6 +6,7 @@ import {
   DURATIONS,
   getContext,
   CUSTOM_MAX_CHARS,
+  CUSTOM_ENABLED,
   type ContextId,
   type Duration,
   type VoiceChoice,
@@ -22,9 +23,12 @@ import {
   toggleFav,
   isFav,
   recordMood,
+  recentHintSeen,
+  markRecentHintSeen,
   type RecentSession,
 } from "@/lib/history";
 import { ev } from "@/lib/analytics";
+import { audioProfile, type AudioProfile } from "@/lib/engine";
 
 // Which visual world are we in? relaxed swaps the aurora + coloured discs for
 // the flat, no-accent "stem" identity; ElevenMind keeps its night sky.
@@ -291,6 +295,13 @@ class AudioEngine {
   // The bed level the duck envelope is holding just before the next attack, so
   // each line's ramp starts from a known anchor (avoids clicks / long ramps).
   private duckHold = 1;
+  // Scene-based audio (Phase 1): a gain downstream of the master carries the
+  // per-progress bed intensity envelope, and the current session's voice bus is
+  // kept so its gain can be rolled as the voice thins out (e.g. toward sleep).
+  private ambientScene: GainNode | null = null;
+  private voiceBus: GainNode | null = null;
+  private profile: AudioProfile | null = null;
+  private sessionTotalSec = 0;
   ambientNodes: AudioNode[] = [];
   voiceSegs: AudioBufferSourceNode[] = [];
   voiceGainValue = 1; // per-voice loudness normalization, set before playSegments
@@ -392,6 +403,7 @@ class AudioEngine {
     voiceBus.gain.value = this.voiceGainValue;
     voiceBus.connect(ctx.destination);
     this.ambientNodes.push(voiceBus);
+    this.voiceBus = voiceBus;
 
     this.playStartTime = ctx.currentTime + 0.15;
     this.lineStarts = [];
@@ -401,6 +413,7 @@ class AudioEngine {
       // Each line's start offset, whether or not it has audio (so the read-along
       // still follows along in preview / read-along mode).
       this.lineStarts.push(t - this.playStartTime);
+      this.applyEnvelope(t);
       if (d.buffer) {
         try {
           const src = ctx.createBufferSource();
@@ -476,7 +489,38 @@ class AudioEngine {
     voiceBus.gain.value = this.voiceGainValue;
     voiceBus.connect(ctx.destination);
     this.ambientNodes.push(voiceBus);
+    this.voiceBus = voiceBus;
     return voiceBus;
+  }
+
+  // Scene-based audio (Phase 1): the per-context envelope + the session length,
+  // set once per session (after startAmbient) so applyEnvelope can shape the bed
+  // and voice as the session progresses. Null profile = no envelope (flat).
+  setSession(profile: AudioProfile | null, totalSec: number) {
+    this.profile = profile;
+    this.sessionTotalSec = Math.max(0, totalSec);
+  }
+
+  // Roll the bed intensity and voice presence toward the envelope's values for
+  // this point in the session, anchored to a line's start time. Called as each
+  // line is scheduled, so a Sleep session's voice thins out over the second half
+  // while the bed stays present, and every session softens gently at the close.
+  private applyEnvelope(at: number) {
+    if (!this.profile || !this.sessionTotalSec || !this.ctx) return;
+    const p = Math.max(0, Math.min(1, (at - this.playStartTime) / this.sessionTotalSec));
+    const anchor = Math.max(this.ctx.currentTime, at - 0.05);
+    if (this.voiceBus) {
+      const g = this.voiceBus.gain;
+      g.cancelScheduledValues(anchor);
+      g.setValueAtTime(g.value, anchor);
+      g.linearRampToValueAtTime(this.voiceGainValue * this.profile.voice(p), at + 0.25);
+    }
+    if (this.ambientScene) {
+      const g = this.ambientScene.gain;
+      g.cancelScheduledValues(anchor);
+      g.setValueAtTime(g.value, anchor);
+      g.linearRampToValueAtTime(this.profile.bed(p), at + 2);
+    }
   }
 
   // Core streaming loop for playCustomStream: synthesize a batch of lines with a
@@ -523,6 +567,7 @@ class AudioEngine {
         state.started = true;
       }
       this.lineStarts.push(startAt - this.playStartTime);
+      this.applyEnvelope(startAt);
       let dur = 0;
       if (buf) {
         try {
@@ -563,15 +608,21 @@ class AudioEngine {
     const ctx = this.ensureCtx();
     const master = ctx.createGain();
     master.gain.value = 0;
-    // bed sources -> master (level + fades) -> duck (voice ducking) -> out.
+    // bed sources -> master (level + fades) -> scene (intensity envelope) ->
+    // duck (voice ducking) -> out. Scene is separate from the master so the
+    // per-progress intensity arc never fights the arrival bloom or closing fade.
+    const scene = ctx.createGain();
+    scene.gain.value = this.profile ? this.profile.bed(0) : 1;
     const duck = ctx.createGain();
     duck.gain.value = 1;
     this.duckHold = 1;
-    master.connect(duck);
+    master.connect(scene);
+    scene.connect(duck);
     duck.connect(ctx.destination);
     this.ambientMaster = master;
+    this.ambientScene = scene;
     this.ambientDuck = duck;
-    this.ambientNodes.push(duck);
+    this.ambientNodes.push(scene, duck);
 
     // A hosted looping bed (ElevenLabs nature/music track).
     if (src) {
@@ -798,7 +849,11 @@ class AudioEngine {
     });
     this.ambientNodes = [];
     this.ambientMaster = null;
+    this.ambientScene = null;
     this.ambientDuck = null;
+    this.voiceBus = null;
+    this.profile = null;
+    this.sessionTotalSec = 0;
     this.duckHold = 1;
   }
 
@@ -1138,6 +1193,13 @@ function breathAt(t: number): { pb: number; phase: "in" | "hold" | "out" } {
 export default function Home() {
   const [screen, setScreen] = useState<Screen>("setup");
   const [name, setName] = useState("");
+  // Home header: the name is an editable part of the headline, never a standing
+  // box. Cold start shows the "what should we call you?" field; once a name is
+  // committed (or loaded from prefs) the header becomes the greeting with a
+  // tap-to-edit name. `nameCommitted` flips only on commit, so the field doesn't
+  // disappear mid-typing.
+  const [nameCommitted, setNameCommitted] = useState(false);
+  const [editingName, setEditingName] = useState(false);
   const [context, setContext] = useState<ContextId>("meditation");
   const [duration, setDuration] = useState<Duration>(10);
   const [voice, setVoice] = useState<VoiceChoice>("female");
@@ -1174,6 +1236,10 @@ export default function Home() {
   // from the rolling ten-deep recent window.
   const [favs, setFavs] = useState<RecentSession[]>([]);
   const [mood, setMood] = useState<string | null>(null);
+  // First-reveal hint on the recent/history entry: pulse + a small tooltip the
+  // first time it appears (after the first completed session), then never again.
+  const [hintRecent, setHintRecent] = useState(false);
+  const hintDoneRef = useRef(false);
 
   const engineRef = useRef<AudioEngine>(new AudioEngine());
   // Breathing: one smooth clock (seconds of playing time) drives both the orb
@@ -1273,7 +1339,10 @@ export default function Home() {
       const raw = localStorage.getItem(PREFS_KEY);
       if (raw) {
         const p = JSON.parse(raw) as Prefs;
-        if (p.name) setName(p.name);
+        if (p.name) {
+          setName(p.name);
+          setNameCommitted(true); // returning user: greeting, not the name field
+        }
         if (p.voice) setVoice(p.voice);
         if (p.accent) setAccent(p.accent);
         // Ignore a saved "silence" (the removed Off option): every session
@@ -1290,6 +1359,20 @@ export default function Home() {
     setRecent(loadRecent());
     setFavs(loadFavs());
   }, []);
+
+  // The first time the recent/history entry appears (once there's history, e.g.
+  // after the first completed session lands the user back home), pulse it with a
+  // small tooltip so the newly-appeared glyph is intuitive. Once, ever.
+  useEffect(() => {
+    if (!IS_RELAXED || screen !== "setup" || hintDoneRef.current) return;
+    if (recent.length === 0 && favs.length === 0) return;
+    hintDoneRef.current = true;
+    if (recentHintSeen()) return;
+    markRecentHintSeen();
+    setHintRecent(true);
+    const t = window.setTimeout(() => setHintRecent(false), 5200);
+    return () => window.clearTimeout(t);
+  }, [screen, recent.length, favs.length]);
 
   useEffect(() => {
     const engine = engineRef.current;
@@ -1492,6 +1575,18 @@ export default function Home() {
     } catch {
       return false;
     }
+  }
+
+  // Commit the typed name from the home header: trim, remember it, and flip the
+  // header from the field to the greeting. Empty input is ignored (stay in the
+  // field) so a name can't be blanked out by tapping away.
+  function commitName() {
+    const n = name.trim();
+    if (!n) return;
+    setName(n);
+    setNameCommitted(true);
+    setEditingName(false);
+    persistPrefs();
   }
 
   function chooseIntention(id: ContextId) {
@@ -1703,6 +1798,9 @@ export default function Home() {
     const { voiceGain, src, level } = bedAndVoice(voice, accent, soundscape);
     eng.voiceGainValue = voiceGain;
     eng.startAmbient(soundscape, src, level);
+    // Scene-based audio: the per-intention envelope shapes the bed + voice over
+    // the session's length (e.g. the voice thins out toward sleep).
+    eng.setSession(audioProfile(context), duration * 60);
     eng.playBell({ gain: 0.06, f0: 396, decay: 4.5 }); // soft "enter" cue
     eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
 
@@ -1790,6 +1888,9 @@ export default function Home() {
     const { voiceGain, src, level } = bedAndVoice(voice, accent, soundscape);
     eng.voiceGainValue = voiceGain;
     eng.startAmbient(soundscape, src, level);
+    // Scene-based audio: shape the bed + voice over the session (e.g. the voice
+    // thins out toward the end of a Sleep session while the bed carries on).
+    eng.setSession(audioProfile(context), duration * 60);
     eng.playBell({ gain: 0.06, f0: 396, decay: 4.5 }); // soft "enter" cue
     eng.playSegments(segments);
     clockStart();
@@ -2235,68 +2336,165 @@ export default function Home() {
         <div className="topbar">
           <Wordmark />
           {IS_RELAXED && (recent.length > 0 || favs.length > 0) && (
-            <button
-              className="recent-entry"
-              onClick={() => {
-                haptic("light");
-                setScreen("history");
-              }}
-              aria-label="Recent sessions"
-            >
-              <OrbitGlyph size={22} />
-            </button>
+            <div className="recent-entry-wrap">
+              <button
+                className={`recent-entry ${hintRecent ? "pulse" : ""}`}
+                onClick={() => {
+                  haptic("light");
+                  setHintRecent(false);
+                  setScreen("history");
+                }}
+                aria-label="Recent and saved sessions"
+              >
+                <OrbitGlyph size={22} />
+              </button>
+              {hintRecent && (
+                <span className="recent-hint" role="status">
+                  history and saved
+                </span>
+              )}
+            </div>
           )}
         </div>
 
         <div className="hero">
-          <div className="greeting">
-            {greetingFor()}
-            {name.trim() ? (
-              <>
-                , <b>{name.trim()}</b>
-              </>
-            ) : (
-              ""
-            )}
-          </div>
-
-          <div className="namefield glass">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="What should we call you?"
-              maxLength={40}
-              aria-label="Your name"
-            />
-          </div>
-
-          <div className="prompt">What would you like to do?</div>
-          <div className="states">
-            {CONTEXTS.map((c) => (
-              <button
-                key={c.id}
-                className="state"
-                onClick={() => chooseIntention(c.id)}
-              >
-                <span
-                  className="orb"
-                  style={
-                    IS_RELAXED
-                      ? undefined
-                      : ({ background: c.art, "--og": c.glow } as React.CSSProperties)
-                  }
+          {/* Header. The name is an editable part of the headline, never a
+              standing box. relaxed: cold start shows the field; a remembered
+              name shows the greeting with a tap-to-edit name. ElevenMind keeps
+              its original greeting + name field. */}
+          {IS_RELAXED ? (
+            // Fixed-height header so everything below (the prompt + intentions)
+            // stays pinned regardless of state; the greeting sits on the same
+            // line the cold-start field occupies.
+            <div className="home-head">
+              {nameCommitted && !editingName ? (
+                <div className="greeting">
+                  {greetingFor()},{" "}
+                  <button
+                    className="name-chip"
+                    onClick={() => setEditingName(true)}
+                    aria-label="Edit your name"
+                  >
+                    <b>{name.trim()}</b>
+                    <svg className="pencil" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path
+                        d="M14.5 5.5l4 4M4 20l1-4L16 5a2 2 0 0 1 3 3L8 19l-4 1z"
+                        stroke="currentColor"
+                        strokeWidth={1.6}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="ask-label">what should we call you?</div>
+                  <div className="namefield glass">
+                    <input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          commitName();
+                          e.currentTarget.blur();
+                        }
+                      }}
+                      onBlur={commitName}
+                      placeholder="your name"
+                      maxLength={40}
+                      autoFocus={editingName}
+                      aria-label="Your name"
+                    />
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="greeting">
+                {greetingFor()}
+                {name.trim() ? (
+                  <>
+                    , <b>{name.trim()}</b>
+                  </>
+                ) : (
+                  ""
+                )}
+              </div>
+              <div className="namefield glass">
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="What should we call you?"
+                  maxLength={40}
+                  aria-label="Your name"
                 />
-                <span className="slabel">
-                  <span className="sname">{c.label}</span>
-                  {c.custom && (
-                    <span className="ssub">
-                      A guided session for whatever you need.
-                    </span>
-                  )}
+              </div>
+            </>
+          )}
+
+          {IS_RELAXED && CUSTOM_ENABLED ? (
+            <>
+              {/* "Make your own" is the flagship: a filled (Bone) primary, above
+                  a labeled divider and the common intentions. */}
+              <div className="prompt">What would you like to do?</div>
+              <button className="hero-make" onClick={() => chooseIntention("custom")}>
+                <span className="hm-l">make your own</span>
+                <span className="hm-s">
+                  Let us create a personalized, guided session for whatever you need.
                 </span>
               </button>
-            ))}
-          </div>
+              <div className="hero-div">
+                <span className="l" />
+                or pick a common intention
+                <span className="l" />
+              </div>
+              <div className="states states-wide">
+                {CONTEXTS.filter((c) => !c.custom).map((c) => (
+                  <button
+                    key={c.id}
+                    className="state"
+                    onClick={() => chooseIntention(c.id)}
+                  >
+                    <span className="slabel">
+                      <span className="sname">{c.label}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="prompt">What would you like to do?</div>
+              <div className="states">
+                {CONTEXTS.map((c) => (
+                  <button
+                    key={c.id}
+                    className="state"
+                    onClick={() => chooseIntention(c.id)}
+                  >
+                    <span
+                      className="orb"
+                      style={
+                        IS_RELAXED
+                          ? undefined
+                          : ({ background: c.art, "--og": c.glow } as React.CSSProperties)
+                      }
+                    />
+                    <span className="slabel">
+                      <span className="sname">{c.label}</span>
+                      {c.custom && (
+                        <span className="ssub">
+                          A guided session for whatever you need.
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
 
         </div>
 

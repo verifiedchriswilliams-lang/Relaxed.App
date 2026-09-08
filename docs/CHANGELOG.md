@@ -55,6 +55,28 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### Unreleased — `phase1-engine` branch (in preview)
+Phase 1: "make the AI genuinely special." Built on a branch for review, not yet
+merged to production.
+- **Meditation Engine** (`lib/engine.ts`): the custom "In your words" session is
+  now written to a structured arc (settle → body → visualization → reflection →
+  close), each scene with its own second target that the app fits, so the session
+  is balanced end to end. The app owns timing; Claude owns language.
+- **Scene-based audio**: a per-intention envelope shapes bed intensity and voice
+  presence over the session; for **sleep the voice thins out** toward the end
+  while the bed continues. Applies to presets and custom.
+- **"In your words" is the flagship**: under "What would you like to do?",
+  "make your own" is a filled (Bone) primary card above an "or pick a common
+  intention" divider, with the common intentions as quiet rows below.
+- **Home header refined**: the name is an editable part of the headline (no
+  standing box). First run asks "what should we call you?" with a field; a
+  remembered name shows the greeting with a tap-to-edit pencil. The intentions
+  section is pinned to a fixed position so it never shifts between states.
+- **Recent/history entry first-reveal hint**: the first time the orbit mark
+  appears (after the first session), it pulses with a small "history and saved"
+  tooltip, once ever.
+
+
 ### 2026-09-06 — History redesign, audio leveling, tray, instant-start fix
 - **History page.** Replaced the broken home "recents" stack with a dedicated
   history screen reached from an orbit-mark entry point (a proprietary
