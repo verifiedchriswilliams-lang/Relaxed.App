@@ -161,7 +161,9 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 26px 2px 0;
+  /* Clear the status bar / Dynamic Island in the native shell. On the web the
+     inset resolves to 0, so the spacing is unchanged. */
+  padding: calc(26px + env(safe-area-inset-top)) 2px 0;
 }
 .wm {
   display: inline-flex;
@@ -1409,7 +1411,8 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 26px 2px 0;
+  /* Clear the status bar / Dynamic Island in the native shell (see .topbar). */
+  padding: calc(26px + env(safe-area-inset-top)) 2px 0;
   font-size: 13px;
   color: var(--ink-1);
 }

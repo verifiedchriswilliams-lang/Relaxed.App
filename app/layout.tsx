@@ -47,6 +47,12 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  // Draw edge to edge in the native shell so the dark ground fills behind the
+  // status bar and home indicator, and make the safe-area insets resolve to real
+  // values (env(safe-area-inset-*)) so chrome clears the status bar / Dynamic
+  // Island and the home indicator. Without this the top bars under-clear the
+  // island on modern iPhones.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

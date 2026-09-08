@@ -55,6 +55,13 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-08 — Status-bar overlap fix (safe-area insets)
+- **Fixed:** on iPhones with a Dynamic Island / notch, the player's title + timer
+  (and the home wordmark) rendered under the status bar. The app now draws edge to
+  edge (`viewport-fit=cover`) and the top chrome clears the status bar via
+  `env(safe-area-inset-top)`. Because the iOS shell loads the hosted page, this
+  reaches installed builds on deploy, no new App Store build required.
+
 ### 2026-09-08 — History page scrolls; script model set to opus
 - **Scrollable sessions list.** On the single-screen relaxed shell, the history
   page's saved + recent list is now its own inner scroller: the back-button bar

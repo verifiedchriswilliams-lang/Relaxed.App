@@ -35,9 +35,17 @@ flowchart LR
 
 - `appId: app.relaxed`, `appName: relaxed`, `server.url: https://relaxed.app`,
   `cleartext: false`.
-- `backgroundColor: #121110` (Ink) app-wide and iOS; `ios.contentInset: "always"`
-  so content sits inside the safe areas (status bar / home indicator painted by
-  the native Ink background).
+- `backgroundColor: #121110` (Ink) app-wide and iOS, so the status-bar and
+  home-indicator regions are painted by the native Ink ground.
+- **Safe-area insets are handled web-side.** The layout draws edge to edge
+  (`viewport-fit=cover` in `app/layout.tsx`) and the chrome clears the status bar /
+  Dynamic Island and the home indicator via CSS `env(safe-area-inset-*)` padding
+  (`.topbar`, `.player-top`, the tray/history bottoms in `app/globals.css`). This
+  is the operative mechanism because the relaxed brand is scroll-locked, so
+  `ios.contentInset: "always"` (a scroll-view inset) has no effect on the fixed
+  layout, content would otherwise pin under the island. Because the shell loads the
+  hosted page, these fixes reach installed builds on deploy, no App Store build
+  needed.
 - **SplashScreen:** `launchShowDuration 1500`, `launchFadeOutDuration 700`, Ink
   background, no spinner — a calm cross-fade into the hosted page over an unchanging
   Ink ground.
