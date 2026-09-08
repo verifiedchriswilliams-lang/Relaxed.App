@@ -243,81 +243,93 @@ button {
   color: var(--ink-2);
 }
 
-/* Flagship: the bespoke "In your words" entry, elevated above the presets. A
-   prominent field with a primary go button, so "tell relaxed what you need" is
-   the headline of the home. */
-.flagship {
-  margin-top: 36px;
-  width: 320px;
-  max-width: 92%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
+/* Home header: the cold-start "what should we call you?" label above the name
+   field, and the returning-state editable name chip in the greeting. */
+.ask-label {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--ink-1);
+  margin-bottom: 0;
 }
-.fs-lead {
-  font-size: 19px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  color: var(--ink-0);
-  margin-bottom: 12px;
+.ask-label + .namefield {
+  margin-top: 12px;
 }
-.fs-field {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--glass);
-  border: 1px solid var(--glass-line);
-  border-radius: 16px;
-  height: 54px;
-  padding: 0 6px 0 16px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  transition: border-color var(--t-ui) var(--ease-ui);
-}
-.fs-field:focus-within {
-  border-color: var(--ink-1);
-}
-.fs-field input {
-  flex: 1;
-  min-width: 0;
-  height: 100%;
-  background: none;
-  border: 0;
-  outline: none;
-  color: var(--ink-0);
-  font-family: inherit;
-  font-size: 15px;
-}
-.fs-field input::placeholder {
-  color: var(--ink-2);
-}
-.fs-go {
-  flex: 0 0 auto;
+.name-chip {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
+  gap: 6px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.name-chip b {
+  border-bottom: 1px dotted var(--rx-line-strong, rgba(255, 255, 255, 0.24));
+  padding-bottom: 1px;
+}
+.name-chip .pencil {
+  color: var(--ink-2);
+  opacity: 0.85;
+}
+.name-chip:hover .pencil,
+.name-chip:focus-visible .pencil {
+  opacity: 1;
+}
+
+/* "Make your own" flagship: a filled (Bone) primary above a labeled divider. */
+.hero-make {
+  width: 280px;
+  max-width: 92%;
+  margin-top: 16px;
+  text-align: left;
   background: var(--glass-strong);
   color: var(--rx-invert-fg, #0b0d1a);
   border: 0;
-  padding: 0;
+  border-radius: 16px;
+  padding: 15px 18px;
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
   -webkit-tap-highlight-color: transparent;
   transition: transform var(--t-ui) var(--ease-ui);
 }
-.fs-go:hover,
-.fs-go:focus-visible {
-  transform: translateX(1px);
+.hero-make:hover,
+.hero-make:focus-visible {
+  transform: translateY(-1px);
 }
-.fs-hint {
-  margin-top: 10px;
+.hero-make .hm-l {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+}
+.hero-make .hm-s {
+  display: block;
+  margin-top: 3px;
   font-size: 12.5px;
+  line-height: 1.35;
+  opacity: 0.62;
+}
+.hero-div {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 280px;
+  max-width: 92%;
+  margin-top: 17px;
   color: var(--ink-2);
+  font-size: 11px;
+}
+.hero-div .l {
+  flex: 1;
+  height: 1px;
+  background: var(--glass-line);
+}
+.states-wide {
+  width: 280px;
+  max-width: 92%;
 }
 
 .prompt {

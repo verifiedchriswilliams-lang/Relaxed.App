@@ -53,13 +53,17 @@ stateDiagram-v2
 
 ### 3a. Setup (home)
 
-- A time-based greeting ("Good morning/afternoon/evening"), optionally with the
-  saved name.
-- A name field (persisted on-device).
-- **The flagship ("In your words").** On relaxed, the home leads with "tell relaxed
-  what you need" and an inline phrase field; entering it opens the tray in custom
-  mode with the phrase carried. The presets sit below under "or choose a practice."
-- The intention tiles. Tapping one opens the options tray.
+- **Header (the name is an editable part of the headline, never a standing box).**
+  First run shows "what should we call you?" with a name field; once a name is set
+  (or remembered), the header becomes the time-based greeting with the name inline
+  and a small pencil to tap and edit ("good evening, Chris ✎"). ElevenMind keeps
+  its original greeting + name field.
+- **The flagship ("In your words").** On relaxed, under "What would you like to
+  do?", "make your own" is a filled (Bone) primary card ("Let us create a
+  personalized, guided session for whatever you need."), set apart above an
+  "or pick a common intention" divider.
+- The common intentions (meditate, sleep, flow, relax) follow as quiet rows.
+  Tapping any option (including make your own) opens the options tray.
 - An **orbit-mark entry point** (top-right) appears once the user has any history,
   opening the History screen.
 

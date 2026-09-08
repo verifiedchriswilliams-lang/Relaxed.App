@@ -65,8 +65,12 @@ merged to production.
 - **Scene-based audio**: a per-intention envelope shapes bed intensity and voice
   presence over the session; for **sleep the voice thins out** toward the end
   while the bed continues. Applies to presets and custom.
-- **"In your words" is the flagship**: the home leads with "tell relaxed what you
-  need"; presets move below under "or choose a practice."
+- **"In your words" is the flagship**: under "What would you like to do?",
+  "make your own" is a filled (Bone) primary card above an "or pick a common
+  intention" divider, with the common intentions as quiet rows below.
+- **Home header refined**: the name is an editable part of the headline (no
+  standing box). First run asks "what should we call you?" with a field; a
+  remembered name shows the greeting with a tap-to-edit pencil.
 
 
 ### 2026-09-06 — History redesign, audio leveling, tray, instant-start fix

@@ -1191,6 +1191,13 @@ function breathAt(t: number): { pb: number; phase: "in" | "hold" | "out" } {
 export default function Home() {
   const [screen, setScreen] = useState<Screen>("setup");
   const [name, setName] = useState("");
+  // Home header: the name is an editable part of the headline, never a standing
+  // box. Cold start shows the "what should we call you?" field; once a name is
+  // committed (or loaded from prefs) the header becomes the greeting with a
+  // tap-to-edit name. `nameCommitted` flips only on commit, so the field doesn't
+  // disappear mid-typing.
+  const [nameCommitted, setNameCommitted] = useState(false);
+  const [editingName, setEditingName] = useState(false);
   const [context, setContext] = useState<ContextId>("meditation");
   const [duration, setDuration] = useState<Duration>(10);
   const [voice, setVoice] = useState<VoiceChoice>("female");
@@ -1326,7 +1333,10 @@ export default function Home() {
       const raw = localStorage.getItem(PREFS_KEY);
       if (raw) {
         const p = JSON.parse(raw) as Prefs;
-        if (p.name) setName(p.name);
+        if (p.name) {
+          setName(p.name);
+          setNameCommitted(true); // returning user: greeting, not the name field
+        }
         if (p.voice) setVoice(p.voice);
         if (p.accent) setAccent(p.accent);
         // Ignore a saved "silence" (the removed Off option): every session
@@ -1545,6 +1555,18 @@ export default function Home() {
     } catch {
       return false;
     }
+  }
+
+  // Commit the typed name from the home header: trim, remember it, and flip the
+  // header from the field to the greeting. Empty input is ignored (stay in the
+  // field) so a name can't be blanked out by tapping away.
+  function commitName() {
+    const n = name.trim();
+    if (!n) return;
+    setName(n);
+    setNameCommitted(true);
+    setEditingName(false);
+    persistPrefs();
   }
 
   function chooseIntention(id: ContextId) {
@@ -2308,95 +2330,136 @@ export default function Home() {
         </div>
 
         <div className="hero">
-          <div className="greeting">
-            {greetingFor()}
-            {name.trim() ? (
-              <>
-                , <b>{name.trim()}</b>
-              </>
-            ) : (
-              ""
-            )}
-          </div>
-
-          <div className="namefield glass">
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="What should we call you?"
-              maxLength={40}
-              aria-label="Your name"
-            />
-          </div>
-
-          {/* "In your words" is the flagship on relaxed: a bespoke session, written
-              live for this moment, front and center. Presets sit below it. */}
-          {IS_RELAXED && CUSTOM_ENABLED && (
-            <div className="flagship">
-              <div className="fs-lead">tell relaxed what you need</div>
-              <div className="fs-field glass">
-                <input
-                  value={customText}
-                  onChange={(e) => setCustomText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") chooseIntention("custom");
-                  }}
-                  placeholder="a few words about now"
-                  maxLength={CUSTOM_MAX_CHARS}
-                  aria-label="What you need"
-                />
-                <button
-                  className="fs-go"
-                  onClick={() => chooseIntention("custom")}
-                  aria-label="Make your own session"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path
-                      d="M5 12h14M13 6l6 6-6 6"
-                      stroke="currentColor"
-                      strokeWidth={1.8}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
-              </div>
-              <div className="fs-hint">a session written for you, starting in seconds.</div>
+          {/* Header. The name is an editable part of the headline, never a
+              standing box. relaxed: cold start shows the field; a remembered
+              name shows the greeting with a tap-to-edit name. ElevenMind keeps
+              its original greeting + name field. */}
+          {IS_RELAXED && nameCommitted && !editingName ? (
+            <div className="greeting">
+              {greetingFor()},{" "}
+              <button
+                className="name-chip"
+                onClick={() => setEditingName(true)}
+                aria-label="Edit your name"
+              >
+                <b>{name.trim()}</b>
+                <svg className="pencil" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M14.5 5.5l4 4M4 20l1-4L16 5a2 2 0 0 1 3 3L8 19l-4 1z"
+                    stroke="currentColor"
+                    strokeWidth={1.6}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
             </div>
+          ) : IS_RELAXED ? (
+            <>
+              <div className="ask-label">what should we call you?</div>
+              <div className="namefield glass">
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      commitName();
+                      e.currentTarget.blur();
+                    }
+                  }}
+                  onBlur={commitName}
+                  placeholder="your name"
+                  maxLength={40}
+                  autoFocus={editingName}
+                  aria-label="Your name"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="greeting">
+                {greetingFor()}
+                {name.trim() ? (
+                  <>
+                    , <b>{name.trim()}</b>
+                  </>
+                ) : (
+                  ""
+                )}
+              </div>
+              <div className="namefield glass">
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="What should we call you?"
+                  maxLength={40}
+                  aria-label="Your name"
+                />
+              </div>
+            </>
           )}
 
-          <div className="prompt">
-            {IS_RELAXED && CUSTOM_ENABLED ? "or choose a practice" : "What would you like to do?"}
-          </div>
-          <div className="states">
-            {(IS_RELAXED && CUSTOM_ENABLED
-              ? CONTEXTS.filter((c) => !c.custom)
-              : CONTEXTS
-            ).map((c) => (
-              <button
-                key={c.id}
-                className="state"
-                onClick={() => chooseIntention(c.id)}
-              >
-                <span
-                  className="orb"
-                  style={
-                    IS_RELAXED
-                      ? undefined
-                      : ({ background: c.art, "--og": c.glow } as React.CSSProperties)
-                  }
-                />
-                <span className="slabel">
-                  <span className="sname">{c.label}</span>
-                  {c.custom && (
-                    <span className="ssub">
-                      A guided session for whatever you need.
-                    </span>
-                  )}
+          {IS_RELAXED && CUSTOM_ENABLED ? (
+            <>
+              {/* "Make your own" is the flagship: a filled (Bone) primary, above
+                  a labeled divider and the common intentions. */}
+              <div className="prompt">What would you like to do?</div>
+              <button className="hero-make" onClick={() => chooseIntention("custom")}>
+                <span className="hm-l">make your own</span>
+                <span className="hm-s">
+                  Let us create a personalized, guided session for whatever you need.
                 </span>
               </button>
-            ))}
-          </div>
+              <div className="hero-div">
+                <span className="l" />
+                or pick a common intention
+                <span className="l" />
+              </div>
+              <div className="states states-wide">
+                {CONTEXTS.filter((c) => !c.custom).map((c) => (
+                  <button
+                    key={c.id}
+                    className="state"
+                    onClick={() => chooseIntention(c.id)}
+                  >
+                    <span className="slabel">
+                      <span className="sname">{c.label}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="prompt">What would you like to do?</div>
+              <div className="states">
+                {CONTEXTS.map((c) => (
+                  <button
+                    key={c.id}
+                    className="state"
+                    onClick={() => chooseIntention(c.id)}
+                  >
+                    <span
+                      className="orb"
+                      style={
+                        IS_RELAXED
+                          ? undefined
+                          : ({ background: c.art, "--og": c.glow } as React.CSSProperties)
+                      }
+                    />
+                    <span className="slabel">
+                      <span className="sname">{c.label}</span>
+                      {c.custom && (
+                        <span className="ssub">
+                          A guided session for whatever you need.
+                        </span>
+                      )}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
 
         </div>
 
