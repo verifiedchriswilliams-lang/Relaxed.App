@@ -22,6 +22,8 @@ import {
   pushRecent,
   toggleFav,
   isFav,
+  removeRecent,
+  removeFav,
   recordMood,
   recentHintSeen,
   markRecentHintSeen,
@@ -97,6 +99,107 @@ function StarGlyph({ filled }: { filled: boolean }) {
     >
       <path d="M12 3.4l2.63 5.33 5.88.86-4.25 4.15 1 5.86L12 17.7l-5.26 2.76 1-5.86-4.25-4.15 5.88-.86z" />
     </svg>
+  );
+}
+
+// A history/saved row that swipes left to reveal a delete action (iOS-style):
+// drag the card left, tap the revealed trash to remove; tap the card (or swipe
+// back) to close. Horizontal drags are captured; vertical gestures are ignored
+// so they don't fight scrolling. onDelete removes the underlying session.
+const SWIPE_REVEAL = 76;
+function SwipeRow({
+  onDelete,
+  children,
+}: {
+  onDelete: () => void;
+  children: React.ReactNode;
+}) {
+  const [dx, setDx] = useState(0);
+  const [open, setOpen] = useState(false);
+  const drag = useRef<{
+    x: number;
+    y: number;
+    active: boolean;
+    decided: boolean;
+    horizontal: boolean;
+  } | null>(null);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    drag.current = { x: e.clientX, y: e.clientY, active: true, decided: false, horizontal: false };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d || !d.active) return;
+    const mx = e.clientX - d.x;
+    const my = e.clientY - d.y;
+    if (!d.decided) {
+      if (Math.abs(mx) < 6 && Math.abs(my) < 6) return;
+      d.decided = true;
+      d.horizontal = Math.abs(mx) > Math.abs(my);
+      if (d.horizontal) {
+        try {
+          (e.currentTarget as Element).setPointerCapture(e.pointerId);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    if (!d.horizontal) return;
+    const base = open ? -SWIPE_REVEAL : 0;
+    // clamp: no rightward past closed, a little rubber past the reveal.
+    setDx(Math.max(-SWIPE_REVEAL - 16, Math.min(0, base + mx)));
+  };
+  const onPointerUp = () => {
+    const d = drag.current;
+    if (!d) return;
+    d.active = false;
+    if (!d.horizontal) return;
+    const shouldOpen = dx < -SWIPE_REVEAL / 2;
+    setOpen(shouldOpen);
+    setDx(shouldOpen ? -SWIPE_REVEAL : 0);
+  };
+  const settle = drag.current?.active ? "none" : "transform 0.28s var(--ease-ui)";
+
+  return (
+    <div className="hs-swipe">
+      <div className="hs-del" aria-hidden={!open}>
+        <button
+          className="hs-del-btn"
+          onClick={onDelete}
+          aria-label="Delete this session"
+          tabIndex={open ? 0 : -1}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"
+              stroke="currentColor"
+              strokeWidth={1.6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+      <div
+        className="hs-card"
+        style={{ transform: `translateX(${dx}px)`, transition: settle }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        // When open, a tap anywhere on the card closes it instead of activating
+        // the row underneath.
+        onClickCapture={(e) => {
+          if (open) {
+            e.stopPropagation();
+            setOpen(false);
+            setDx(0);
+          }
+        }}
+      >
+        {children}
+      </div>
+    </div>
   );
 }
 
@@ -1238,7 +1341,8 @@ export default function Home() {
   const [mood, setMood] = useState<string | null>(null);
   // First-reveal hint on the recent/history entry: pulse + a small tooltip the
   // first time it appears (after the first completed session), then never again.
-  const [hintRecent, setHintRecent] = useState(false);
+  const [hintRecent, setHintRecent] = useState(false); // tooltip mounted
+  const [hintShow, setHintShow] = useState(false); // drives the fade in/out
   const hintDoneRef = useRef(false);
 
   const engineRef = useRef<AudioEngine>(new AudioEngine());
@@ -1369,9 +1473,15 @@ export default function Home() {
     hintDoneRef.current = true;
     if (recentHintSeen()) return;
     markRecentHintSeen();
-    setHintRecent(true);
-    const t = window.setTimeout(() => setHintRecent(false), 5200);
-    return () => window.clearTimeout(t);
+    setHintRecent(true); // mount
+    const inT = window.setTimeout(() => setHintShow(true), 80); // next frame: fade in
+    const outT = window.setTimeout(() => setHintShow(false), 5000); // begin fade out
+    const endT = window.setTimeout(() => setHintRecent(false), 5500); // unmount after fade
+    return () => {
+      window.clearTimeout(inT);
+      window.clearTimeout(outT);
+      window.clearTimeout(endT);
+    };
   }, [screen, recent.length, favs.length]);
 
   useEffect(() => {
@@ -1660,6 +1770,16 @@ export default function Home() {
   function toggleFavorite(r: RecentSession) {
     haptic("light");
     setFavs(toggleFav(r));
+  }
+
+  // Swipe-to-delete a row from recent or from saved.
+  function deleteRecent(r: RecentSession) {
+    haptic("light");
+    setRecent(removeRecent(r));
+  }
+  function deleteFavorite(r: RecentSession) {
+    haptic("light");
+    setFavs(removeFav(r));
   }
 
   // The post-session reflection: one tap, stored on-device, never blocking.
@@ -2256,10 +2376,13 @@ export default function Home() {
       const snd = SOUNDSCAPES.find((s) => s.id === r.soundscape)?.label ?? "";
       return [mins, who, acc, snd].filter(Boolean).join(" · ");
     };
-    const row = (r: RecentSession, i: number) => {
+    const row = (r: RecentSession, i: number, group: "recent" | "saved") => {
       const saved = isFav(favs, r);
       return (
-        <div className="hs-row" key={`${r.context}-${r.at}-${i}`}>
+        <SwipeRow
+          key={`${r.context}-${r.at}-${i}`}
+          onDelete={() => (group === "saved" ? deleteFavorite(r) : deleteRecent(r))}
+        >
           <button className="hs-main" onClick={() => replay(r)}>
             <span className="hs-top">
               <span className="hs-label">{r.label}</span>
@@ -2275,7 +2398,7 @@ export default function Home() {
           >
             <StarGlyph filled={saved} />
           </button>
-        </div>
+        </SwipeRow>
       );
     };
     content = (
@@ -2303,14 +2426,22 @@ export default function Home() {
         <div className="history">
           <div className="hh">
             <OrbitGlyph size={24} className="hh-mark" />
-            <span className="hh-title">recent</span>
+            <span className="hh-title">your sessions</span>
           </div>
 
-          {/* The header already says "recent", so this group carries no eyebrow;
-              the recent sessions sit directly beneath it. */}
+          {/* Saved sits on top (kept indefinitely), then recent (rolling ten).
+              Swipe any row left to delete it. */}
+          {savedList.length > 0 && (
+            <section className="hsec">
+              <div className="hsec-label">saved</div>
+              {savedList.map((r, i) => row(r, i, "saved"))}
+            </section>
+          )}
+
           <section className="hsec">
+            {savedList.length > 0 && <div className="hsec-label">recent</div>}
             {recentList.length > 0 ? (
-              recentList.map(row)
+              recentList.map((r, i) => row(r, i, "recent"))
             ) : (
               <div className="hs-empty">
                 {savedList.length > 0
@@ -2319,13 +2450,6 @@ export default function Home() {
               </div>
             )}
           </section>
-
-          {savedList.length > 0 && (
-            <section className="hsec">
-              <div className="hsec-label">saved</div>
-              {savedList.map(row)}
-            </section>
-          )}
         </div>
       </main>
     );
@@ -2341,6 +2465,7 @@ export default function Home() {
                 className={`recent-entry ${hintRecent ? "pulse" : ""}`}
                 onClick={() => {
                   haptic("light");
+                  setHintShow(false);
                   setHintRecent(false);
                   setScreen("history");
                 }}
@@ -2349,7 +2474,7 @@ export default function Home() {
                 <OrbitGlyph size={22} />
               </button>
               {hintRecent && (
-                <span className="recent-hint" role="status">
+                <span className={`recent-hint ${hintShow ? "show" : ""}`} role="status">
                   history and saved
                 </span>
               )}
