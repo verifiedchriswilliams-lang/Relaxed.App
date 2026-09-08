@@ -55,6 +55,11 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-08 — Flagship "make your own" reads as primary
+- The "make your own" label on the home screen is now the largest text in the
+  choice area (bigger than the common intentions), so the Bone card reads as the
+  primary action instead of the box shrinking its label below the intentions.
+
 ### 2026-09-08 — Status-bar overlap fix (safe-area insets)
 - **Fixed:** on iPhones with a Dynamic Island / notch, the player's title + timer
   (and the home wordmark) rendered under the status bar. The app now draws edge to
