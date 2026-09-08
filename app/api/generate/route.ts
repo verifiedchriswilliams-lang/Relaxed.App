@@ -7,6 +7,7 @@ import {
 } from "@/lib/sessions";
 import { cacheKey, cacheUrl, isCached } from "@/lib/voiceCache";
 import type { ContextId } from "@/lib/contexts";
+import { enforceRateLimit } from "@/lib/rateLimit";
 
 // Node runtime so the ElevenLabs binary responses decode cleanly.
 export const runtime = "nodejs";
@@ -148,6 +149,9 @@ interface OutSegment {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req.headers, "generate");
+  if (limited) return limited;
+
   try {
     const body = (await req.json()) as GenerateBody;
     const name = (body.name || "").slice(0, 60);
