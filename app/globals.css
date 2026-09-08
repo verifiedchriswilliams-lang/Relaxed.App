@@ -1149,6 +1149,22 @@ button {
 .history {
   margin-top: 30px;
 }
+/* relaxed locks the page (see relaxed.css), so the sessions list is its own
+   inner scroller: the back-button topbar stays fixed while the list scrolls.
+   Saved can grow past a screen, so this keeps the last row reachable. The
+   ElevenMind build scrolls its page normally and is left untouched. */
+[data-brand="relaxed"] .history-scroll {
+  height: 100vh;
+  height: 100dvh;
+}
+[data-brand="relaxed"] .history-scroll .history {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(28px + env(safe-area-inset-bottom));
+}
 .hh {
   display: flex;
   align-items: center;

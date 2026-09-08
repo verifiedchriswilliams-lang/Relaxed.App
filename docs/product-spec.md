@@ -117,8 +117,11 @@ groups, **saved on top, then recent**:
   tray).
 
 Any row **swipes left to reveal a delete action** (a trash button); tapping it
-removes that session, tapping the card or swiping back closes it. All history is
-on-device (`localStorage`); see [data-privacy.md](./data-privacy.md).
+removes that session, tapping the card or swiping back closes it. Because relaxed
+locks the page (single-screen shell), the list is its own inner scroller: the
+back-button bar stays fixed while the sessions scroll, so a long saved list stays
+fully reachable. All history is on-device (`localStorage`); see
+[data-privacy.md](./data-privacy.md).
 
 ## 4. Personalization pipeline (user's view)
 

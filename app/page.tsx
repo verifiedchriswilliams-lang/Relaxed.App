@@ -2402,7 +2402,7 @@ export default function Home() {
       );
     };
     content = (
-      <main className="wrap">
+      <main className="wrap history-scroll">
         <div className="topbar history-bar">
           <button
             className="hb-back"
