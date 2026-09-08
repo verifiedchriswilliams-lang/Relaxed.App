@@ -215,11 +215,29 @@ export async function POST(req: NextRequest) {
     const msg = await client.messages.create({
       model: DEFAULT_MODEL,
       max_tokens: 1600,
-      system: SCRIPT_SYSTEM_PROMPT,
+      // The system prompt is byte-stable across every request, so mark it as a
+      // cache prefix. The per-request user prompt varies and sits after it in
+      // messages[], so it never invalidates the cached prefix. Reads bill at
+      // ~0.1x input; this pays off whenever sessions cluster within the cache
+      // window, and is a no-op cost otherwise.
+      system: [
+        {
+          type: "text",
+          text: SCRIPT_SYSTEM_PROMPT,
+          cache_control: { type: "ephemeral" },
+        },
+      ],
       messages: [
         { role: "user", content: buildPrompt(who, phrase, blueprint, arrivalText) },
       ],
     });
+    // Cache telemetry (visible in Vercel function logs): cache_read_input_tokens
+    // > 0 means the system prefix was served from cache. If it stays 0 across
+    // back-to-back sessions, the prefix isn't being reused (or drifted).
+    const u = msg.usage;
+    console.log(
+      `[custom-script] model=${DEFAULT_MODEL} in=${u.input_tokens} out=${u.output_tokens} cache_write=${u.cache_creation_input_tokens ?? 0} cache_read=${u.cache_read_input_tokens ?? 0}`
+    );
     const raw = msg.content
       .filter((b): b is Anthropic.TextBlock => b.type === "text")
       .map((b) => b.text)

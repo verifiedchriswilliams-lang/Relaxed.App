@@ -38,6 +38,13 @@ now on the **Meditation Engine** (see [§9](#9-the-meditation-engine-phase-1)):
   (`app/api/custom-script/route.ts`). `max_tokens: 1600`, a fixed
   `SCRIPT_SYSTEM_PROMPT` (`lib/contexts.ts`), and a per-request user prompt built
   from the session **blueprint** (`buildPrompt()` + `lib/engine.ts`).
+- **Prompt caching:** the fixed system prompt is sent as an `ephemeral` cache
+  prefix (`cache_control`), so when sessions cluster within the cache window the
+  reused prefix bills at ~0.1x input. The per-request user prompt sits after it,
+  so it never invalidates the prefix. Cache hits are logged per request
+  (`cache_read_input_tokens`) in the Vercel function logs. Note the model's
+  output tokens dominate cost and are not cacheable, so this is a modest, mainly
+  at-scale saving.
 - The prompt hands Claude the arc scene by scene; the response is split on
   `[scene:key]` markers and each scene's prose is parsed with `parseBreaks()` and
   fit to that scene's own second target (`fitScene`), so the arc stays balanced.
