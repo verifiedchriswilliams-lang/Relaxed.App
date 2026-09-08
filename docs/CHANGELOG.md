@@ -18,7 +18,7 @@ build carried, not the review timeline.
 
 ## iOS — App Store releases
 
-### 1.1.1 — in review (submitted 2026-09)
+### 1.1.1 — released 2026-09-06
 Native corrections plus a marketing refresh of the release notes.
 - **Beveled launch screen.** The launch image now uses the app icon's exact
   Liquid-Glass "r" (extracted from the rendered icon), centered on Ink, so the

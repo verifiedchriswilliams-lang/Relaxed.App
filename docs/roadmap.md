@@ -21,7 +21,7 @@ bigger catalog, it's "tell relaxed what you need and it makes one for you."
   each with a line motif in the player ring.
 - Full "stem" identity, dark-only. Breathing orb synced to the breath cue.
 - Native iOS app (Capacitor shell over the hosted site) — **live on the App Store**
-  (v1.1 released; v1.1.1 in review). See [CHANGELOG.md](./CHANGELOG.md).
+  (v1.1.1 released 2026-09-06). See [CHANGELOG.md](./CHANGELOG.md).
 - Privacy page; anonymous Vercel analytics; US + Canada; `support@relaxed.app` live;
   in-app Contact + Privacy links.
 
