@@ -70,8 +70,9 @@ The remaining Phase 0 items are the native/App Store follow-ups noted at the end
 
 ## Phase 1 — make the AI genuinely special (the moat)
 
-**Built on the `phase1-engine` branch (in preview, not yet merged).** See
-[audio-engine.md](./audio-engine.md#9-the-meditation-engine-phase-1).
+**Shipped to production** (merged to `main`, including the home rework and the
+polish pass: first-reveal history hint, swipe-to-delete, scrollable history).
+See [audio-engine.md](./audio-engine.md#9-the-meditation-engine-phase-1).
 
 - ✅ **Meditation Engine.** The app emits a structured session (an ordered arc of
   scenes: settle / body / visualization / reflection / close), each with a share
@@ -82,8 +83,9 @@ The remaining Phase 0 items are the native/App Store follow-ups noted at the end
 - ✅ **Scene-based sessions.** A per-intention audio envelope shapes bed intensity
   and voice presence over the session's progress; for **sleep the voice thins out**
   toward the end while the bed continues. Applies to presets and custom.
-- ✅ **"In your words" is the flagship.** The home leads with "tell relaxed what you
-  need"; the presets sit below as "or choose a practice."
+- ✅ **"In your words" is the flagship.** The home leads with "make your own" (a
+  filled Bone card) above an "or pick a common intention" divider, with the
+  presets as quiet rows below.
 - Later refinements (not in this branch): fold presets into full blueprints
   (needs content re-authoring + a voice-cache rebuild); per-scene (not just
   progress-based) audio cues; a visible session arc in the player.
