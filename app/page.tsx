@@ -27,6 +27,8 @@ import {
   recordMood,
   recentHintSeen,
   markRecentHintSeen,
+  arrivingSeenToday,
+  markArrivingSeen,
   updateRecentScript,
   type RecentSession,
   type SavedLine,
@@ -1287,6 +1289,15 @@ function easeInOut(x: number): number {
 // neutral so it never feels like a grade.
 const MOODS = ["much calmer", "a little calmer", "about the same"] as const;
 
+// "How are you arriving?" options, each gently steering toward a fitting
+// intention. The last one is a graceful "I'm alright" that just closes.
+const ARRIVING: { key: string; label: string; context: ContextId | null }[] = [
+  { key: "tense", label: "tense", context: "relax" },
+  { key: "tired", label: "tired", context: "sleep" },
+  { key: "restless", label: "restless", context: "meditation" },
+  { key: "good", label: "I'm good", context: null },
+];
+
 // For a position t seconds into playback, the eased breath amount (0 = fully
 // exhaled, 1 = fully inhaled / held at the top) and which phase we're in. The
 // orb scales with `pb`; the cue words read from `phase` — one source of truth,
@@ -1363,6 +1374,8 @@ export default function Home() {
   });
   const [reminderOpen, setReminderOpen] = useState(false);
   const [reminderBusy, setReminderBusy] = useState(false);
+  // "How are you arriving?" welcome-back check-in (once/day, returning users).
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
   // First-reveal hint on the recent/history entry: pulse + a small tooltip the
   // first time it appears (after the first completed session), then never again.
   const [hintRecent, setHintRecent] = useState(false); // tooltip mounted
@@ -1484,12 +1497,18 @@ export default function Home() {
     } catch {
       /* ignore */
     }
-    setRecent(loadRecent());
+    const startRecent = loadRecent();
+    setRecent(startRecent);
     setFavs(loadFavs());
     // Load the reminder pref and re-sync it to the OS schedule (so a reminder
     // set before the native plugin existed starts firing once it can).
     setReminder(loadReminder());
     syncReminder();
+    // Welcome back: for an established returning user (relaxed, has history),
+    // offer a gentle once-a-day "how are you arriving?" that tunes the session.
+    if (IS_RELAXED && startRecent.length > 0 && !arrivingSeenToday()) {
+      setWelcomeOpen(true);
+    }
   }, []);
 
   // The first time the recent/history entry appears (once there's history, e.g.
@@ -1823,6 +1842,23 @@ export default function Home() {
     const next = await saveReminder({ enabled: reminder.enabled, hour: h, minute: m });
     setReminder(next);
     setReminderBusy(false);
+  }
+
+  // Welcome-back check-in: record how they're arriving, then either steer into a
+  // fitting intention (opening the tray) or simply close. Once a day either way.
+  function chooseArriving(opt: { key: string; context: ContextId | null }) {
+    markArrivingSeen();
+    ev("arriving", { mood: opt.key });
+    setWelcomeOpen(false);
+    if (opt.context) {
+      recordMood({ mood: opt.key, context: opt.context, custom: false });
+      chooseIntention(opt.context);
+    }
+  }
+
+  function dismissWelcome() {
+    markArrivingSeen();
+    setWelcomeOpen(false);
   }
 
   // One-tap replay: restore every choice from a past session. If the exact
@@ -2872,6 +2908,34 @@ export default function Home() {
               >
                 done
               </button>
+            </div>
+          </div>
+        )}
+
+        {welcomeOpen && (
+          <div className="rm-scrim" onClick={dismissWelcome} role="presentation">
+            <div
+              className="rm-sheet"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-label="Welcome back"
+            >
+              <div className="rm-title">
+                {name.trim() ? `welcome back, ${name.trim()}` : "welcome back"}
+              </div>
+              <p className="rm-sub">How are you arriving?</p>
+              <div className="wb-moods">
+                {ARRIVING.map((o) => (
+                  <button
+                    key={o.key}
+                    type="button"
+                    className={`wb-mood ${o.context ? "" : "wb-skip"}`}
+                    onClick={() => chooseArriving(o)}
+                  >
+                    {o.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}

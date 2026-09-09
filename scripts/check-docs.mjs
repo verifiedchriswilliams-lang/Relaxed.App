@@ -174,7 +174,7 @@ function checkPinnedFacts() {
 
   // 7. On-device localStorage keys must all be in the privacy inventory.
   const KEY_RE = /"(relaxed\.[a-z.]+v\d+|elevenmind\.[a-z.]+v\d+|em_variant_seq)"/g;
-  const src = read("lib/history.ts") + read("app/page.tsx");
+  const src = read("lib/history.ts") + read("lib/reminders.ts") + read("app/page.tsx");
   const keys = [...new Set([...src.matchAll(KEY_RE)].map((m) => m[1]))];
   for (const k of keys) {
     mustAppear(`storage key ${k}`, [k], ["docs/data-privacy.md"]);

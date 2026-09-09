@@ -90,13 +90,30 @@ See [audio-engine.md](./audio-engine.md#9-the-meditation-engine-phase-1).
   (needs content re-authoring + a voice-cache rebuild); per-scene (not just
   progress-based) audio cues; a visible session arc in the player.
 
-## Phase 2 — private continuity (retention without gamification)
+## Phase 2 — depth, continuity, and the habit (in progress)
 
-- **Optional Sign in with Apple.** Anonymous mode stays fully functional; Private
-  mode unlocks history, favorites, replay library, preferences, cross-device.
-- **Welcome Back / mood check-in**: "How are you arriving?" tunes the session.
-- Memory is transparent and useful ("Again? 10 min · Relax · Rain"), never
+Scoped with the founder. **Most of this is built on the `phase2` branch (in
+preview, not deployed); the audio work is gated on new source files.**
+
+- **Soundscape audio (top priority, gated on new files).** Replace the current
+  beds with premium, seamless-looping audio (sourced from ElevenLabs or a
+  licensing library), normalize levels (`measure-beds`), and set loop points /
+  stitching so there is no gap where the audio restarts. This also unlocks
+  **infinite sessions** (the soundscape loops as long as the person wants).
+- ✅ **Longer sessions:** 45 and 60 minutes (a new "extended" pacing band).
+- ✅ **More variety:** 5 script variants per intention (was 3), so presets feel
+  fresh far longer.
+- ✅ **Exact replay:** the resolved script is saved on-device and reproduced
+  (revoiced, never rewritten); tapping a recent/saved plays immediately; End/Done
+  return to where the session was launched from.
+- ✅ **Daily reminder:** an on-device local notification at a chosen time (no
+  server, no accounts). The native plugin ships in the **1.2** build.
+- ✅ **Welcome back / mood check-in:** a gentle once-a-day "how are you arriving?"
+  that tunes the session, dismissible.
+- Memory stays transparent and useful ("Again? 10 min · Relax · Rain"), never
   surveillant. No streaks, badges, or leaderboards.
+- **Deferred:** Sign in with Apple / accounts / cross-device sync. Everything above
+  is on-device; accounts wait until continuity genuinely outgrows the device.
 
 ## Phase 3 — monetize (overlaps Phase 2)
 

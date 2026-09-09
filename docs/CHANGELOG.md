@@ -55,6 +55,23 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### Unreleased — `phase2` branch (in preview)
+Phase 2: private continuity and depth. Built on a branch for review, not deployed.
+- **Longer sessions:** 45 and 60 minute options, with a new "extended" pacing band.
+- **More variety:** two more script variants per intention (3 → 5 each), so
+  meditate / sleep / flow / relax / stress-relief feel fresh far longer. (New
+  common lines synthesize live until the voice cache is rebuilt.)
+- **Sessions replay exactly:** each session's resolved script (words + pauses) is
+  saved on-device; replaying reproduces it, revoiced, never rewritten (bespoke
+  sessions no longer drift, and presets no longer re-roll a different variant).
+- **Recents/saved play immediately:** tapping a saved session goes straight to the
+  player instead of the tray, and End returns to the history page it came from.
+- **Daily reminder:** an on-device daily practice reminder (a local notification
+  at a chosen time; no server, no accounts). The native plugin lands in the 1.2
+  build; the preference is stored and re-syncs when the plugin is present.
+- **Welcome back check-in:** a gentle once-a-day "how are you arriving?" for
+  returning users that tunes the session, fully dismissible.
+
 ### 2026-09-08 — Flagship "make your own" reads as primary
 - The "make your own" label on the home screen is now the largest text in the
   choice area (bigger than the common intentions), so the Bone card reads as the

@@ -21,9 +21,11 @@
 | Key | Contents | Notes |
 |---|---|---|
 | `elevenmind.prefs.v1` | `{ name, voice, accent, soundscape }` | The name is free text the user typed. Key is legacy-named `elevenmind.*` across both brands. |
-| `relaxed.recent.v1` | Last 10 sessions (`RecentSession[]`) | Includes the custom phrase text (`customText`) for replay. |
+| `relaxed.recent.v1` | Last 10 sessions (`RecentSession[]`) | Includes the custom phrase text (`customText`) and the exact resolved `script` (words + pauses) so a replay reproduces it. |
 | `relaxed.favs.v1` | Saved sessions (`RecentSession[]`, cap 100) | Same shape; kept indefinitely. |
-| `relaxed.moods.v1` | Last 50 post-session moods (`MoodEntry[]`) | `{ mood, context, custom, at }`; a fixed enum mood, not free text. |
+| `relaxed.moods.v1` | Last 50 post-session moods (`MoodEntry[]`) | `{ mood, context, custom, at }`; a fixed enum mood, not free text. Also records the once-a-day "how are you arriving?" answer. |
+| `relaxed.reminder.v1` | Daily-reminder pref `{ enabled, hour, minute }` | Non-personal; the local time for the on-device notification. The notification is scheduled by the OS, never sent to a server. |
+| `relaxed.arriving.v1` | Date the welcome-back check-in was last shown | Non-personal; a `YYYY-M-D` string so it shows at most once a day. |
 | `em_variant_seq` | Per-intention script-variant counter | Non-personal; ensures repeats vary. |
 | `relaxed.recentHint.v1` | One-time flag: the recent/history entry has been introduced | Non-personal; a single `"1"`. |
 

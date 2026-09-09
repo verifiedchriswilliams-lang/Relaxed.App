@@ -53,9 +53,10 @@ relaxed.app/
 | `lib/mark.tsx` | `STEM_PATH`, `StemGlyph`, `OrbitGlyph`, `stemStroke` | [design-system](./design-system.md) |
 | `lib/soundMotifs.tsx` | Per-soundscape line motifs in the player ring | [design-system](./design-system.md) |
 | `lib/iconArt.ts` | Brand-aware icon/artwork tile art (data URIs) | [design-system](./design-system.md) |
-| `lib/history.ts` | On-device recent (10) + favorites (100) + moods (50); `sessionSig` | [product-spec](./product-spec.md), [data-privacy](./data-privacy.md) |
+| `lib/history.ts` | On-device recent (10, with saved script) + favorites (100) + moods (50); `sessionSig`; welcome-back once-a-day flag | [product-spec](./product-spec.md), [data-privacy](./data-privacy.md) |
+| `lib/reminders.ts` | Daily-reminder preference (`relaxed.reminder.v1`) + schedule/cancel orchestration | [ios-native](./ios-native.md), [data-privacy](./data-privacy.md) |
 | `lib/analytics.ts` | Anonymous first-party events (`ev`) | [data-privacy](./data-privacy.md) |
-| `lib/native.ts` | Capacitor bridge: haptics + MediaSession; safe web no-ops | [ios-native](./ios-native.md) |
+| `lib/native.ts` | Capacitor bridge: haptics + MediaSession + local notifications; safe web no-ops | [ios-native](./ios-native.md) |
 | `lib/voices.json` | Voice guide names used by the preview builder | [audio-engine](./audio-engine.md) |
 
 ## `scripts/` — maintenance tooling

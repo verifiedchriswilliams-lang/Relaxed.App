@@ -13,7 +13,7 @@ Runtime (`dependencies`):
 | `next` | 14.2.35 | MIT |
 | `react`, `react-dom` | 18.3.1 | MIT |
 | `@anthropic-ai/sdk` | 0.68.0 | MIT |
-| `@capacitor/core`, `/ios`, `/haptics`, `/splash-screen`, `/status-bar` | 8.x | MIT |
+| `@capacitor/core`, `/ios`, `/haptics`, `/splash-screen`, `/status-bar`, `/local-notifications` | 8.x | MIT |
 | `@vercel/analytics` | 2.0.1 | MPL-2.0 / Apache-2.0 **[confirm]** |
 
 Dev (`devDependencies`):

@@ -15,7 +15,7 @@ what you need and it makes one for you."
 | Choice | Options | Default | Source |
 |---|---|---|---|
 | Intention | meditate, sleep, flow, relax, and either "In your words" (relaxed) or "breathe"/stress-relief | meditation | `lib/contexts.ts` |
-| Duration | 5, 10, 15, 20, 30 minutes | 10 | `DURATIONS` |
+| Duration | 5, 10, 15, 20, 30, 45, 60 minutes | 10 | `DURATIONS` |
 | Voice | Her, Him, or None (sounds only) | Her | `VoiceChoice` |
 | Accent | US, UK | US | `Accent` |
 | Soundscape | 15 across Nature / Music / Frequencies | rain (first-time) | `SOUNDSCAPES` |
@@ -66,6 +66,13 @@ stateDiagram-v2
   Tapping any option (including make your own) opens the options tray.
 - An **orbit-mark entry point** (top-right) appears once the user has any history,
   opening the History screen.
+- **Daily reminder.** A "Reminder" entry in the footer opens a small sheet to set
+  an on-device daily practice reminder (a local notification at a chosen time,
+  scheduled by the OS, no server). See [ios-native.md](./ios-native.md).
+- **Welcome back check-in.** For a returning user (with history), at most once a
+  day, a gentle "how are you arriving?" sheet offers a few moods (tense / tired /
+  restless / I'm good); choosing one records the mood and opens the tray on a
+  fitting intention. Fully dismissible.
 
 ### 3b. Options tray (onboarding as ritual)
 
@@ -113,8 +120,10 @@ groups, **saved on top, then recent**:
   shows only under Saved so it never appears twice.
 - **recent:** the rolling last 10 sessions, reverse-chronological, each showing
   intention/phrase, time-ago, and detail (`length · Her/Him · US/UK · soundscape`,
-  or `length · sounds only`). Tap to replay (restores every choice and opens the
-  tray).
+  or `length · sounds only`). **Tap to replay: it starts playing immediately**,
+  reproducing the session's exact saved script (revoiced, never rewritten), and
+  End returns to the history page it was launched from. (Sessions saved before
+  the script was recorded fall back to opening the tray to regenerate.)
 
 Any row **swipes left to reveal a delete action** (a trash button); tapping it
 removes that session, tapping the card or swiping back closes it. Because relaxed

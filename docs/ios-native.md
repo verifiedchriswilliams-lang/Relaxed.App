@@ -51,6 +51,14 @@ flowchart LR
   Ink ground.
 - **StatusBar:** `style: DARK` (light text/icons on the Ink ground). Also set in
   Info.plist so it applies without a JS call on the remote page.
+- **LocalNotifications** (`@capacitor/local-notifications`): powers the daily
+  practice reminder. The reminder is scheduled entirely on-device (a repeating
+  local notification at the user's chosen time), no server or push tokens. The web
+  layer resolves the plugin at runtime through the bridge (like Haptics), so the
+  plugin must be compiled into the app (a `cap sync` on a build that includes the
+  dependency, landing in **1.2**); until then the reminder UI stores the pref but
+  can't schedule, and re-syncs on the next app open once the plugin is present.
+  iOS shows its own permission prompt on first enable.
 
 ## 3. Native capabilities in use
 

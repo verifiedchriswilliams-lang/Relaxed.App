@@ -78,6 +78,11 @@ Or run the **"Build voice cache"** GitHub Action (manual). It commits the update
 manifest and uploads to Blob. Existing keys are skipped, so it only voices what
 changed. See [voice-cache.md](./voice-cache.md).
 
+> **After adding script variants:** new common lines are not in the cache yet, so
+> they synthesize live (slower, and they cost per play) until you run
+> `build:voices`. Run it once after editing `lib/sessionScripts.json` so the new
+> lines are pre-voiced to Blob.
+
 ## Sync media to Blob
 
 When you add or change soundscape beds (or want to re-push audio):

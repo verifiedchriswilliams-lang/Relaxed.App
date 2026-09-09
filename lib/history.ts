@@ -177,6 +177,29 @@ export function recordMood(m: Omit<MoodEntry, "at">): void {
   }
 }
 
+// The "how are you arriving?" welcome-back check-in is offered at most once per
+// calendar day (local), so it's a gentle greeting, never a nag. We store the
+// last date it was shown.
+const ARRIVING_KEY = "relaxed.arriving.v1";
+function todayKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+export function arrivingSeenToday(): boolean {
+  try {
+    return localStorage.getItem(ARRIVING_KEY) === todayKey();
+  } catch {
+    return true; // storage unavailable → don't prompt
+  }
+}
+export function markArrivingSeen(): void {
+  try {
+    localStorage.setItem(ARRIVING_KEY, todayKey());
+  } catch {
+    /* best-effort */
+  }
+}
+
 // Whether the recent/history entry point has already been introduced to this
 // device. Used to pulse it (with a tooltip) exactly once, the first time it
 // appears after a session.

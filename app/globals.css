@@ -581,6 +581,41 @@ button {
   }
 }
 
+/* Welcome-back "how are you arriving?" mood options (reuses the sheet chrome). */
+.wb-moods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+.wb-mood {
+  flex: 1 1 auto;
+  min-width: 44%;
+  padding: 14px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--glass-line, rgba(255, 255, 255, 0.12));
+  background: var(--hover, rgba(255, 255, 255, 0.05));
+  color: var(--ink-0);
+  font-size: 16px;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform var(--t-ui, 0.3s) var(--ease-ui, ease);
+}
+.wb-mood:hover,
+.wb-mood:focus-visible {
+  transform: translateY(-1px);
+}
+.wb-mood.wb-skip {
+  flex-basis: 100%;
+  background: none;
+  border: 0;
+  color: var(--ink-2);
+  font-size: 14px;
+  padding: 8px;
+}
+
 /* ---------------------------------------------------------------- tray */
 .scrim {
   position: fixed;
