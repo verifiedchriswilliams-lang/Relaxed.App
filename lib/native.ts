@@ -132,3 +132,90 @@ export function clearNowPlaying(): void {
     /* ignore */
   }
 }
+
+// ---------------------------------------------------------------------------
+// Local notifications: the daily practice reminder. The reminder is scheduled
+// on-device (no server, no accounts) via @capacitor/local-notifications, which
+// is compiled into the native app. As with haptics, the web bundle does not
+// import the plugin (it's shared with the non-native build); we resolve it at
+// runtime through the injected bridge, so everything here is a safe no-op in a
+// plain browser or in a native build that predates the plugin.
+// ---------------------------------------------------------------------------
+
+// Whether the native Capacitor bridge is present (i.e. we're inside the app).
+export function isNativeApp(): boolean {
+  const cap = capacitor();
+  return !!(cap && (typeof cap.isNativePlatform === "function" ? cap.isNativePlatform() : cap.isNative));
+}
+
+function localNotifications(): any {
+  const cap = capacitor();
+  if (!cap) return undefined;
+  if (cap.Plugins && cap.Plugins.LocalNotifications) return cap.Plugins.LocalNotifications;
+  if (typeof cap.registerPlugin === "function") {
+    try {
+      return cap.registerPlugin("LocalNotifications");
+    } catch {
+      /* bridge present but registration unsupported */
+    }
+  }
+  return undefined;
+}
+
+// Stable id for the single daily reminder, so scheduling replaces (not stacks)
+// and cancel is unambiguous.
+const REMINDER_ID = 4242;
+
+// Ask for notification permission. Returns true only if granted. No-op → false
+// where the plugin isn't present (web, or a native build without it yet).
+export async function requestNotificationPermission(): Promise<boolean> {
+  const LN = localNotifications();
+  if (!LN) return false;
+  try {
+    const res = await LN.requestPermissions();
+    return res?.display === "granted";
+  } catch {
+    return false;
+  }
+}
+
+// Schedule (or reschedule) the daily reminder at the given local time. Returns
+// whether it was actually scheduled. Safe no-op without the plugin.
+export async function scheduleDailyReminder(
+  hour: number,
+  minute: number,
+  body: string,
+  title = "relaxed"
+): Promise<boolean> {
+  const LN = localNotifications();
+  if (!LN) return false;
+  try {
+    await LN.cancel({ notifications: [{ id: REMINDER_ID }] }).catch(() => {});
+    await LN.schedule({
+      notifications: [
+        {
+          id: REMINDER_ID,
+          title,
+          body,
+          // Fire every day at the chosen local hour:minute. allowWhileIdle lets
+          // it deliver even under low-power conditions.
+          schedule: { on: { hour, minute }, repeats: true, allowWhileIdle: true },
+        },
+      ],
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// Cancel the daily reminder. Safe no-op without the plugin.
+export async function cancelDailyReminder(): Promise<void> {
+  const LN = localNotifications();
+  if (!LN) return;
+  try {
+    await LN.cancel({ notifications: [{ id: REMINDER_ID }] });
+  } catch {
+    /* best-effort */
+  }
+}

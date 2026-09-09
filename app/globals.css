@@ -437,6 +437,149 @@ button {
   font-weight: 700;
   color: rgba(245, 246, 252, 0.82);
 }
+/* A footer link rendered as a button (opens the reminder sheet), matched to the
+   adjacent text links. */
+.foot-link-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.foot-link-btn:hover,
+.foot-link-btn:focus-visible {
+  text-decoration: underline;
+}
+
+/* ---------------------------------------------------- daily reminder sheet */
+.rm-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(4, 5, 12, 0.55);
+  padding: 0 14px calc(18px + env(safe-area-inset-bottom));
+  animation: rm-fade 0.28s var(--ease-ui, ease) both;
+}
+.rm-sheet {
+  width: 100%;
+  max-width: 420px;
+  background: var(--night-0);
+  border: 1px solid var(--glass-line, rgba(255, 255, 255, 0.1));
+  border-radius: 20px;
+  padding: 22px 20px calc(18px + env(safe-area-inset-bottom));
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.7);
+  color: var(--ink-0);
+  animation: rm-rise 0.34s var(--ease-ui, ease) both;
+}
+.rm-title {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.rm-sub {
+  margin: 6px 0 16px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+.rm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  font-size: 15px;
+  border-top: 1px solid var(--glass-line, rgba(255, 255, 255, 0.08));
+}
+.rm-row.rm-dim {
+  opacity: 0.45;
+}
+.rm-toggle {
+  width: 46px;
+  height: 28px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--glass-line, rgba(255, 255, 255, 0.18));
+  position: relative;
+  cursor: pointer;
+  transition: background var(--t-ui, 0.3s) var(--ease-ui, ease);
+  -webkit-appearance: none;
+  appearance: none;
+  flex: none;
+}
+.rm-toggle.on {
+  background: var(--glass-strong, #efebe3);
+}
+.rm-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--ink-0);
+  transition: transform var(--t-ui, 0.3s) var(--ease-ui, ease);
+}
+.rm-toggle.on .rm-knob {
+  transform: translateX(18px);
+  background: var(--night-0);
+}
+.rm-time {
+  background: var(--hover, rgba(255, 255, 255, 0.06));
+  border: 1px solid var(--glass-line, rgba(255, 255, 255, 0.12));
+  border-radius: 10px;
+  color: var(--ink-0);
+  font: inherit;
+  font-size: 15px;
+  padding: 6px 10px;
+}
+.rm-conf {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--ink-1);
+}
+.rm-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.rm-done {
+  margin-top: 18px;
+  width: 100%;
+  background: var(--glass-strong, #efebe3);
+  color: var(--rx-invert-fg, #121110);
+  border: 0;
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+@keyframes rm-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes rm-rise {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rm-scrim,
+  .rm-sheet {
+    animation: none;
+  }
+}
 
 /* ---------------------------------------------------------------- tray */
 .scrim {

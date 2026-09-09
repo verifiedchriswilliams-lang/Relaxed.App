@@ -15,7 +15,7 @@ import { asset } from "@/lib/assets";
 import { BRAND } from "@/lib/brand";
 import { StemGlyph, OrbitGlyph } from "@/lib/mark";
 import { SoundMotif } from "@/lib/soundMotifs";
-import { haptic, setNowPlaying, setPlaybackState, clearNowPlaying } from "@/lib/native";
+import { haptic, setNowPlaying, setPlaybackState, clearNowPlaying, isNativeApp } from "@/lib/native";
 import {
   loadRecent,
   loadFavs,
@@ -32,6 +32,12 @@ import {
   type SavedLine,
 } from "@/lib/history";
 import { ev } from "@/lib/analytics";
+import {
+  loadReminder,
+  saveReminder,
+  syncReminder,
+  type ReminderPref,
+} from "@/lib/reminders";
 import { audioProfile, type AudioProfile } from "@/lib/engine";
 
 // Which visual world are we in? relaxed swaps the aurora + coloured discs for
@@ -1348,6 +1354,15 @@ export default function Home() {
   // an effect once the restored choices have applied to state (so the timer's
   // totalSecs and the engine params match the session being replayed).
   const [pendingReplay, setPendingReplay] = useState<RecentSession | null>(null);
+  // Daily practice reminder (on-device local notification): the stored pref and
+  // whether the little settings sheet is open.
+  const [reminder, setReminder] = useState<ReminderPref>({
+    enabled: false,
+    hour: 20,
+    minute: 0,
+  });
+  const [reminderOpen, setReminderOpen] = useState(false);
+  const [reminderBusy, setReminderBusy] = useState(false);
   // First-reveal hint on the recent/history entry: pulse + a small tooltip the
   // first time it appears (after the first completed session), then never again.
   const [hintRecent, setHintRecent] = useState(false); // tooltip mounted
@@ -1471,6 +1486,10 @@ export default function Home() {
     }
     setRecent(loadRecent());
     setFavs(loadFavs());
+    // Load the reminder pref and re-sync it to the OS schedule (so a reminder
+    // set before the native plugin existed starts firing once it can).
+    setReminder(loadReminder());
+    syncReminder();
   }, []);
 
   // The first time the recent/history entry appears (once there's history, e.g.
@@ -1781,9 +1800,35 @@ export default function Home() {
     setRecent(updateRecentScript(currentSession(), script));
   }
 
-  // One-tap replay: restore every choice from a past session and open the tray
-  // pre-filled, ready to begin (or tweak). Works from the home or the history
-  // page, so it returns to setup first before opening the tray.
+  // --- Daily reminder (local notification) ---
+  const pad2 = (n: number) => String(n).padStart(2, "0");
+  const reminderTimeLabel = (() => {
+    const ap = reminder.hour < 12 ? "AM" : "PM";
+    const hh = ((reminder.hour + 11) % 12) + 1;
+    return `${hh}:${pad2(reminder.minute)} ${ap}`;
+  })();
+
+  async function toggleReminder(on: boolean) {
+    setReminderBusy(true);
+    const next = await saveReminder({ ...reminder, enabled: on });
+    setReminder(next);
+    setReminderBusy(false);
+    ev("reminder_set", { on: next.enabled });
+  }
+
+  async function setReminderTime(value: string) {
+    const [h, m] = value.split(":").map((x) => Number(x));
+    if (!Number.isFinite(h) || !Number.isFinite(m)) return;
+    setReminderBusy(true);
+    const next = await saveReminder({ enabled: reminder.enabled, hour: h, minute: m });
+    setReminder(next);
+    setReminderBusy(false);
+  }
+
+  // One-tap replay: restore every choice from a past session. If the exact
+  // script was saved, playback starts immediately (deferred to the effect that
+  // consumes pendingReplay); older entries without a saved script fall back to
+  // restoring the choices in the tray.
   function replay(r: RecentSession) {
     ev("session_replay", { context: r.context, duration: r.duration });
     engineRef.current.stopPreview();
@@ -2757,6 +2802,14 @@ export default function Home() {
             <>
               <br />
               <span className="foot-links">
+                <button
+                  type="button"
+                  className="foot-link-btn"
+                  onClick={() => setReminderOpen(true)}
+                >
+                  Reminder
+                </button>
+                <span className="dotsep">·</span>
                 <a href={`mailto:${BRAND.support}`}>Contact</a>
                 <span className="dotsep">·</span>
                 <a href="/privacy">Privacy</a>
@@ -2764,6 +2817,64 @@ export default function Home() {
             </>
           )}
         </div>
+
+        {reminderOpen && (
+          <div
+            className="rm-scrim"
+            onClick={() => setReminderOpen(false)}
+            role="presentation"
+          >
+            <div
+              className="rm-sheet"
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-label="Daily reminder"
+            >
+              <div className="rm-title">daily reminder</div>
+              <p className="rm-sub">
+                A gentle nudge to take a few minutes for yourself, at the same time
+                each day.
+              </p>
+              <div className="rm-row">
+                <span>Remind me daily</span>
+                <button
+                  type="button"
+                  className={`rm-toggle ${reminder.enabled ? "on" : ""}`}
+                  role="switch"
+                  aria-checked={reminder.enabled}
+                  disabled={reminderBusy}
+                  onClick={() => toggleReminder(!reminder.enabled)}
+                >
+                  <span className="rm-knob" />
+                </button>
+              </div>
+              <div className={`rm-row ${reminder.enabled ? "" : "rm-dim"}`}>
+                <span>Time</span>
+                <input
+                  type="time"
+                  className="rm-time"
+                  value={`${pad2(reminder.hour)}:${pad2(reminder.minute)}`}
+                  disabled={reminderBusy || !reminder.enabled}
+                  onChange={(e) => setReminderTime(e.target.value)}
+                  aria-label="Reminder time"
+                />
+              </div>
+              {reminder.enabled && (
+                <p className="rm-conf">We&apos;ll nudge you at {reminderTimeLabel}.</p>
+              )}
+              {!isNativeApp() && (
+                <p className="rm-note">Reminders are delivered in the relaxed app.</p>
+              )}
+              <button
+                type="button"
+                className="rm-done"
+                onClick={() => setReminderOpen(false)}
+              >
+                done
+              </button>
+            </div>
+          </div>
+        )}
       </main>
     );
   }
