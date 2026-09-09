@@ -12,7 +12,7 @@
 Preset intentions (meditate, sleep, flow, relax, stress-relief) are assembled from
 hand-authored templates, not written live:
 
-- `lib/sessionScripts.json` holds `Record<ContextId, ScriptLine[][]>`: **3 script
+- `lib/sessionScripts.json` holds `Record<ContextId, ScriptLine[][]>`: **5 script
   variants per intention**, each variant a list of `ScriptLine` =
   `{ text, pause, from?, name? }`. One master template per intention serves every
   duration.

@@ -66,7 +66,7 @@ on the device. See [security.md](./security.md) and [data-privacy.md](./data-pri
 | Server | `/api/generate` | `app/api/generate/route.ts` | Assembles a preset session from templates and voices it (cache-first, ElevenLabs for the rest). |
 | Server | `/api/custom-script` | `app/api/custom-script/route.ts` | Writes a bespoke session live with Claude from the user's typed phrase. |
 | Server | `/api/tts` | `app/api/tts/route.ts` | Voices a single line on demand (powers custom streaming). |
-| Content | Session templates | `lib/sessions.ts`, `lib/sessionScripts.json` | 5 intentions × 3 script variants; pacing/duration assembly. |
+| Content | Session templates | `lib/sessions.ts`, `lib/sessionScripts.json` | 5 intentions × 5 script variants; pacing/duration assembly. |
 | Content | Contexts + prompt | `lib/contexts.ts` | Intentions, durations, the Claude system prompt, feature flags. |
 | Content | Meditation Engine | `lib/engine.ts` | Session blueprint (scene arc + per-scene targets) driving the custom path, and the per-intention audio envelope (scene-based mix). See [audio-engine.md](./audio-engine.md#9-the-meditation-engine-phase-1). |
 | Infra libs | Voice cache | `lib/voiceCache.ts`, `lib/voiceCacheManifest.json` | Hash-keyed cache of pre-voiced common lines (1,448 entries). |

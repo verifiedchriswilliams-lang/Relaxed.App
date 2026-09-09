@@ -44,7 +44,7 @@ relaxed.app/
 | `lib/contexts.ts` | Intentions, durations, `VoiceChoice`, `CUSTOM_MAX_CHARS`, `CUSTOM_ENABLED`, the Claude `SCRIPT_SYSTEM_PROMPT`, duration bands, feature flags | [product-spec](./product-spec.md) |
 | `lib/engine.ts` | Meditation Engine: session blueprint (`blueprintFor`, scene arc + per-scene targets) + per-intention audio envelope (`audioProfile`) | [audio-engine](./audio-engine.md#9-the-meditation-engine-phase-1) |
 | `lib/sessions.ts` | Preset session assembler (`assembleSession`, pacing/fit, transcript, cache line enumeration) | [audio-engine](./audio-engine.md) |
-| `lib/sessionScripts.json` | 5 intentions × 3 script variants (`ScriptLine[][]`) | [audio-engine](./audio-engine.md) |
+| `lib/sessionScripts.json` | 5 intentions × 5 script variants (`ScriptLine[][]`) | [audio-engine](./audio-engine.md) |
 | `lib/tts.ts` | Voice-ID resolution (`VOICE_TABLE`, `resolveVoiceId`) + ElevenLabs byte synthesis | [audio-engine](./audio-engine.md) |
 | `lib/voiceCache.ts` | Cache key hashing, manifest membership (`isCached`), Blob URL | [audio-engine](./audio-engine.md), [voice-cache](./voice-cache.md) |
 | `lib/voiceCacheManifest.json` | `{ keys: [...] }`, 1,448 cached-line hashes (tracked in git) | [voice-cache](./voice-cache.md) |
