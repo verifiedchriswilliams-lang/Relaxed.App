@@ -150,7 +150,7 @@ export function blueprintFor(
   durationMin: number,
   opts?: { leadSeconds?: number }
 ): Blueprint {
-  const total = Math.max(3, Math.min(30, durationMin)) * 60;
+  const total = Math.max(3, Math.min(60, durationMin)) * 60;
   const lead = Math.max(0, Math.min(opts?.leadSeconds ?? 0, total * 0.34));
   const bodyTargetSeconds = Math.max(total - lead, 60);
   const base = scenesFor(context);

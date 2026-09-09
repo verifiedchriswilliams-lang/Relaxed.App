@@ -4,6 +4,15 @@
 // from the player's own union types; the caller casts back on use. Every read
 // and write is guarded so a private window or cleared storage is a safe no-op.
 
+// One spoken line of a saved session: the exact words and the stillness after
+// it. Persisted so a replay reproduces the same script (revoiced), never a
+// freshly written one, this matters most for the bespoke path, where the words
+// are generated live and would otherwise differ every time.
+export interface SavedLine {
+  text: string;
+  pauseAfter: number;
+}
+
 export interface RecentSession {
   context: string; // ContextId
   label: string; // display line, e.g. "Sleep" or the custom phrase
@@ -13,6 +22,10 @@ export interface RecentSession {
   accent: string; // "us" | "uk"
   soundscape: string; // Soundscape id
   customText?: string;
+  // The exact resolved script (words + pauses), captured once the session is
+  // composed. Absent on sessions saved before this was recorded; the player
+  // falls back to regenerating for those.
+  script?: SavedLine[];
   at: number; // epoch ms of the most recent run
 }
 
@@ -65,6 +78,36 @@ export function pushRecent(s: RecentSession): RecentSession[] {
     /* storage unavailable; the in-memory list is still returned */
   }
   return capped;
+}
+
+// Attach the resolved script to a session once it's composed. Matches by
+// signature and updates the entry in both recent and favorites (a session may
+// already be starred), so a later replay finds the exact words. Returns the new
+// recent list so the caller can update state without a re-read.
+export function updateRecentScript(
+  s: RecentSession,
+  script: SavedLine[]
+): RecentSession[] {
+  const k = sessionSig(s);
+  const apply = (list: RecentSession[]) =>
+    list.map((r) => (sessionSig(r) === k ? { ...r, script } : r));
+
+  const recent = apply(loadRecent());
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(recent));
+  } catch {
+    /* best-effort */
+  }
+  // Mirror into favorites if this session is starred, so a saved replay is exact.
+  const favs = loadFavs();
+  if (favs.some((r) => sessionSig(r) === k)) {
+    try {
+      localStorage.setItem(FAV_KEY, JSON.stringify(apply(favs)));
+    } catch {
+      /* best-effort */
+    }
+  }
+  return recent;
 }
 
 // Whether a session is currently saved (present in the favorites list).

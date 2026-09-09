@@ -27,7 +27,9 @@ import {
   recordMood,
   recentHintSeen,
   markRecentHintSeen,
+  updateRecentScript,
   type RecentSession,
+  type SavedLine,
 } from "@/lib/history";
 import { ev } from "@/lib/analytics";
 import { audioProfile, type AudioProfile } from "@/lib/engine";
@@ -1339,6 +1341,13 @@ export default function Home() {
   // from the rolling ten-deep recent window.
   const [favs, setFavs] = useState<RecentSession[]>([]);
   const [mood, setMood] = useState<string | null>(null);
+  // Which screen a session was launched from, so End / Done return there (e.g.
+  // a session started from history goes back to history, not always home).
+  const [playOrigin, setPlayOrigin] = useState<Screen>("setup");
+  // A saved session waiting to start on the player. Set by replay(), consumed by
+  // an effect once the restored choices have applied to state (so the timer's
+  // totalSecs and the engine params match the session being replayed).
+  const [pendingReplay, setPendingReplay] = useState<RecentSession | null>(null);
   // First-reveal hint on the recent/history entry: pulse + a small tooltip the
   // first time it appears (after the first completed session), then never again.
   const [hintRecent, setHintRecent] = useState(false); // tooltip mounted
@@ -1605,6 +1614,18 @@ export default function Home() {
     c.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
   }, [activeLine, showTranscript]);
 
+  // Start a queued replay once the restored choices have applied to state and
+  // we're on the player, so the timer (totalSecs) and engine match the session.
+  useEffect(() => {
+    if (pendingReplay && screen === "player") {
+      const r = pendingReplay;
+      setPendingReplay(null);
+      startFromSaved(r);
+    }
+    // startFromSaved is a stable component function; deps are the trigger only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingReplay, screen]);
+
   // --- Session clock (wall-clock based) ---
   const nowMs = () =>
     typeof performance !== "undefined" ? performance.now() : Date.now();
@@ -1721,9 +1742,11 @@ export default function Home() {
     setTrayOpen(true);
   }
 
-  // Save the session that's starting to on-device history, so it can be replayed
-  // later with one tap. Called from begin() for every kind of session.
-  function rememberSession() {
+  // A history descriptor for the session currently set up in state. Its signature
+  // (context/duration/voice/accent/soundscape/phrase) is what matches an entry
+  // across recent and saved, so building it the same way here and when attaching
+  // the script keeps them in sync.
+  function currentSession(): RecentSession {
     const phrase = customText.trim();
     const label = selected.custom
       ? phrase
@@ -1731,19 +1754,31 @@ export default function Home() {
         : selected.label
       : selected.label;
     const soundBit = voice === "none" ? "sounds only" : soundLabel;
-    setRecent(
-      pushRecent({
-        context,
-        label,
-        sub: `${duration} min · ${soundBit}`,
-        duration,
-        voice,
-        accent,
-        soundscape,
-        customText: selected.custom ? phrase : undefined,
-        at: Date.now(),
-      })
-    );
+    return {
+      context,
+      label,
+      sub: `${duration} min · ${soundBit}`,
+      duration,
+      voice,
+      accent,
+      soundscape,
+      customText: selected.custom ? phrase : undefined,
+      at: Date.now(),
+    };
+  }
+
+  // Save the session that's starting to on-device history, so it can be replayed
+  // later with one tap. Called from begin() for every kind of session. The exact
+  // script is attached separately once it's composed (rememberScript).
+  function rememberSession() {
+    setRecent(pushRecent(currentSession()));
+  }
+
+  // Attach the resolved script to the session just started, so a later replay
+  // reproduces these exact words (revoiced) instead of writing a new session.
+  function rememberScript(script: SavedLine[]) {
+    if (!script.length) return;
+    setRecent(updateRecentScript(currentSession(), script));
   }
 
   // One-tap replay: restore every choice from a past session and open the tray
@@ -1753,6 +1788,7 @@ export default function Home() {
     ev("session_replay", { context: r.context, duration: r.duration });
     engineRef.current.stopPreview();
     setError(null);
+    setPlayOrigin(screen);
     setContext(r.context as ContextId);
     setDuration(r.duration as Duration);
     setVoice(r.voice as VoiceChoice);
@@ -1762,8 +1798,15 @@ export default function Home() {
     setSoundPicked(true);
     setSoundTab(catOf(r.soundscape as Soundscape));
     setCustomText(r.customText ?? "");
-    setScreen("setup");
-    setTrayOpen(true);
+    // Saved script → play it now (deferred so the restored choices land first).
+    // No saved script (older entry) → restore into the tray to regenerate.
+    if (r.script && r.script.length) {
+      setPendingReplay(r);
+      setScreen("player");
+    } else {
+      setScreen("setup");
+      setTrayOpen(true);
+    }
   }
 
   // Star / unstar a session so it's kept indefinitely, off the rolling window.
@@ -1808,6 +1851,7 @@ export default function Home() {
     engineRef.current.unlock();
 
     setError(null);
+    setPlayOrigin("setup"); // Begin comes from the home/tray; End returns home.
     persistPrefs();
     rememberSession();
     setMood(null); // fresh reflection for this session
@@ -1865,6 +1909,20 @@ export default function Home() {
       setScript(data.script || "");
       setNote(typeof data.note === "string" ? data.note : "");
       setIsPreview(Boolean(data.mock));
+
+      // Persist the exact script (name-resolved transcript lines paired with each
+      // segment's pause) so a later replay reproduces it rather than re-rolling
+      // the variant. The transcript is 1:1 with the segments.
+      const segs = Array.isArray(data.segments) ? data.segments : [];
+      const texts = String(data.script || "").split("\n");
+      if (segs.length && texts.length === segs.length) {
+        rememberScript(
+          segs.map((s: { pauseAfter?: number }, i: number) => ({
+            text: texts[i],
+            pauseAfter: Number(s.pauseAfter) || 0,
+          }))
+        );
+      }
 
       const wait = MIN_GENERATING_MS - (Date.now() - started);
       if (wait > 0) await new Promise((r) => setTimeout(r, wait));
@@ -1979,6 +2037,12 @@ export default function Home() {
         setScript(
           [...arrival.map((a) => a.text), ...body.map((s) => s.text)].join("\n")
         );
+        // Persist the exact composed script (arrival + body) so a replay
+        // reproduces these words rather than asking Claude for a new session.
+        rememberScript([
+          ...arrival.map((a) => ({ text: a.text, pauseAfter: a.pauseAfter })),
+          ...body.map((s) => ({ text: s.text, pauseAfter: s.pauseAfter })),
+        ]);
       } else {
         // The guide couldn't be written/reached; keep the bed going so it lands
         // as a calm sounds-only session rather than an error bounce.
@@ -2013,6 +2077,58 @@ export default function Home() {
     eng.setSession(audioProfile(context), duration * 60);
     eng.playBell({ gain: 0.06, f0: 396, decay: 4.5 }); // soft "enter" cue
     eng.playSegments(segments);
+    clockStart();
+    setPlaying(true);
+    setElapsed(0);
+    startTick();
+    acquireWakeLock();
+  }
+
+  // Play a saved session from its exact stored script (revoiced, never
+  // rewritten). Invoked by the pendingReplay effect once the restored choices
+  // are in state, so the timer and engine match. The whole script plays as one
+  // streamed batch; the player's timer ends it at its length like any session.
+  function startFromSaved(r: RecentSession) {
+    const eng = engineRef.current;
+    const lines: SavedLine[] = r.script ?? [];
+    setNote("");
+    setIsPreview(false);
+    setScript(lines.map((l) => l.text).join("\n"));
+    // Float it back to the top of recents, keeping its script.
+    setRecent(pushRecent({ ...r, at: Date.now() }));
+    haptic("medium");
+
+    const rVoice = r.voice as VoiceChoice;
+    const rAccent = r.accent as Accent;
+    const { voiceGain, src, level } = bedAndVoice(
+      rVoice,
+      rAccent,
+      r.soundscape as Soundscape
+    );
+    eng.voiceGainValue = voiceGain;
+    eng.startAmbient(r.soundscape as Soundscape, src, level);
+    eng.setSession(audioProfile(r.context as ContextId), r.duration * 60);
+    eng.playBell({ gain: 0.06, f0: 396, decay: 4.5 });
+    eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
+
+    // Sounds-only sessions have no voice to reproduce; the bed + timer carry it.
+    if (rVoice !== "none" && lines.length) {
+      const fetchAudio = async (text: string): Promise<ArrayBuffer | null> => {
+        try {
+          const res = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text, voice: rVoice, accent: rAccent }),
+          });
+          if (!res.ok) return null;
+          return await res.arrayBuffer();
+        } catch {
+          return null;
+        }
+      };
+      eng.playCustomStream(lines, Promise.resolve([]), fetchAudio, () => {});
+    }
+
     clockStart();
     setPlaying(true);
     setElapsed(0);
@@ -2080,7 +2196,9 @@ export default function Home() {
     releaseWakeLock();
     setPlaying(false);
     setElapsed(0);
-    setScreen("setup");
+    // Return to wherever the session was launched from (history if it was a
+    // replay, otherwise home), not always home.
+    setScreen(playOrigin);
   }
 
   // Cue words read from the same breathing clock as the orb (breathPhase state),

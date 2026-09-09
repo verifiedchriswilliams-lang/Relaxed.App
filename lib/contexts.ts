@@ -176,8 +176,8 @@ export function getContext(id: string): SessionContext | undefined {
 }
 
 // Duration presets offered in the UI. The generator itself handles any value in
-// the 3 to 30 range via duration bands (below), so these are just convenient doses.
-export const DURATIONS = [5, 10, 15, 20, 30] as const;
+// the 3 to 60 range via duration bands (below), so these are just convenient doses.
+export const DURATIONS = [5, 10, 15, 20, 30, 45, 60] as const;
 export type Duration = (typeof DURATIONS)[number];
 
 export type VoiceChoice = "female" | "male" | "none";
@@ -244,6 +244,16 @@ export const DURATION_BANDS: DurationBand[] = [
       "The most spacious of all. Extended, restful silences (40 seconds and more, many stacked break " +
       "tags) and the same handful of gentle cues spread across the whole session, with nowhere to " +
       "rush and nothing to add. The words are sparse islands in a great deal of stillness.",
+  },
+  {
+    id: "extended",
+    minMinutes: 31,
+    maxMinutes: 60,
+    guidance:
+      "A long, sustained rest. Guidance is very sparse, the same few gentle anchors returned to across " +
+      "the whole session, with silences of a minute or more between them (many stacked break tags). " +
+      "Introduce nothing new to fill the time; the deep, unbroken stillness is the point, and the voice " +
+      "only reappears now and then to steady the person before receding again.",
   },
 ];
 

@@ -189,7 +189,7 @@ export async function POST(req: NextRequest) {
 
   const name = (body.name || "").trim().slice(0, 60);
   const phrase = (body.phrase || "").replace(/\s+/g, " ").trim().slice(0, 70);
-  const durationMin = Math.min(30, Math.max(3, Number(body.durationMin) || 10));
+  const durationMin = Math.min(60, Math.max(3, Number(body.durationMin) || 10));
   // Clamp the reserved arrival to something sane (never more than a third of a
   // short session), so a bad client value can't starve the body.
   const leadSeconds = Math.min(
