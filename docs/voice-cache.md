@@ -60,7 +60,7 @@ is never broken by a missing cache, it just gets faster once you build it.
 
 - Voice IDs and delivery settings (speed/stability) come from the same env vars
   the app uses, so cached audio matches live audio.
-- The cache is voice-specific: the current manifest holds **1,448 hashes**
+- The cache is voice-specific: the current manifest holds **1,912 hashes**
   (roughly four voices x the distinct common lines across all templates).
 - The cache already lives on **Vercel Blob** (`cacheUrl()` resolves through
   `NEXT_PUBLIC_BLOB_BASE_URL`), so it does not weigh on git and scales freely.

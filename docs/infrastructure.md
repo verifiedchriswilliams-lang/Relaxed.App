@@ -78,7 +78,7 @@ Large audio is not in git; it is served from a single Vercel Blob store.
   under `/public` (a safe, reversible fallback).
 - **Folder layout** (Blob key = path relative to `public/`):
   - `sounds/` — soundscape beds (~110 MB).
-  - `voice-cache/<hash>.mp3` — pre-voiced common lines (~53 MB, 1,448 keys).
+  - `voice-cache/<hash>.mp3` — pre-voiced common lines (~70 MB, 1,912 keys).
   - `voice-previews/<slot>.mp3` — the four tray audition clips.
 - All media blobs are **public** (`access: "public"`, `audio/mpeg`, stable keys).
   The only secret is the `BLOB_READ_WRITE_TOKEN`.

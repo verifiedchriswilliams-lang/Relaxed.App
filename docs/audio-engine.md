@@ -91,7 +91,7 @@ Presets are made nearly free by pre-voicing their reusable lines:
 - Every distinct **common (non-name) line** across all templates is voiced once
   per voice slot and stored as `voice-cache/<key>.mp3` on Vercel Blob.
 - `key = sha1("<voiceId>\n<text>").hex.slice(0,20)` (`lib/voiceCache.ts:17`).
-- `lib/voiceCacheManifest.json` (`{ "keys": [...] }`, **1,448 entries**) is loaded
+- `lib/voiceCacheManifest.json` (`{ "keys": [...] }`, **1,912 entries**) is loaded
   into a `Set`; `isCached(key)` is an O(1) membership test.
 - At request time (`/api/generate`): cached common lines resolve to a Blob CDN
   URL (free, fast); the **name line and any uncached line** are synthesized live.
