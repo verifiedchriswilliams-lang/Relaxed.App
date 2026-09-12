@@ -51,6 +51,7 @@ what you need and it makes one for you." The full strategy and phased plan live 
 | iOS shell | Capacitor | 8.5.0 | WKWebView over the hosted site + native plugins. |
 | Analytics | Vercel Web Analytics | 2.0.1 | First-party, cookieless. |
 | Styling | Hand-authored CSS | — | Custom properties; no framework. |
+| Testing | Vitest | ^2 | Unit tests for the pure logic (`tests/`, `npm test`); CI runs build + test. |
 
 Full dependency and license detail is in [third-party-ip.md](./third-party-ip.md).
 Full environment and infra detail is in [infrastructure.md](./infrastructure.md).

@@ -55,8 +55,9 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
-### Unreleased — `phase2` branch (in preview)
-Phase 2: private continuity and depth. Built on a branch for review, not deployed.
+### 2026-09-12 — Phase 2 merged: longer sessions, variety, exact replay, reminders
+Phase 2: continuity and depth (the soundscape-audio + infinite-session work is
+still parked pending new audio files).
 - **Longer sessions:** 45 and 60 minute options, with a new "extended" pacing band.
 - **More variety:** two more script variants per intention (3 → 5 each), so
   meditate / sleep / flow / relax / stress-relief feel fresh far longer. (New
@@ -77,6 +78,19 @@ Phase 2: private continuity and depth. Built on a branch for review, not deploye
 - **EU readiness (for 1.2):** the privacy policy now states the GDPR essentials
   (data-subject rights, international transfers, legal basis, supervisory-authority
   complaint). Remaining EU gates are App-Store-side; see the runbook checklist.
+
+### 2026-09-12 — Hardening merged: rate limiting, tests + CI, decomposition
+- **Rate limiting on the paid routes.** `/api/custom-script`, `/api/tts`, and
+  `/api/generate` now enforce a per-IP fixed-window limit (`lib/rateLimit.ts`,
+  tunable via `RL_*_PER_MIN`) so unauthenticated abuse can't run up provider
+  spend. Best-effort per serverless instance; a shared store is the durable
+  upgrade.
+- **First automated tests.** A Vitest suite (54 tests) covers the pure
+  audio/timing/loudness logic, history storage, and rate limiting; a CI workflow
+  runs the build + tests on every PR.
+- **`app/page.tsx` decomposed** from ~2,900 to ~1,920 lines: the `AudioEngine`,
+  the soundscape/loudness domain, and the breath/format helpers moved to
+  `lib/audio/**`, `lib/breath.ts`, and `lib/format.ts`. No behavior change.
 
 ### 2026-09-08 — Flagship "make your own" reads as primary
 - The "make your own" label on the home screen is now the largest text in the

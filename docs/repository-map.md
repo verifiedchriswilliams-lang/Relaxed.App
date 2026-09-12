@@ -8,16 +8,18 @@
 ```
 relaxed.app/
 ├── app/                  Next.js App Router: pages, API routes, generated images
-├── lib/                  All non-UI logic: content, brand, audio helpers, native bridge
+├── lib/                  All non-UI logic: content, brand, audio engine + helpers, native bridge
+├── tests/               Vitest unit tests for the pure logic (run: npm test)
 ├── scripts/             One-off Node scripts (voice cache, previews, blob upload, loudness)
 ├── public/              Static assets (audio served from Blob in prod; READMEs here)
 ├── assets/              Source icon + splash images for iOS asset generation
 ├── native/www/          Capacitor offline fallback bundle
 ├── docs/                This documentation set
-├── .github/workflows/   Two manual GitHub Actions (voice cache, blob sync)
+├── .github/workflows/   CI (build + test), docs-check, and two manual Actions (voice cache, blob sync)
 ├── capacitor.config.ts  iOS shell config
 ├── next.config.mjs      Empty (Next defaults)
 ├── tsconfig.json        TS config (strict), path alias @/* → ./*
+├── vitest.config.ts     Test runner config (node env, @ alias)
 └── package.json         Scripts + dependencies
 ```
 
@@ -25,7 +27,7 @@ relaxed.app/
 
 | Path | Kind | Purpose |
 |---|---|---|
-| `app/page.tsx` | Client component (~2,580 lines) | **The entire app**: the five-screen state machine + the `AudioEngine` class. The single most important file. |
+| `app/page.tsx` | Client component (~1,920 lines) | **The app UI**: the five-screen state machine and screens. The `AudioEngine` and audio domain now live in `lib/audio/`. Still the single largest file. |
 | `app/layout.tsx` | Server | App shell, fonts (Manrope + Figtree), brand-templated metadata, `data-brand`, theme color, Vercel `<Analytics/>`. |
 | `app/globals.css` | CSS | Base (ElevenMind) design system + all shared component styles. |
 | `app/relaxed.css` | CSS | relaxed brand token overrides + relaxed-only structure (scoped `[data-brand="relaxed"]`). |
@@ -43,6 +45,13 @@ relaxed.app/
 |---|---|---|
 | `lib/contexts.ts` | Intentions, durations, `VoiceChoice`, `CUSTOM_MAX_CHARS`, `CUSTOM_ENABLED`, the Claude `SCRIPT_SYSTEM_PROMPT`, duration bands, feature flags | [product-spec](./product-spec.md) |
 | `lib/engine.ts` | Meditation Engine: session blueprint (`blueprintFor`, scene arc + per-scene targets) + per-intention audio envelope (`audioProfile`) | [audio-engine](./audio-engine.md#9-the-meditation-engine-phase-1) |
+| `lib/audio/engine.ts` | The `AudioEngine` class: Web Audio graph, bloom, ducking, streaming, scene envelope, previews (extracted from `page.tsx`) | [audio-engine](./audio-engine.md) |
+| `lib/audio/soundscapes.ts` | The 15-bed catalog (`SOUNDSCAPES`), families, `catOf`/`soundDef` | [audio-engine](./audio-engine.md), [product-spec](./product-spec.md) |
+| `lib/audio/levels.ts` | Loudness math (`normGain`) + bed/voice selection (`bedAndVoice`), level targets, `VOICE_STATS`, `PREVIEW_GAIN` | [audio-engine](./audio-engine.md#5-loudness-normalization-the-it-just-sounds-right-work) |
+| `lib/audio/types.ts` | Shared audio types (`Soundscape`, `SoundCat`, `SoundDef`, `Accent`) | — |
+| `lib/breath.ts` | The 14.5s breath clock (`breathAt`, `easeInOut`, `BREATH_*`) shared by orb + cue | [audio-engine](./audio-engine.md) |
+| `lib/format.ts` | Pure formatters: `timeAgo`, `mmss`, `greetingFor`, `transcriptLines` | — |
+| `lib/rateLimit.ts` | Per-IP fixed-window rate limiter for the paid routes (`enforceRateLimit`) | [security](./security.md) |
 | `lib/sessions.ts` | Preset session assembler (`assembleSession`, pacing/fit, transcript, cache line enumeration) | [audio-engine](./audio-engine.md) |
 | `lib/sessionScripts.json` | 5 intentions × 5 script variants (`ScriptLine[][]`) | [audio-engine](./audio-engine.md) |
 | `lib/tts.ts` | Voice-ID resolution (`VOICE_TABLE`, `resolveVoiceId`) + ElevenLabs byte synthesis | [audio-engine](./audio-engine.md) |
@@ -84,8 +93,9 @@ relaxed.app/
 |---|---|
 | Change a preset script | `lib/sessionScripts.json` (then rebuild the voice cache) |
 | Change the Claude prompt | `lib/contexts.ts` (`SCRIPT_SYSTEM_PROMPT`) + `app/api/custom-script/route.ts` (`buildPrompt`) |
-| Add/adjust a soundscape | `SOUNDSCAPES` in `app/page.tsx` + `lib/soundMotifs.tsx` + Blob upload |
-| Tune loudness | `VOICE_STATS`, `SOUNDSCAPES[].trim`, `PREVIEW_GAIN` in `app/page.tsx` (measure first) |
+| Add/adjust a soundscape | `SOUNDSCAPES` in `lib/audio/soundscapes.ts` + `lib/soundMotifs.tsx` + Blob upload |
+| Tune loudness | `VOICE_STATS`, `SOUNDSCAPES[].trim`, `PREVIEW_GAIN` in `lib/audio/` (measure first) |
+| Run / add a unit test | `tests/*.test.ts` (`npm test`); pure logic in `lib/` |
 | Change a voice | `ELEVENLABS_VOICE_*` env or `VOICE_TABLE` defaults (then rebuild cache) |
 | Change the look | `app/relaxed.css` (relaxed) / `app/globals.css` (shared) |
 | Change native config | `capacitor.config.ts`, Info.plist (needs a new build) |

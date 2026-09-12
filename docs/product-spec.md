@@ -162,6 +162,9 @@ positioning. See [roadmap.md](./roadmap.md#explicitly-not-building).
 
 ## 7. Quality assurance
 
-There is no automated test suite; QA is manual. The Phase 0 QA checklist used for
-the last major release is preserved at [qa-phase0.md](./qa-phase0.md). This is a
-known gap, tracked in [risks-tech-debt.md](./risks-tech-debt.md#testing).
+Unit tests (Vitest, `tests/`, `npm test`) cover the pure logic (audio levels,
+session timing, the breath clock, history, rate limiting); CI runs them with the
+build. The player's Web Audio engine and the UI are still verified by manual QA,
+the Phase 0 checklist is preserved at [qa-phase0.md](./qa-phase0.md). Extending
+automated coverage there is tracked in
+[risks-tech-debt.md](./risks-tech-debt.md#testing).

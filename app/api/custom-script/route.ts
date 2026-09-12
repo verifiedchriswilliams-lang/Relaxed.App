@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getDurationBand, SCRIPT_SYSTEM_PROMPT } from "@/lib/contexts";
 import { blueprintFor, type Blueprint, type SceneKey } from "@/lib/engine";
+import { enforceRateLimit } from "@/lib/rateLimit";
 
 // Writes a fully bespoke meditation for a short phrase the user typed, live via
 // Claude, on the Meditation Engine (Phase 1). The app hands Claude a structured
@@ -180,6 +181,10 @@ function fallbackScript(
 }
 
 export async function POST(req: NextRequest) {
+  // Cap paid-provider abuse before doing any work (fail-open on limiter error).
+  const limited = enforceRateLimit(req.headers, "custom-script");
+  if (limited) return limited;
+
   let body: Body;
   try {
     body = (await req.json()) as Body;

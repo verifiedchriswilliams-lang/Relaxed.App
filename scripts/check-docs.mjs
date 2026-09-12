@@ -116,10 +116,10 @@ function checkPinnedFacts() {
       "docs/overview.md",
     ]);
 
-  // 3. Breath cadence (cycle seconds), from the three constants.
-  const bin = grab("app/page.tsx", /BREATH_IN\s*=\s*([\d.]+)/, "BREATH_IN");
-  const bhold = grab("app/page.tsx", /BREATH_HOLD\s*=\s*([\d.]+)/, "BREATH_HOLD");
-  const bout = grab("app/page.tsx", /BREATH_OUT\s*=\s*([\d.]+)/, "BREATH_OUT");
+  // 3. Breath cadence (cycle seconds), from the three constants in lib/breath.ts.
+  const bin = grab("lib/breath.ts", /BREATH_IN\s*=\s*([\d.]+)/, "BREATH_IN");
+  const bhold = grab("lib/breath.ts", /BREATH_HOLD\s*=\s*([\d.]+)/, "BREATH_HOLD");
+  const bout = grab("lib/breath.ts", /BREATH_OUT\s*=\s*([\d.]+)/, "BREATH_OUT");
   if (bin && bhold && bout) {
     const cycle = (parseFloat(bin) + parseFloat(bhold) + parseFloat(bout))
       .toString();

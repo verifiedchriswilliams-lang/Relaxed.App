@@ -8,6 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "check:docs": "node scripts/check-docs.mjs",
     "build:voices": "node scripts/build-voice-cache.mjs",
     "build:previews": "node scripts/build-voice-previews.mjs",
@@ -35,6 +37,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@vercel/blob": "^2.8.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^2.1.9"
   }
 }

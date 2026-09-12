@@ -18,12 +18,18 @@ npm run dev                     # http://localhost:3000
   `ELEVENLABS_API_KEY` (voice). For the relaxed brand locally, set
   `NEXT_PUBLIC_BRAND=relaxed`.
 
-Build & lint:
+Build, test & lint:
 
 ```bash
 npm run build      # production build (also the pre-deploy sanity check)
+npm test           # Vitest unit tests (audio levels, timing, history, rate limit)
 npm run lint       # next lint (no committed ruleset yet)
 ```
+
+CI runs the build and the unit tests on every PR and push to `main`
+(`.github/workflows/ci.yml`), alongside the docs-drift check. A red build or a
+failing test blocks nothing automatically today (no branch protection set), so
+keep an eye on the checks; Vercel still deploys `main` on push.
 
 ## Deploy (web)
 
@@ -214,5 +220,5 @@ voice cache and cost nothing at Anthropic. ElevenLabs bills separately for voice
 | Custom path returns fallback text | No `ANTHROPIC_API_KEY` or Claude error | Check the key; check function logs. |
 | New splash/haptics missing in the app | `ios:assets`/`ios:sync` skipped, or launch-screen cache | Re-run both, re-archive; delete/reinstall the app. |
 | Audio 404s | `NEXT_PUBLIC_BLOB_BASE_URL` wrong or media not uploaded | Re-run `upload-blob.mjs`; verify the base URL. |
-| Provider cost spike | Unauthenticated custom/tts abuse | Add rate limiting (see [security.md](./security.md#5-recommended-hardening-prioritized)); watch spend per [Billing & cost monitoring](#billing--cost-monitoring). |
+| Provider cost spike | Custom/tts/generate abuse | Routes are rate-limited per IP; tighten `RL_CUSTOM_PER_MIN` / `RL_TTS_PER_MIN` / `RL_GENERATE_PER_MIN` in Vercel, and see [security.md](./security.md#5-recommended-hardening-prioritized); watch spend per [Billing & cost monitoring](#billing--cost-monitoring). |
 | Custom generation suddenly failing for everyone | Anthropic credits hit $0 | Check the balance ([console.anthropic.com](https://console.anthropic.com) → Billing); confirm auto-reload is on. See [Billing & cost monitoring](#billing--cost-monitoring). |
