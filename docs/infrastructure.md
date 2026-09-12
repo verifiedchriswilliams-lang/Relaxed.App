@@ -42,6 +42,9 @@ deployment never disturbs the other.
 | `ELEVENLABS_STABILITY` | Delivery steadiness (0–1) | 0.85 |
 | `ELEVENLABS_OUTPUT_FORMAT` | Cache/audio format | `mp3_44100_128` |
 | `TTS_CONCURRENCY` | Parallel live TTS calls (1–6) | 4 |
+| `RL_CUSTOM_PER_MIN` | Per-IP request ceiling on `/api/custom-script` (0 disables) | 8 |
+| `RL_TTS_PER_MIN` | Per-IP request ceiling on `/api/tts` | 40 |
+| `RL_GENERATE_PER_MIN` | Per-IP request ceiling on `/api/generate` | 12 |
 | `ELEVENLABS_VOICE_FEMALE_US` | Her/US voice ID override | `7AvtJrjTNyBhBxEvNPIZ` |
 | `ELEVENLABS_VOICE_MALE_US` | Him/US override | `6bPfTtSpgxgD0GeBVfqu` |
 | `ELEVENLABS_VOICE_FEMALE_UK` | Her/UK override | `bgU7lBMo69PNEOWHFqxM` |

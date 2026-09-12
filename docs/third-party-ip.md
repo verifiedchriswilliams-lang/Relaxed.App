@@ -23,6 +23,7 @@ Dev (`devDependencies`):
 | `@capacitor/cli`, `@capacitor/assets` | 8.x / 3.0.5 | MIT |
 | `@vercel/blob` | 2.8.0 | Apache-2.0 **[confirm]** |
 | `typescript` | ^5 | Apache-2.0 |
+| `vitest` | ^2 | MIT |
 | `@types/*` | — | MIT |
 
 - The tree is small and dominated by permissive (MIT/Apache) licenses. There are

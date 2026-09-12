@@ -5,6 +5,7 @@ import {
   type Gender,
   type Accent,
 } from "@/lib/tts";
+import { enforceRateLimit } from "@/lib/rateLimit";
 
 // One line of voice, on demand. The Custom session calls this once per line and
 // streams playback as each returns, so time-to-first-audio is a few seconds
@@ -19,6 +20,9 @@ interface TtsBody {
 }
 
 export async function POST(req: NextRequest) {
+  const limited = enforceRateLimit(req.headers, "tts");
+  if (limited) return limited;
+
   let body: TtsBody;
   try {
     body = (await req.json()) as TtsBody;

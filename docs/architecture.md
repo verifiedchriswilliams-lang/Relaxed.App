@@ -61,8 +61,8 @@ on the device. See [security.md](./security.md) and [data-privacy.md](./data-pri
 
 | Layer | Component | File(s) | Responsibility |
 |---|---|---|---|
-| Client UI | `Home()` | `app/page.tsx` (~2,580 lines) | The entire experience: a five-screen state machine (setup → history → generating → player → complete). |
-| Client audio | `class AudioEngine` | `app/page.tsx:283` | Web Audio mixer: voice bus, ambient bed, ducking, bloom, bells, streaming playback, loudness normalization. |
+| Client UI | `Home()` | `app/page.tsx` (~1,920 lines) | The experience: a five-screen state machine (setup → history → generating → player → complete). |
+| Client audio | `class AudioEngine` | `lib/audio/engine.ts` | Web Audio mixer: voice bus, ambient bed, ducking, bloom, bells, streaming playback, loudness normalization. Audio catalog + loudness math sit alongside in `lib/audio/`. |
 | Server | `/api/generate` | `app/api/generate/route.ts` | Assembles a preset session from templates and voices it (cache-first, ElevenLabs for the rest). |
 | Server | `/api/custom-script` | `app/api/custom-script/route.ts` | Writes a bespoke session live with Claude from the user's typed phrase. |
 | Server | `/api/tts` | `app/api/tts/route.ts` | Voices a single line on demand (powers custom streaming). |
@@ -85,7 +85,7 @@ on the device. See [security.md](./security.md) and [data-privacy.md](./data-pri
    player | complete`). The screen subtree is keyed on `screen` so it remounts
    and re-fires the calm fade-in on each transition, while audio and session
    state live in refs/hooks on the parent and survive the remount
-   (`app/page.tsx:2345`). This keeps the always-on `AudioContext` and playback
+   (`app/page.tsx`). This keeps the always-on `AudioContext` and playback
    timeline intact across view changes.
 
 2. **No database, no accounts (yet).** All personalization state is
