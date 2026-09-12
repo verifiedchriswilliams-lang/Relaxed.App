@@ -1504,9 +1504,10 @@ export default function Home() {
     // set before the native plugin existed starts firing once it can).
     setReminder(loadReminder());
     syncReminder();
-    // Welcome back: for an established returning user (relaxed, has history),
-    // offer a gentle once-a-day "how are you arriving?" that tunes the session.
-    if (IS_RELAXED && startRecent.length > 0 && !arrivingSeenToday()) {
+    // Welcome back: for an established returning user (either brand, has
+    // history), offer a gentle once-a-day "how are you arriving?" that tunes the
+    // session.
+    if (startRecent.length > 0 && !arrivingSeenToday()) {
       setWelcomeOpen(true);
     }
   }, []);
@@ -2834,7 +2835,7 @@ export default function Home() {
             </>
           )}
           Not medical or therapeutic advice.
-          {IS_RELAXED && (
+          {IS_RELAXED ? (
             <>
               <br />
               <span className="foot-links">
@@ -2849,6 +2850,19 @@ export default function Home() {
                 <a href={`mailto:${BRAND.support}`}>Contact</a>
                 <span className="dotsep">·</span>
                 <a href="/privacy">Privacy</a>
+              </span>
+            </>
+          ) : (
+            <>
+              <br />
+              <span className="foot-links">
+                <button
+                  type="button"
+                  className="foot-link-btn"
+                  onClick={() => setReminderOpen(true)}
+                >
+                  Daily reminder
+                </button>
               </span>
             </>
           )}

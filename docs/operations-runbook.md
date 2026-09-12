@@ -64,6 +64,31 @@ Connect fields, review notes) is in [ios-build.md](./ios-build.md).
 > To verify a new launch screen on device: delete the app, restart the phone,
 > reinstall (iOS caches the launch image aggressively).
 
+## EU / App Store availability
+<a id="eu--app-store-availability"></a>
+
+Expanding beyond US + Canada (planned for 1.2). The app collects no personal data
+server-side and analytics are anonymous and cookieless, so GDPR exposure is low,
+but EU distribution still has gates. Status:
+
+- ✅ **Privacy policy** covers the GDPR essentials: on-device storage, processors
+  (Anthropic / ElevenLabs / Vercel), international transfers (US), legal basis,
+  data-subject rights, and a supervisory-authority complaint note (`/privacy`).
+- ☐ **DSA trader status** (App Store Connect → Business): provide and verify
+  trader contact info (legal name, address, email, phone). **Required** for EU
+  distribution; Apple withholds EU availability until it's verified.
+- ☐ **App availability** (App Store Connect → Pricing and Availability): add the
+  EU countries.
+- ☐ **App Privacy "nutrition label":** confirm it reflects reality, no data
+  linked to identity; anonymous analytics as "not linked to you," or "Data Not
+  Collected" if nothing qualifies.
+- ☐ **Provider DPAs:** confirm Anthropic / ElevenLabs / Vercel data-processing
+  terms cover EU processing of the custom phrase (diligence, [third-party-ip](./third-party-ip.md)).
+- ☐ **Age rating:** confirm it's set (EU child-data age can be 16).
+
+No cookie-consent banner is needed (Vercel analytics is cookieless and
+non-identifying). See [data-privacy.md](./data-privacy.md).
+
 ## Rebuild the voice cache
 
 When session templates change (new/edited common lines) or a voice ID changes:

@@ -10,7 +10,7 @@ export const metadata = {
 // AI providers only to generate that session, and analytics are anonymous and
 // aggregate. Update the contact address below if you use a different one.
 const CONTACT = BRAND.support;
-const UPDATED = "August 31, 2026";
+const UPDATED = "September 12, 2026";
 
 export default function PrivacyPage() {
   return (
@@ -100,15 +100,47 @@ export default function PrivacyPage() {
 
       <Section title="Data retention">
         <p style={{ margin: 0 }}>
-          The name you enter stays on your device until you clear it (or clear your
-          browser data). We do not maintain accounts or user profiles, so there is
-          no stored history of your sessions tied to you.
+          The name you enter, and your session history and preferences, stay on
+          your device until you clear them (or clear your browser data). We do not
+          maintain accounts or user profiles, so there is no stored history of your
+          sessions tied to you. Session inputs are processed by our providers only
+          to generate that one session and are not retained by us.
+        </p>
+      </Section>
+
+      <Section title="International transfers">
+        <p style={{ margin: 0 }}>
+          Our providers (Anthropic, ElevenLabs, Vercel) are based in the United
+          States, so if you use a &ldquo;Make Your Own&rdquo; session the short
+          phrase you type is processed in the US to generate that session. These
+          providers process it under their own terms and standard contractual
+          protections. If you would rather nothing leave the device, use the preset
+          intentions or a sounds-only session, which do not send a phrase.
+        </p>
+      </Section>
+
+      <Section title="Your rights (EU/UK and others)">
+        <p style={{ margin: "0 0 10px" }}>
+          Because there are no accounts, most of your data lives on your device and
+          is under your direct control: you can view, change, or erase it at any
+          time by editing your details in the app or clearing the app&rsquo;s
+          storage. Where applicable law (such as the EU/UK GDPR) gives you rights to
+          access, correct, delete, or object to the processing of personal data, you
+          may exercise them by contacting us. The legal basis for the limited
+          processing we do (generating the session you ask for) is performing the
+          service you request; analytics rely on our legitimate interest in
+          understanding aggregate, non-identifying usage.
+        </p>
+        <p style={{ margin: 0 }}>
+          If you are in the EU/UK you also have the right to lodge a complaint with
+          your local data protection authority.
         </p>
       </Section>
 
       <Section title="Children">
         <p style={{ margin: 0 }}>
-          {BRAND.name} is not directed to children under 13, and we do not
+          {BRAND.name} is not directed to children under 13 (or the minimum age
+          required in your country, such as 16 in parts of the EU), and we do not
           knowingly collect personal information from them.
         </p>
       </Section>

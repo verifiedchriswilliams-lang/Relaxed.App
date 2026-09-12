@@ -83,8 +83,11 @@ same"), not free text. Plus Vercel's cookieless auto-pageviews.
   (an in-app `/privacy` page exists; see `app/privacy/page.tsx`).
 - **GDPR / UK GDPR:** minimal exposure — no accounts, no profiling, cookieless
   analytics. The lawful-basis surface is small because almost nothing personal is
-  processed server-side. If EU availability is pursued, revisit the AI-provider
-  data-processing terms and add a data-processing addendum trail.
+  processed server-side. The privacy policy now states the GDPR essentials (rights,
+  international transfers to US providers, legal basis). For EU **distribution**,
+  the remaining gates are App-Store-side (DSA trader verification, App Privacy
+  details) and confirming the AI-provider DPAs, see the checklist in
+  [operations-runbook.md](./operations-runbook.md#eu--app-store-availability).
 - **CCPA/CPRA:** no "sale" of personal information; minimal collection.
 - **COPPA / age:** the product is not directed at children; there is no age gate.
   An acquirer should confirm App Store age rating and marketing alignment.
@@ -110,6 +113,9 @@ risks.
 - [ ] Confirm Anthropic and ElevenLabs commercial terms and data-retention /
       training-use settings for API traffic (see [third-party-ip.md](./third-party-ip.md)).
 - [ ] Confirm the App Store privacy nutrition label matches this document.
-- [ ] Decide EU posture before expanding availability (GDPR DPA trail, DSA).
+- [ ] EU expansion (1.2): complete the App-Store-side gates (DSA trader
+      verification, availability, App Privacy) and confirm provider DPAs, per the
+      [runbook checklist](./operations-runbook.md#eu--app-store-availability). The
+      privacy-policy content is done.
 - [ ] When accounts arrive (Phase 2), this document and the privacy policy must be
       revised for server-side personal data.

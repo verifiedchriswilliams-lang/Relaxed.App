@@ -146,4 +146,5 @@ Streaks, social features, public profiles, leaderboards, notification spam, or
 - Multi-day programs / journeys.
 - Accounts backend (e.g. Supabase) if continuity outgrows on-device storage.
 - Android (Capacitor already supports it).
-- Broaden availability beyond US + Canada (watch EU trader / DSA obligations).
+- Broaden availability beyond the EU + US + Canada (EU expansion is in the 1.2
+  scope; see the runbook's EU checklist).

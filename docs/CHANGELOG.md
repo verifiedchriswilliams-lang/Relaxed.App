@@ -71,6 +71,12 @@ Phase 2: private continuity and depth. Built on a branch for review, not deploye
   build; the preference is stored and re-syncs when the plugin is present.
 - **Welcome back check-in:** a gentle once-a-day "how are you arriving?" for
   returning users that tunes the session, fully dismissible.
+- **Brand parity:** the daily reminder and welcome-back check-in now work on both
+  brands (ElevenMind gets a footer reminder entry; the check-in is no longer
+  relaxed-only). The other Phase 2 features were already brand-agnostic.
+- **EU readiness (for 1.2):** the privacy policy now states the GDPR essentials
+  (data-subject rights, international transfers, legal basis, supervisory-authority
+  complaint). Remaining EU gates are App-Store-side; see the runbook checklist.
 
 ### 2026-09-08 — Flagship "make your own" reads as primary
 - The "make your own" label on the home screen is now the largest text in the

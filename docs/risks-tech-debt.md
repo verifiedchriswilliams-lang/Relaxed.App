@@ -63,7 +63,11 @@
 - 🟠 **Provider dependency / single points of failure.** The core experience
   depends on Anthropic and ElevenLabs availability and pricing. Degradation modes
   exist (preview/fallback), but there is no second provider.
-- 🟢 **Availability limited to US + Canada.** EU expansion needs a GDPR/DSA pass.
+- 🟢 **Availability limited to US + Canada; EU expansion in progress (1.2).** The
+  privacy policy now carries the GDPR essentials (rights, international transfers,
+  legal basis). Remaining before the EU toggle is flipped: DSA trader verification
+  and App Privacy details in App Store Connect (both founder actions). Checklist
+  in [operations-runbook.md](./operations-runbook.md#eu--app-store-availability).
 
 ## iOS
 
