@@ -105,8 +105,28 @@ At [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → **Apps →
 - **Export compliance**: the app uses only standard HTTPS encryption →
   choose the **exempt** option (add `ITSAppUsesNonExemptEncryption = NO` to
   Info.plist to skip the prompt on every upload).
-- **Screenshots**: capture on a 6.7" device/simulator (home, tray, a playing
-  session) — the dark UI shots look great.
+- **Screenshots**: this listing's slots and their **required pixel dimensions**
+  (App Store Connect rejects anything else — log kept so we don't rediscover it
+  every release):
+  - **iPhone 6.5" Display** — `1242 × 2688` (portrait). (6.5" also accepts
+    `1284 × 2778`; the two share an aspect ratio and can sit in the same slot.)
+  - **iPad 13" Display** — `2064 × 2752` (portrait). (This is the 13" iPad Pro
+    M4 size; the older 12.9" `2048 × 2732` is a *different* slot and is rejected
+    here.)
+
+  Good screens to show: **home** (with the replay/history glyph in the topbar),
+  the **make-your-own** tray (duration slider on the new 45/60 stops), a
+  **populated history** ("your sessions", saved over recent), and the **player**
+  (the breathing orb — enlarged on iPad). The dark UI reads well full-bleed.
+
+  Reproducible capture (no device needed): render the live site headless at the
+  slot's CSS size (iPhone 6.5" = `414 × 896 @3x`; iPad 13" = `1032 × 1376 @2x`)
+  and seed on-device state before load so the glyph and lists appear — set
+  `elevenmind.prefs.v1` (name), `relaxed.recent.v1`, `relaxed.favs.v1` (with a
+  `script` on one saved session to reach the player via replay), plus
+  `relaxed.recentHint.v1` and `relaxed.arriving.v1` to suppress the first-run
+  hint and the welcome-back sheet. Click a scripted saved row to land on the
+  player.
 
 ## 5. Archive & upload
 

@@ -499,6 +499,52 @@
   [data-brand="relaxed"] .breath .sub {
     font-size: 15px;
   }
+
+  /* The sessions list was never adapted for a big canvas — it inherited the
+     phone's tight rows and hugged the top, leaving the lower half empty. Give
+     it real presence here: drop it down off the bar, and make the heading,
+     section labels and cards roomier so the list fills the space and reads as
+     deliberate rather than cramped. */
+  [data-brand="relaxed"] .history-scroll .history {
+    padding-top: 26px;
+    /* Center the list as a group so the space sits balanced above and below
+       instead of pooling at the bottom. `safe` keeps a long list anchored to
+       the top (and fully scrollable) rather than clipping its first rows. */
+    display: flex;
+    flex-direction: column;
+    justify-content: safe center;
+  }
+  [data-brand="relaxed"] .hh {
+    margin-bottom: 32px;
+  }
+  [data-brand="relaxed"] .hh-title {
+    font-size: 30px;
+  }
+  [data-brand="relaxed"] .hsec {
+    margin-bottom: 36px;
+  }
+  [data-brand="relaxed"] .hsec-label {
+    font-size: 13px;
+    margin-bottom: 14px;
+  }
+  [data-brand="relaxed"] .hs-swipe {
+    border-radius: 18px;
+    margin-bottom: 12px;
+  }
+  [data-brand="relaxed"] .hs-main {
+    padding: 18px 22px;
+    border-radius: 18px;
+  }
+  [data-brand="relaxed"] .hs-label {
+    font-size: 18px;
+  }
+  [data-brand="relaxed"] .hs-sub {
+    font-size: 14px;
+    margin-top: 5px;
+  }
+  [data-brand="relaxed"] .hs-time {
+    font-size: 13.5px;
+  }
 }
 
 /* ---- per-soundscape session motif (player only) ------------------------- */

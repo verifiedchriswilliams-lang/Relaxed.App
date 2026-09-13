@@ -55,6 +55,13 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-13 — Better iPad layout for the sessions list
+- **iPad "your sessions" now uses the space.** On large screens (≥768px) the
+  history list was inheriting the phone's tight rows and hugging the top with an
+  empty lower half. It now has roomier cards, larger type, and the list is
+  centered as a group so the margins sit balanced (a long list still anchors to
+  the top and scrolls). Scoped to relaxed; phone and ElevenMind are unchanged.
+
 ### 2026-09-12 — Phase 2 merged: longer sessions, variety, exact replay, reminders
 Phase 2: continuity and depth (the soundscape-audio + infinite-session work is
 still parked pending new audio files).

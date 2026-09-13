@@ -74,7 +74,11 @@ ElevenMind base in `globals.css`). relaxed is **deliberately dark-only.**
 Structural moves: solid surfaces (no `backdrop-filter`), a monochrome breathing
 bloom behind orbs, a breathing ring driven by a shared JS clock variable (`--pb`)
 rather than a keyframe (so it holds when paused), a calm `rx-screen-in` fade on
-each screen transition, and an iPad/large-screen scale-up at ≥768px.
+each screen transition, and an iPad/large-screen scale-up at ≥768px. That
+breakpoint enlarges the player orb and greeting, and gives the sessions list
+(history) real presence — roomier cards, larger type, and the list centered as a
+group (`justify-content: safe center`) so short lists sit balanced instead of
+pooling at the top, while a long list still anchors to the top and scrolls.
 
 ## 3. The "stem" mark
 
