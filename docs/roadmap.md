@@ -1,152 +1,110 @@
 # relaxed.app — Roadmap
 
-Part of the [documentation set](./README.md). Living doc. relaxed.app is the standalone brand; elevenmind.io is the same
-codebase forked by `NEXT_PUBLIC_BRAND` (see `lib/brand.ts`). Keep scope changes
-brand-aware.
+Part of the [documentation set](./README.md). Living doc. relaxed.app is the
+standalone brand; elevenmind.io is the same codebase forked by
+`NEXT_PUBLIC_BRAND` (see `lib/brand.ts`). Keep scope changes brand-aware.
 
 Strategic thesis (agreed after a product review): make the *moment* exceptional,
-remove all friction, add private continuity, then build the ecosystem. Don't spend
-months on Apple integrations wrapped around an experience that still makes someone
-wait 30 seconds for a meditation to start. North star: **relaxed should feel like a
-luxury object, not a wellness utility.** The wedge vs. Calm/Headspace is not a
-bigger catalog, it's "tell relaxed what you need and it makes one for you."
+remove all friction, add private continuity, then build the ecosystem. North
+star: **relaxed should feel like a luxury object, not a wellness utility.** The
+wedge vs. Calm/Headspace is not a bigger catalog, it's "tell relaxed what you
+need and it makes one for you."
+
+> **Descoped 2026-09-13.** The forward plan is deliberately three items (see
+> **Active backlog**). Everything that used to sit in Phases 3–4 and "later" is
+> either parked behind paying-user signal or explicitly not being built. The
+> phase-by-phase history now lives in **Shipped** and in
+> [CHANGELOG.md](./CHANGELOG.md).
 
 ## Shipped
 
-- Personalized pipeline: Claude writes the script, ElevenLabs voices it, played over
-  an ElevenLabs soundscape with a breathing visual + transcript.
-- Intentions: meditation, sleep, flow, relax, stress-relief, plus "In your words"
-  (a live, bespoke script from a short phrase) — now on by default for relaxed.
-- Voice Her/Him x US/UK, or None. 15 soundscapes across Nature/Music/Frequencies,
-  each with a line motif in the player ring.
-- Full "stem" identity, dark-only. Breathing orb synced to the breath cue.
-- Native iOS app (Capacitor shell over the hosted site) — **live on the App Store**
-  (v1.1.1 released 2026-09-06). See [CHANGELOG.md](./CHANGELOG.md).
-- Privacy page; anonymous Vercel analytics; US + Canada; `support@relaxed.app` live;
-  in-app Contact + Privacy links.
+The personalized experience and its depth are live in production (this was
+Phases 0–2 of the original plan):
 
-## Code we already have (so several "big" items are cheaper than they look)
+- **Personalized pipeline** — Claude writes the script, ElevenLabs voices it,
+  played over an ElevenLabs soundscape with a breathing visual + transcript.
+  **Instant start:** the bed + breathing begin at once and the body streams in
+  behind a short spoken arrival (no "composing" wait on the custom path).
+- **Meditation Engine** — custom sessions are a structured arc
+  (settle → body → visualization → reflection → close); the app owns timing,
+  Claude owns language, ElevenLabs owns voice. A per-intention audio envelope
+  shapes bed/voice over the session (for sleep the voice thins toward the end).
+  (`lib/engine.ts`, `lib/sessions.ts`; see [audio-engine.md](./audio-engine.md).)
+- **The flagship + shared home** — "make your own" leads the home above the
+  common intentions, with a compact, editable greeting; both brands share the
+  home information architecture (relaxed: text-only, Bone; ElevenMind: aurora,
+  glass, coloured orbs).
+- **Continuity, on-device** — recents + saved (exact replay, revoiced never
+  rewritten), post-session mood, a daily reminder (local notification), and a
+  rotating warm greeting. All localStorage, no accounts. (`lib/history.ts`.)
+- **Breadth** — 15 soundscapes (Nature/Music/Frequencies), voices Her/Him ×
+  US/UK or None, durations 5–60, several script variants per intention.
+- **iOS** — a Capacitor shell over the hosted site, live on the App Store
+  (1.1.1). **1.2 (daily-reminder plugin + refreshed screenshots) is in review
+  for US + Canada.**
+- **Brand parity** — relaxed.app and elevenmind.io run the same build and reach
+  feature parity (home IA, greeting, history, footer), with ElevenMind retaining
+  its ElevenLabs / ElevenMusic attribution.
 
-- **Client-held true silence.** `AudioEngine.playSegments` schedules real silence
-  between spoken lines on the audio clock with the ambient bed continuing — we
-  already do "voice, silence, breath, silence, voice," not gappy `<break>` TTS.
-- **A streaming path.** `AudioEngine.playStream` voices lines as it plays.
-- **A structured session assembler.** `lib/sessions.ts` `assembleSession` already
-  builds arrival/body/close with duration-band pacing — the "meditation engine"
-  skeleton exists.
-- **A dual-bus mixer.** Separate voice + ambient buses exist to build ducking on.
-- Presets are largely pre-cached in Vercel Blob (only the name line is live TTS),
-  so the 10-40s wait is essentially the **custom** path, not every session.
+## Reusable foundation (why the backlog is cheaper than it looks)
 
-## Phase 0 — make the existing product feel expensive (do first)
+Client-held true silence on the audio clock (`AudioEngine.playSegments`), a
+streaming path (`playStream`), a structured session assembler (`lib/sessions.ts`),
+and a dual-bus (voice + ambient) mixer for ducking already exist. Presets are
+largely pre-cached in Vercel Blob (only the name line is live TTS).
 
-Phase 0 web work is complete and **shipped to production** (merged to `main`).
-The remaining Phase 0 items are the native/App Store follow-ups noted at the end
-(the beveled launch screen and haptics land with the 1.1.1 build).
+## Active backlog
 
-- ✅ **Instant start (Make Your Own).** Tapping Begin goes straight to the player:
-  the bed + breathing orb start at once, a short fixed arrival is spoken through the
-  existing TTS path, and Claude's personalized body streams in behind it. No
-  "composing" screen, no 10-40s wait. (`playCustomStream` in app/page.tsx.)
-- ✅ **Audio craft.** Voice ducking (the bed dips under each line and swells back in
-  the long pauses), an arrival bloom (bed comes in sparse then fills over ~30s), and
-  soft synthesized singing-bowl bells at start and close. Built on the existing bus.
-  Scene-mapped bed intensity tied to script sections is a later refinement.
-- ✅ **Onboarding as ritual, not config.** The tray opens minimal — intention,
-  duration, Begin — with voice/soundscape folded behind a "Customize" row that shows
-  the current pick at a glance (e.g. "Her · Ocean Waves") and expands on demand.
-- ✅ **Post-session micro-feedback + Replay.** One-tap "How do you feel?" on the
-  closing screen and a "recent" list on the home screen that restores every choice
-  with one tap. Both on-device (localStorage), no accounts. (lib/history.ts.)
-- ✅ **Lightweight anonymous event analytics** (session start/complete/abandon,
-  replay, feedback) via Vercel custom events. No accounts, no identifiers, no free
-  text — never the name or the custom phrase, only the shape. (lib/analytics.ts.)
-- ✅ **iPad / Mac layout:** widened column + enlarged orb on tablet-plus screens.
-- ✅ **iOS build-2 native changes** (splash cross-fade + beveled launch mark), shipped
-  in the 1.1 build.
-- Polish: continue refining orb motion, typography/spacing, generation states.
-- Native follow-ups still open: none blocking; revisit lock-screen richness and
-  further haptics as the native app iterates.
+The only planned work right now.
 
-## Phase 1 — make the AI genuinely special (the moat)
+1. **Soundscape audio → infinite sessions + ∞ slider.** Replace the current beds
+   with premium, seamless-looping audio, normalize levels (`measure-beds`), and
+   set loop points so there is no gap where the audio restarts. This unlocks
+   **infinite sessions** (the bed loops as long as the person wants), surfaced as
+   an **∞ stop** at the end of the duration slider
+   (`5 · 10 · 15 · 20 · 30 · 45 · 60 · ∞`, kept as equal-spaced notches).
+   - **Dependency:** sourcing the right seamless-loop audio (in progress, not yet
+     found). Once the files exist the engineering is small — content +
+     normalization + loop points + one slider stop.
 
-**Shipped to production** (merged to `main`, including the home rework and the
-polish pass: first-reveal history hint, swipe-to-delete, scrollable history).
-See [audio-engine.md](./audio-engine.md#9-the-meditation-engine-phase-1).
+2. **EU launch — 1.2.1.** Add the EU countries to availability and ship a 1.2.1
+   build.
+   - **Dependency:** Apple's DSA trader verification (submitted, in review). See
+     the [operations runbook](./operations-runbook.md) EU checklist.
 
-- ✅ **Meditation Engine.** The app emits a structured session (an ordered arc of
-  scenes: settle / body / visualization / reflection / close), each with a share
-  of the length, a breath feel, and an objective; Claude fills each scene to those
-  constraints, and the app fits each scene's pauses to its own second target. The
-  app owns timing; Claude owns language; ElevenLabs owns voice. (`lib/engine.ts`,
-  driving the custom path; presets remain the cached templates for now.)
-- ✅ **Scene-based sessions.** A per-intention audio envelope shapes bed intensity
-  and voice presence over the session's progress; for **sleep the voice thins out**
-  toward the end while the bed continues. Applies to presets and custom.
-- ✅ **"In your words" is the flagship.** The home leads with "make your own" (a
-  filled Bone card) above an "or pick a common intention" divider, with the
-  presets as quiet rows below.
-- Later refinements (not in this branch): fold presets into full blueprints
-  (needs content re-authoring + a voice-cache rebuild); per-scene (not just
-  progress-based) audio cues; a visible session arc in the player.
+3. **Apple Watch — v1 companion.** A native watchOS (SwiftUI) app that rides in
+   the existing Xcode project and shares the App Store listing + backend APIs:
+   a **breathing-haptic pacer** on the wrist (no audio pipeline needed),
+   **start / pause / end** a session that plays on the phone (WatchConnectivity),
+   a **complication + quick "5-min reset"**, and optional **HealthKit Mindful
+   Minutes**.
+   - **Reality:** this is the one item that leaves the web stack — watchOS can't
+     reuse the Capacitor / Web Audio app, so it's a net-new Swift/SwiftUI build
+     (Medium effort, a skill set we don't use yet). Standalone on-watch playback
+     (rebuilding the audio engine in AVAudioEngine so a session runs phone-free)
+     is explicitly **v2 / someday**, not this scope.
 
-## Phase 2 — depth, continuity, and the habit (in progress)
+## Someday (parked — revisit after paying-user signal; not planned)
 
-Scoped with the founder. **Shipped to production (merged to `main`), except the
-soundscape-audio + infinite-session work, which is gated on new source files.**
-
-- **Soundscape audio (top priority, gated on new files).** Replace the current
-  beds with premium, seamless-looping audio (sourced from ElevenLabs or a
-  licensing library), normalize levels (`measure-beds`), and set loop points /
-  stitching so there is no gap where the audio restarts. This also unlocks
-  **infinite sessions** (the soundscape loops as long as the person wants).
-- ✅ **Longer sessions:** 45 and 60 minutes (a new "extended" pacing band).
-- ✅ **More variety:** 5 script variants per intention (was 3), so presets feel
-  fresh far longer.
-- ✅ **Exact replay:** the resolved script is saved on-device and reproduced
-  (revoiced, never rewritten); tapping a recent/saved plays immediately; End/Done
-  return to where the session was launched from.
-- ✅ **Daily reminder:** an on-device local notification at a chosen time (no
-  server, no accounts). The native plugin ships in the **1.2** build.
-- **Welcome back:** shipped as a once-a-day "how are you arriving?" check-in, then
-  **removed** — auto-assigning a session from a mood tap read as clutter, not
-  ritual. The returning-user warmth now lives in the rotating home greeting
-  ("Welcome back / Good to see you / Hello again", mixed with the time of day).
-- Memory stays transparent and useful ("Again? 10 min · Relax · Rain"), never
-  surveillant. No streaks, badges, or leaderboards.
-- **Deferred:** Sign in with Apple / accounts / cross-device sync. Everything above
-  is on-device; accounts wait until continuity genuinely outgrows the device.
-
-## Phase 3 — monetize (overlaps Phase 2)
-
-- Test **relaxed+** (~$9.99/mo or ~$59.99/yr): unlimited personalized sessions, all
-  voices/soundscapes, "In your words," continuity, premium audio. Sell "your own
-  meditation whenever you need it," not "AI." Validate willingness to pay before the
-  large ecosystem build, but not before Phase 0 makes the moment worth paying for.
-
-## Phase 4 — Apple ecosystem (after product-market signal)
-
-Order by behavioral value:
-1. **Apple Watch** (strongest retention play — where people actually meditate).
-2. **Widgets / Lock Screen** ("5-min reset," "What do you need?").
-3. **Siri / App Intents** ("Hey Siri, give me five minutes to reset").
-4. **HealthKit** Mindful Minutes (invisible infrastructure, not a headline).
-5. **iPad** optimized layout — already universal, so a layout job, not a new app.
-   Minimalism makes the big canvas gorgeous (enormous orb, generous negative space).
-6. **tvOS** — deferred. Capacitor can't target tvOS, so it's a **separate native
-   SwiftUI app** hitting the same APIs. TV is a great playback surface but a poor
-   discovery/control surface; build only if data shows people want phone-to-TV
-   sessions. Highest effort, lowest near-term ROI of the platforms.
+- **relaxed+ paywall test** (~$9.99/mo or ~$59.99/yr): unlimited personalized
+  sessions, all voices/soundscapes, "In your words," continuity, premium audio.
+  The monetization bet, held until premium audio makes the moment worth paying
+  for.
+- **ElevenMind iPad layout pass** — its own aurora/glass large-screen design
+  (relaxed already has one; the shared iPad treatment is relaxed-scoped).
+- **Rest of the Apple ecosystem** — Widgets / Lock Screen, Siri / App Intents,
+  standalone HealthKit, and **Apple Watch v2** (phone-free on-watch playback).
+- **Engine refinements** — fold presets into full blueprints (needs content
+  re-authoring + a voice-cache rebuild), per-scene (not just progress-based)
+  audio cues, a visible session arc in the player.
+- **Exploration** — multi-day programs / journeys, an accounts backend
+  (e.g. Supabase) if continuity outgrows on-device storage, Android (Capacitor
+  supports it), availability beyond EU + US + Canada.
 
 ## Explicitly not building
 
 Streaks, social features, public profiles, leaderboards, notification spam, or
-"AI-powered" gimmicks. They cheapen the luxury-object positioning.
-
-## Later / exploration
-
-- Multi-day programs / journeys.
-- Accounts backend (e.g. Supabase) if continuity outgrows on-device storage.
-- Android (Capacitor already supports it).
-- Broaden availability beyond the EU + US + Canada (EU expansion is in the 1.2
-  scope; see the runbook's EU checklist).
+"AI-powered" gimmicks — they cheapen the luxury-object positioning. **tvOS** is
+also off the table: Capacitor can't target it (it would be a separate native
+SwiftUI app), and a TV is a poor discovery/control surface for this product —
+highest effort, lowest near-term ROI of the platforms.
