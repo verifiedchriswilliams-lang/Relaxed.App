@@ -55,6 +55,15 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-13 — ElevenMind home reaches parity with relaxed
+- **Same home information architecture on both brands.** The compact, editable
+  greeting header (tap the name to edit) and the "make your own" flagship (above
+  an "or pick a common intention" divider) were relaxed-only; ElevenMind still had
+  a standing name-field box and showed "Make Your Own" as a plain tile at the
+  bottom of the list. Both are now shared. ElevenMind keeps its own visual world
+  (aurora, glass, coloured intention orbs) and its ElevenLabs / ElevenMusic
+  attribution; relaxed is unchanged (text-only intentions, Bone flagship).
+
 ### 2026-09-13 — Home footer links reachable on every device
 - **Fixed: Reminder / Contact / Privacy could be unreachable.** The night home is
   a locked, single screen; on a short device its content overflowed and the

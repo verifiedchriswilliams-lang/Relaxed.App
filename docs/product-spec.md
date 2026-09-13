@@ -54,16 +54,18 @@ stateDiagram-v2
 ### 3a. Setup (home)
 
 - **Header (the name is an editable part of the headline, never a standing box).**
-  First run shows "what should we call you?" with a name field; once a name is set
-  (or remembered), the header becomes the time-based greeting with the name inline
-  and a small pencil to tap and edit ("good evening, Chris ✎"). ElevenMind keeps
-  its original greeting + name field.
-- **The flagship ("In your words").** On relaxed, under "What would you like to
-  do?", "make your own" is a filled (Bone) primary card ("Let us create a
-  personalized, guided session for whatever you need."), set apart above an
-  "or pick a common intention" divider.
+  Both brands share this: first run shows "what should we call you?" with a name
+  field; once a name is set (or remembered), the header becomes the greeting with
+  the name inline and a small pencil to tap and edit ("welcome back, Chris ✎").
+- **The flagship.** When custom is enabled (relaxed always; ElevenMind via
+  `NEXT_PUBLIC_ENABLE_CUSTOM=1`), under "What would you like to do?" "make your
+  own" is the primary card ("Let us create a personalized, guided session for
+  whatever you need."), set apart above an "or pick a common intention" divider.
+  Same information architecture on both brands; relaxed renders it as a Bone-filled
+  card with text-only intentions, ElevenMind as a glass card with its coloured orbs.
 - The common intentions (meditate, sleep, flow, relax) follow as quiet rows.
-  Tapping any option (including make your own) opens the options tray.
+  Tapping any option (including make your own) opens the options tray. (With custom
+  disabled, there is no flagship and the fifth row is "breathe"/stress-relief.)
 - An **orbit-mark entry point** (top-right) appears once the user has any history,
   opening the History screen.
 - **Daily reminder.** A "Reminder" entry in the footer opens a small sheet to set

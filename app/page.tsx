@@ -49,7 +49,7 @@ import {
 } from "@/lib/audio/soundscapes";
 import { PREVIEW_GAIN, normGain, bedAndVoice, BED_SOLO } from "@/lib/audio/levels";
 import { AudioEngine } from "@/lib/audio/engine";
-import { timeAgo, greetingFor, rotatingGreeting, mmss, transcriptLines } from "@/lib/format";
+import { timeAgo, rotatingGreeting, mmss, transcriptLines } from "@/lib/format";
 import { breathAt } from "@/lib/breath";
 
 // Which visual world are we in? relaxed swaps the aurora + coloured discs for
@@ -1672,86 +1672,60 @@ export default function Home() {
         </div>
 
         <div className="hero">
-          {/* Header. The name is an editable part of the headline, never a
-              standing box. relaxed: cold start shows the field; a remembered
-              name shows the greeting with a tap-to-edit name. ElevenMind keeps
-              its original greeting + name field. */}
-          {IS_RELAXED ? (
-            // Fixed-height header so everything below (the prompt + intentions)
-            // stays pinned regardless of state; the greeting sits on the same
-            // line the cold-start field occupies.
-            <div className="home-head">
-              {nameCommitted && !editingName ? (
-                <div className="greeting">
-                  {visitGreeting},{" "}
-                  <button
-                    className="name-chip"
-                    onClick={() => setEditingName(true)}
-                    aria-label="Edit your name"
-                  >
-                    <b>{name.trim()}</b>
-                    <svg className="pencil" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path
-                        d="M14.5 5.5l4 4M4 20l1-4L16 5a2 2 0 0 1 3 3L8 19l-4 1z"
-                        stroke="currentColor"
-                        strokeWidth={1.6}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <div className="ask-label">what should we call you?</div>
-                  <div className="namefield glass">
-                    <input
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          commitName();
-                          e.currentTarget.blur();
-                        }
-                      }}
-                      onBlur={commitName}
-                      placeholder="your name"
-                      maxLength={40}
-                      autoFocus={editingName}
-                      aria-label="Your name"
-                    />
-                  </div>
-                </>
-              )}
-            </div>
-          ) : (
-            <>
+          {/* Header (both brands): the name is an editable part of the headline,
+              never a standing box. Cold start shows the field; a remembered name
+              shows the greeting with a tap-to-edit name. Fixed-height so the
+              prompt + intentions below stay pinned regardless of state. */}
+          <div className="home-head">
+            {nameCommitted && !editingName ? (
               <div className="greeting">
-                {nameCommitted ? visitGreeting : greetingFor()}
-                {name.trim() ? (
-                  <>
-                    , <b>{name.trim()}</b>
-                  </>
-                ) : (
-                  ""
-                )}
+                {visitGreeting},{" "}
+                <button
+                  className="name-chip"
+                  onClick={() => setEditingName(true)}
+                  aria-label="Edit your name"
+                >
+                  <b>{name.trim()}</b>
+                  <svg className="pencil" width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path
+                      d="M14.5 5.5l4 4M4 20l1-4L16 5a2 2 0 0 1 3 3L8 19l-4 1z"
+                      stroke="currentColor"
+                      strokeWidth={1.6}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
               </div>
-              <div className="namefield glass">
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="What should we call you?"
-                  maxLength={40}
-                  aria-label="Your name"
-                />
-              </div>
-            </>
-          )}
+            ) : (
+              <>
+                <div className="ask-label">what should we call you?</div>
+                <div className="namefield glass">
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        commitName();
+                        e.currentTarget.blur();
+                      }
+                    }}
+                    onBlur={commitName}
+                    placeholder="your name"
+                    maxLength={40}
+                    autoFocus={editingName}
+                    aria-label="Your name"
+                  />
+                </div>
+              </>
+            )}
+          </div>
 
-          {IS_RELAXED && CUSTOM_ENABLED ? (
+          {CUSTOM_ENABLED ? (
             <>
-              {/* "Make your own" is the flagship: a filled (Bone) primary, above
-                  a labeled divider and the common intentions. */}
+              {/* "Make your own" is the flagship primary, above a labeled divider
+                  and the common intentions. Both brands; relaxed drops the orb
+                  markers (words alone) via CSS, ElevenMind keeps its coloured orbs. */}
               <div className="prompt">What would you like to do?</div>
               <button className="hero-make" onClick={() => chooseIntention("custom")}>
                 <span className="hm-l">make your own</span>
@@ -1764,13 +1738,21 @@ export default function Home() {
                 or pick a common intention
                 <span className="l" />
               </div>
-              <div className="states states-wide">
+              <div className={IS_RELAXED ? "states states-wide" : "states"}>
                 {CONTEXTS.filter((c) => !c.custom).map((c) => (
                   <button
                     key={c.id}
                     className="state"
                     onClick={() => chooseIntention(c.id)}
                   >
+                    <span
+                      className="orb"
+                      style={
+                        IS_RELAXED
+                          ? undefined
+                          : ({ background: c.art, "--og": c.glow } as React.CSSProperties)
+                      }
+                    />
                     <span className="slabel">
                       <span className="sname">{c.label}</span>
                     </span>
