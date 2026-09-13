@@ -68,8 +68,10 @@ The native bridge and player hardening.
   from a mood tap read as clutter and wasn't intuitive. The returning-user warmth
   now lives inline: the home header greeting rotates per visit among the time of
   day and a couple of two-word welcomes ("Welcome back", "Good to see you",
-  "Hello again"), always as "___, {name}". No extra screen, no tap. Scoped to
-  relaxed. (The `relaxed.arriving.v1` storage key is retired.)
+  "Hello again"), always as "___, {name}". No extra screen, no tap. Both brands
+  rotate the greeting for returning users (ElevenMind keeps its time-of-day
+  greeting for a first-time visitor with no name yet). (The `relaxed.arriving.v1`
+  storage key is retired.)
 
 ### 2026-09-13 — Better iPad layout for the sessions list
 - **iPad "your sessions" now uses the space.** On large screens (≥768px) the

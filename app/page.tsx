@@ -384,9 +384,10 @@ export default function Home() {
   const [reminderOpen, setReminderOpen] = useState(false);
   const [reminderBusy, setReminderBusy] = useState(false);
   // A warm greeting for the returning-user header, picked once per visit so it
-  // holds steady across re-renders. relaxed folds the "welcome back" warmth in
-  // here (rotating with the time of day) rather than a separate check-in sheet.
-  const [relaxedGreeting] = useState(rotatingGreeting);
+  // holds steady across re-renders — rotating "welcome back" / "good to see you"
+  // / "hello again" with the time of day. Both brands use it for returning users;
+  // it replaced the separate welcome-back check-in sheet.
+  const [visitGreeting] = useState(rotatingGreeting);
   // First-reveal hint on the recent/history entry: pulse + a small tooltip the
   // first time it appears (after the first completed session), then never again.
   const [hintRecent, setHintRecent] = useState(false); // tooltip mounted
@@ -1682,7 +1683,7 @@ export default function Home() {
             <div className="home-head">
               {nameCommitted && !editingName ? (
                 <div className="greeting">
-                  {relaxedGreeting},{" "}
+                  {visitGreeting},{" "}
                   <button
                     className="name-chip"
                     onClick={() => setEditingName(true)}
@@ -1726,7 +1727,7 @@ export default function Home() {
           ) : (
             <>
               <div className="greeting">
-                {greetingFor()}
+                {nameCommitted ? visitGreeting : greetingFor()}
                 {name.trim() ? (
                   <>
                     , <b>{name.trim()}</b>
