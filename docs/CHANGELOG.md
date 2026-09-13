@@ -165,9 +165,8 @@ still parked pending new audio files).
   other stale env defaults (`ELEVENLABS_OUTPUT_FORMAT`, the unused `SILENCE_SCALE`)
   were reconciled at the same time.
 
-### Unreleased — `phase1-engine` branch (in preview)
-Phase 1: "make the AI genuinely special." Built on a branch for review, not yet
-merged to production.
+### Phase 1 — the meditation engine (merged to production)
+Phase 1: "make the AI genuinely special." Merged to `main` and live.
 - **Meditation Engine** (`lib/engine.ts`): the custom "In your words" session is
   now written to a structured arc (settle → body → visualization → reflection →
   close), each scene with its own second target that the app fits, so the session

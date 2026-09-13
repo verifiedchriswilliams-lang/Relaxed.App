@@ -92,8 +92,8 @@ See [audio-engine.md](./audio-engine.md#9-the-meditation-engine-phase-1).
 
 ## Phase 2 — depth, continuity, and the habit (in progress)
 
-Scoped with the founder. **Most of this is built on the `phase2` branch (in
-preview, not deployed); the audio work is gated on new source files.**
+Scoped with the founder. **Shipped to production (merged to `main`), except the
+soundscape-audio + infinite-session work, which is gated on new source files.**
 
 - **Soundscape audio (top priority, gated on new files).** Replace the current
   beds with premium, seamless-looping audio (sourced from ElevenLabs or a
