@@ -86,6 +86,20 @@
   overscroll-behavior: none;
 }
 
+/* The night home centers on one screen when it fits, but on a short device it
+   can exceed the viewport — and since the page itself is locked, the footer
+   (Reminder / Contact / Privacy) would be clipped off the bottom and unreachable.
+   Make the home its own inner scroller, capped to the viewport, so it still
+   centers when it fits (the hero's auto-margins only collapse once content
+   overflows) and scrolls when it must. */
+[data-brand="relaxed"] .setup-scroll {
+  max-height: 100vh;
+  max-height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* The earned moment: a soft glow breathes behind the mark while a session is
    composing or playing. Monochrome, so it belongs to the stem world. */
 [data-brand="relaxed"] .gen-orb,

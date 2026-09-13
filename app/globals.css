@@ -423,7 +423,9 @@ button {
   text-align: center;
   font-size: 11.5px;
   color: var(--ink-2);
-  padding: 0 0 26px;
+  /* Clear the home indicator so the links (Reminder / Contact / Privacy) never
+     tuck under it on a notched device. */
+  padding: 0 0 calc(26px + env(safe-area-inset-bottom));
   max-width: 34ch;
   margin: 0 auto;
 }

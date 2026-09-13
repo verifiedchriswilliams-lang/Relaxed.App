@@ -1644,7 +1644,7 @@ export default function Home() {
   } else {
     // ---- Setup: the night home ----
     content = (
-      <main className="wrap">
+      <main className="wrap setup-scroll">
         <div className="topbar">
           <Wordmark />
           {IS_RELAXED && (recent.length > 0 || favs.length > 0) && (

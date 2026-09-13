@@ -55,6 +55,14 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-13 — Home footer links reachable on every device
+- **Fixed: Reminder / Contact / Privacy could be unreachable.** The night home is
+  a locked, single screen; on a short device its content overflowed and the
+  footer was clipped off the bottom, and on a notched device the links tucked
+  under the home indicator. The footer now clears the bottom safe area, and the
+  home scrolls when (and only when) it can't fit, so the links are always
+  reachable. It still centers on one screen when it fits.
+
 ### 2026-09-13 — Rotating greeting replaces the welcome-back check-in
 - **Removed the "how are you arriving?" sheet.** Auto-assigning a session type
   from a mood tap read as clutter and wasn't intuitive. The returning-user warmth
