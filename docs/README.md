@@ -27,8 +27,9 @@ grounded in the actual code, with every non-obvious claim traceable to a file.
 | 11 | [repository-map.md](./repository-map.md) | File-by-file / module-by-module code map. |
 | 12 | [third-party-ip.md](./third-party-ip.md) | Dependencies, licenses, provider terms, asset & voice provenance, IP ownership. |
 | 13 | [risks-tech-debt.md](./risks-tech-debt.md) | Honest known limitations, technical debt, and reconciliation items. |
-| 14 | [roadmap.md](./roadmap.md) | Product strategy and phased plan. |
-| 15 | [CHANGELOG.md](./CHANGELOG.md) | Release history (web + iOS). |
+| 14 | [roadmap.md](./roadmap.md) | Product strategy and the (descoped) active backlog. |
+| 15 | [product-brief.md](./product-brief.md) | One-document synthesis of relaxed.app — what it is, first principles/ethos, how it works, feature surface, status, and the active backlog. Written to stand alone (e.g. for external/LLM review). |
+| 16 | [CHANGELOG.md](./CHANGELOG.md) | Release history (web + iOS). |
 
 ### Detailed runbooks & assets (referenced by the above)
 
