@@ -61,7 +61,8 @@ The native bridge and player hardening.
   and scrolls on a normal phone. Both brands.
 - **Daily reminder moved out of the footer to a top-right bell glyph** (both
   brands) — a soft, rounded hand-bell (a calm meditation bell, not a sharp alert),
-  with the history orbit mark to its left when there is history. This
+  its stroke weight matched to the history orbit mark beside it so the two read as
+  the same size. The orbit mark sits to its left when there is history. This
   also fixes an inconsistency where relaxed said "Reminder" and ElevenMind said
   "Daily reminder" in the footer — the UI is now identical across brands.
 - **Footer:** now just the disclaimer + Contact · Privacy. On ElevenMind the
