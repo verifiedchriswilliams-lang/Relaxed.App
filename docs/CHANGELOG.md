@@ -55,6 +55,12 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-13 — ElevenMind flagship reads as frosted glass
+- **"make your own" is now translucent on ElevenMind.** Over the aurora, the
+  near-solid white slab looked stark; it's now a frosted-glass card (62% white
+  with the brand's blur/saturate) so the sky shows through softly, dark label
+  still fully legible. Scoped to ElevenMind; relaxed keeps its solid Bone card.
+
 ### 2026-09-13 — ElevenMind: history entry + footer links (parity)
 - **History & saved are now reachable on ElevenMind.** The top-bar orbit glyph
   that opens "your sessions" was relaxed-only, so ElevenMind stored recents and

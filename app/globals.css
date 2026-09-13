@@ -332,6 +332,14 @@ button {
   line-height: 1.35;
   opacity: 0.6;
 }
+/* ElevenMind: the flagship reads as frosted glass over the aurora rather than a
+   stark white slab — translucent, with the same blur as the brand's other glass
+   surfaces, so the sky shows through softly. (relaxed keeps its solid Bone card.) */
+[data-brand="elevenmind"] .hero-make {
+  background: rgba(255, 255, 255, 0.62);
+  -webkit-backdrop-filter: blur(22px) saturate(1.4);
+  backdrop-filter: blur(22px) saturate(1.4);
+}
 .hero-div {
   display: flex;
   align-items: center;
