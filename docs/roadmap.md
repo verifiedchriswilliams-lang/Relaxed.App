@@ -108,8 +108,10 @@ preview, not deployed); the audio work is gated on new source files.**
   return to where the session was launched from.
 - ✅ **Daily reminder:** an on-device local notification at a chosen time (no
   server, no accounts). The native plugin ships in the **1.2** build.
-- ✅ **Welcome back / mood check-in:** a gentle once-a-day "how are you arriving?"
-  that tunes the session, dismissible.
+- **Welcome back:** shipped as a once-a-day "how are you arriving?" check-in, then
+  **removed** — auto-assigning a session from a mood tap read as clutter, not
+  ritual. The returning-user warmth now lives in the rotating home greeting
+  ("Welcome back / Good to see you / Hello again", mixed with the time of day).
 - Memory stays transparent and useful ("Again? 10 min · Relax · Rain"), never
   surveillant. No streaks, badges, or leaderboards.
 - **Deferred:** Sign in with Apple / accounts / cross-device sync. Everything above

@@ -55,6 +55,14 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-13 — Rotating greeting replaces the welcome-back check-in
+- **Removed the "how are you arriving?" sheet.** Auto-assigning a session type
+  from a mood tap read as clutter and wasn't intuitive. The returning-user warmth
+  now lives inline: the home header greeting rotates per visit among the time of
+  day and a couple of two-word welcomes ("Welcome back", "Good to see you",
+  "Hello again"), always as "___, {name}". No extra screen, no tap. Scoped to
+  relaxed. (The `relaxed.arriving.v1` storage key is retired.)
+
 ### 2026-09-13 — Better iPad layout for the sessions list
 - **iPad "your sessions" now uses the space.** On large screens (≥768px) the
   history list was inheriting the phone's tight rows and hugging the top with an

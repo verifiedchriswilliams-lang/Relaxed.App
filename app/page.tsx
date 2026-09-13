@@ -27,8 +27,6 @@ import {
   recordMood,
   recentHintSeen,
   markRecentHintSeen,
-  arrivingSeenToday,
-  markArrivingSeen,
   updateRecentScript,
   type RecentSession,
   type SavedLine,
@@ -51,7 +49,7 @@ import {
 } from "@/lib/audio/soundscapes";
 import { PREVIEW_GAIN, normGain, bedAndVoice, BED_SOLO } from "@/lib/audio/levels";
 import { AudioEngine } from "@/lib/audio/engine";
-import { timeAgo, greetingFor, mmss, transcriptLines } from "@/lib/format";
+import { timeAgo, greetingFor, rotatingGreeting, mmss, transcriptLines } from "@/lib/format";
 import { breathAt } from "@/lib/breath";
 
 // Which visual world are we in? relaxed swaps the aurora + coloured discs for
@@ -323,15 +321,6 @@ type Screen = "setup" | "history" | "generating" | "player" | "complete";
 // neutral so it never feels like a grade.
 const MOODS = ["much calmer", "a little calmer", "about the same"] as const;
 
-// "How are you arriving?" options, each gently steering toward a fitting
-// intention. The last one is a graceful "I'm alright" that just closes.
-const ARRIVING: { key: string; label: string; context: ContextId | null }[] = [
-  { key: "tense", label: "tense", context: "relax" },
-  { key: "tired", label: "tired", context: "sleep" },
-  { key: "restless", label: "restless", context: "meditation" },
-  { key: "good", label: "I'm good", context: null },
-];
-
 export default function Home() {
   const [screen, setScreen] = useState<Screen>("setup");
   const [name, setName] = useState("");
@@ -394,8 +383,10 @@ export default function Home() {
   });
   const [reminderOpen, setReminderOpen] = useState(false);
   const [reminderBusy, setReminderBusy] = useState(false);
-  // "How are you arriving?" welcome-back check-in (once/day, returning users).
-  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  // A warm greeting for the returning-user header, picked once per visit so it
+  // holds steady across re-renders. relaxed folds the "welcome back" warmth in
+  // here (rotating with the time of day) rather than a separate check-in sheet.
+  const [relaxedGreeting] = useState(rotatingGreeting);
   // First-reveal hint on the recent/history entry: pulse + a small tooltip the
   // first time it appears (after the first completed session), then never again.
   const [hintRecent, setHintRecent] = useState(false); // tooltip mounted
@@ -524,12 +515,6 @@ export default function Home() {
     // set before the native plugin existed starts firing once it can).
     setReminder(loadReminder());
     syncReminder();
-    // Welcome back: for an established returning user (either brand, has
-    // history), offer a gentle once-a-day "how are you arriving?" that tunes the
-    // session.
-    if (startRecent.length > 0 && !arrivingSeenToday()) {
-      setWelcomeOpen(true);
-    }
   }, []);
 
   // The first time the recent/history entry appears (once there's history, e.g.
@@ -863,23 +848,6 @@ export default function Home() {
     const next = await saveReminder({ enabled: reminder.enabled, hour: h, minute: m });
     setReminder(next);
     setReminderBusy(false);
-  }
-
-  // Welcome-back check-in: record how they're arriving, then either steer into a
-  // fitting intention (opening the tray) or simply close. Once a day either way.
-  function chooseArriving(opt: { key: string; context: ContextId | null }) {
-    markArrivingSeen();
-    ev("arriving", { mood: opt.key });
-    setWelcomeOpen(false);
-    if (opt.context) {
-      recordMood({ mood: opt.key, context: opt.context, custom: false });
-      chooseIntention(opt.context);
-    }
-  }
-
-  function dismissWelcome() {
-    markArrivingSeen();
-    setWelcomeOpen(false);
   }
 
   // One-tap replay: restore every choice from a past session. If the exact
@@ -1714,7 +1682,7 @@ export default function Home() {
             <div className="home-head">
               {nameCommitted && !editingName ? (
                 <div className="greeting">
-                  {greetingFor()},{" "}
+                  {relaxedGreeting},{" "}
                   <button
                     className="name-chip"
                     onClick={() => setEditingName(true)}
@@ -1942,34 +1910,6 @@ export default function Home() {
               >
                 done
               </button>
-            </div>
-          </div>
-        )}
-
-        {welcomeOpen && (
-          <div className="rm-scrim" onClick={dismissWelcome} role="presentation">
-            <div
-              className="rm-sheet"
-              onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-label="Welcome back"
-            >
-              <div className="rm-title">
-                {name.trim() ? `welcome back, ${name.trim()}` : "welcome back"}
-              </div>
-              <p className="rm-sub">How are you arriving?</p>
-              <div className="wb-moods">
-                {ARRIVING.map((o) => (
-                  <button
-                    key={o.key}
-                    type="button"
-                    className={`wb-mood ${o.context ? "" : "wb-skip"}`}
-                    onClick={() => chooseArriving(o)}
-                  >
-                    {o.label}
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
         )}

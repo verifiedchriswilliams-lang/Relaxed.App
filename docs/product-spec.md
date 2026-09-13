@@ -69,10 +69,12 @@ stateDiagram-v2
 - **Daily reminder.** A "Reminder" entry in the footer opens a small sheet to set
   an on-device daily practice reminder (a local notification at a chosen time,
   scheduled by the OS, no server). See [ios-native.md](./ios-native.md).
-- **Welcome back check-in.** For a returning user (with history), at most once a
-  day, a gentle "how are you arriving?" sheet offers a few moods (tense / tired /
-  restless / I'm good); choosing one records the mood and opens the tray on a
-  fitting intention. Fully dismissible.
+- **Warm greeting.** For a returning user (with a saved name), the home header
+  rotates its greeting per visit among the time of day ("Good morning/afternoon/
+  evening") and a couple of two-word welcomes ("Welcome back", "Good to see you",
+  "Hello again"), always as "___, {name}". This carries the returning-user warmth
+  inline; there is no separate welcome-back sheet (an earlier "how are you
+  arriving?" check-in was removed as unintuitive clutter).
 
 ### 3b. Options tray (onboarding as ritual)
 

@@ -24,6 +24,21 @@ export function greetingFor(): string {
   return "Good evening";
 }
 
+// A small pool of warm greetings for a returning user, mixing the time of day
+// with a couple of two-word welcomes. One is picked per visit (the caller holds
+// it stable for the session) so the home header carries the "welcome back"
+// warmth on its own, without a separate check-in screen.
+export const GREETINGS = [
+  "Welcome back",
+  "Good to see you",
+  "Hello again",
+] as const;
+
+export function rotatingGreeting(): string {
+  const pool = [greetingFor(), ...GREETINGS];
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
 // Seconds to m:ss for the player timer.
 export function mmss(total: number): string {
   const m = Math.floor(total / 60);

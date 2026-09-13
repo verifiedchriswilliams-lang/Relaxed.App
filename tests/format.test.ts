@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
-import { timeAgo, mmss, transcriptLines, greetingFor } from "@/lib/format";
+import {
+  timeAgo,
+  mmss,
+  transcriptLines,
+  greetingFor,
+  rotatingGreeting,
+  GREETINGS,
+} from "@/lib/format";
 
 afterEach(() => vi.useRealTimers());
 
@@ -51,5 +58,24 @@ describe("greetingFor", () => {
     expect(greetingFor()).toBe("Good afternoon");
     vi.setSystemTime(new Date(2026, 0, 1, 21, 0, 0));
     expect(greetingFor()).toBe("Good evening");
+  });
+});
+
+describe("rotatingGreeting", () => {
+  it("only ever returns a greeting from the pool (time-of-day + warm welcomes)", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 0, 1, 14, 0, 0)); // afternoon
+    const allowed = new Set<string>(["Good afternoon", ...GREETINGS]);
+    for (let i = 0; i < 200; i++) {
+      expect(allowed.has(rotatingGreeting())).toBe(true);
+    }
+  });
+
+  it("actually rotates (yields more than one distinct greeting)", () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 0, 1, 14, 0, 0));
+    const seen = new Set<string>();
+    for (let i = 0; i < 200; i++) seen.add(rotatingGreeting());
+    expect(seen.size).toBeGreaterThan(1);
   });
 });

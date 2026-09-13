@@ -124,9 +124,8 @@ At [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → **Apps →
   and seed on-device state before load so the glyph and lists appear — set
   `elevenmind.prefs.v1` (name), `relaxed.recent.v1`, `relaxed.favs.v1` (with a
   `script` on one saved session to reach the player via replay), plus
-  `relaxed.recentHint.v1` and `relaxed.arriving.v1` to suppress the first-run
-  hint and the welcome-back sheet. Click a scripted saved row to land on the
-  player.
+  `relaxed.recentHint.v1` to suppress the first-run hint. Click a scripted saved
+  row to land on the player.
 
 ## 5. Archive & upload
 
