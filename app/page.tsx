@@ -1678,19 +1678,20 @@ export default function Home() {
               aria-label="Daily reminder"
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                {/* Soft hand-bell (a calm meditation bell, not a sharp alert): a
+                    small handle knob, a rounded body, and a thin stroke. */}
+                <circle cx="12" cy="4.1" r="1.05" fill="currentColor" />
                 <path
-                  d="M18 8.5a6 6 0 1 0-12 0c0 6-2.5 8-2.5 8h17s-2.5-2-2.5-8Z"
+                  d="M12 5.6c-3.05 0-4.95 2.35-4.95 5.55 0 2.65-.65 4.15-1.3 5.05-.5.7.05 1.7 1 1.7h10.5c.95 0 1.5-1 1-1.7-.65-.9-1.3-2.4-1.3-5.05 0-3.2-1.9-5.55-4.95-5.55Z"
                   stroke="currentColor"
-                  strokeWidth={1.6}
-                  strokeLinecap="round"
+                  strokeWidth={1.4}
                   strokeLinejoin="round"
                 />
                 <path
-                  d="M10.4 20.5a2 2 0 0 0 3.2 0"
+                  d="M10.3 20.2a2 2 0 0 0 3.4 0"
                   stroke="currentColor"
-                  strokeWidth={1.6}
+                  strokeWidth={1.4}
                   strokeLinecap="round"
-                  strokeLinejoin="round"
                 />
               </svg>
             </button>
