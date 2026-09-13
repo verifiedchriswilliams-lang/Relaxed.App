@@ -55,6 +55,18 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-13 — Home tightened to one screen; reminder becomes a top-right bell
+- **Fits on one screen again.** Trimmed the home's vertical spacing (hero padding,
+  header height, the header→prompt gap, intention gaps) so it no longer overflows
+  and scrolls on a normal phone. Both brands.
+- **Daily reminder moved out of the footer to a top-right bell glyph** (both
+  brands), with the history orbit mark to its left when there is history. This
+  also fixes an inconsistency where relaxed said "Reminder" and ElevenMind said
+  "Daily reminder" in the footer — the UI is now identical across brands.
+- **Footer:** now just the disclaimer + Contact · Privacy. On ElevenMind the
+  ElevenLabs / ElevenMusic credit breaks onto two lines ("Voiced by ElevenLabs" /
+  "scored with ElevenMusic") so it reads cleanly, with Contact · Privacy beneath.
+
 ### 2026-09-13 — ElevenMind flagship reads as frosted glass
 - **"make your own" is now translucent on ElevenMind.** Over the aurora, the
   near-solid white slab looked stark; it's now a frosted-glass card (62% white

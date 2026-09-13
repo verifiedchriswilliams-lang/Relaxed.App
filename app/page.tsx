@@ -1648,27 +1648,53 @@ export default function Home() {
       <main className="wrap setup-scroll">
         <div className="topbar">
           <Wordmark />
-          {(recent.length > 0 || favs.length > 0) && (
-            <div className="recent-entry-wrap">
-              <button
-                className={`recent-entry ${hintRecent ? "pulse" : ""}`}
-                onClick={() => {
-                  haptic("light");
-                  setHintShow(false);
-                  setHintRecent(false);
-                  setScreen("history");
-                }}
-                aria-label="Recent and saved sessions"
-              >
-                <OrbitGlyph size={22} />
-              </button>
-              {hintRecent && (
-                <span className={`recent-hint ${hintShow ? "show" : ""}`} role="status">
-                  history and saved
-                </span>
-              )}
-            </div>
-          )}
+          <div className="topbar-actions">
+            {(recent.length > 0 || favs.length > 0) && (
+              <div className="recent-entry-wrap">
+                <button
+                  className={`recent-entry ${hintRecent ? "pulse" : ""}`}
+                  onClick={() => {
+                    haptic("light");
+                    setHintShow(false);
+                    setHintRecent(false);
+                    setScreen("history");
+                  }}
+                  aria-label="Recent and saved sessions"
+                >
+                  <OrbitGlyph size={22} />
+                </button>
+                {hintRecent && (
+                  <span className={`recent-hint ${hintShow ? "show" : ""}`} role="status">
+                    history and saved
+                  </span>
+                )}
+              </div>
+            )}
+            {/* Daily reminder: a bell to set a mindful-practice reminder, top-right
+                (both brands). The history glyph sits to its left when there's history. */}
+            <button
+              className="topbar-icon"
+              onClick={() => setReminderOpen(true)}
+              aria-label="Daily reminder"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M18 8.5a6 6 0 1 0-12 0c0 6-2.5 8-2.5 8h17s-2.5-2-2.5-8Z"
+                  stroke="currentColor"
+                  strokeWidth={1.6}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M10.4 20.5a2 2 0 0 0 3.2 0"
+                  stroke="currentColor"
+                  strokeWidth={1.6}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="hero">
@@ -1800,7 +1826,9 @@ export default function Home() {
           {!IS_RELAXED && (
             <>
               <span className="credit">
-                Voiced by <b>ElevenLabs</b> · scored with <b>ElevenMusic</b>
+                Voiced by <b>ElevenLabs</b>
+                <br />
+                scored with <b>ElevenMusic</b>
               </span>
               <br />
             </>
@@ -1808,14 +1836,6 @@ export default function Home() {
           Not medical or therapeutic advice.
           <br />
           <span className="foot-links">
-            <button
-              type="button"
-              className="foot-link-btn"
-              onClick={() => setReminderOpen(true)}
-            >
-              {IS_RELAXED ? "Reminder" : "Daily reminder"}
-            </button>
-            <span className="dotsep">·</span>
             <a href={`mailto:${BRAND.support}`}>Contact</a>
             <span className="dotsep">·</span>
             <a href="/privacy">Privacy</a>

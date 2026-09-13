@@ -202,7 +202,7 @@ button {
   align-items: center;
   text-align: center;
   width: 100%;
-  padding: 40px 0;
+  padding: 18px 0;
 }
 
 .greeting {
@@ -252,7 +252,7 @@ button {
    bottom-anchored, so the returning greeting lands on the same line the
    cold-start field occupies. */
 .home-head {
-  height: 92px;
+  height: 64px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -361,7 +361,7 @@ button {
 }
 
 .prompt {
-  margin-top: 46px;
+  margin-top: 24px;
   font-size: 12.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -374,11 +374,11 @@ button {
    words start together; the group itself (as wide as the longest label) is
    centered by the hero. */
 .states {
-  margin-top: 22px;
+  margin-top: 16px;
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 12px;
+  gap: 10px;
   width: fit-content;
 }
 .state {
@@ -1213,6 +1213,7 @@ button {
    opens a dedicated history page (recent + saved), replacing the old home
    recents stack. */
 .recent-entry,
+.topbar-icon,
 .history-bar .hb-back {
   display: inline-flex;
   align-items: center;
@@ -1241,10 +1242,24 @@ button {
 }
 .recent-entry:hover,
 .recent-entry:focus-visible,
+.topbar-icon:hover,
+.topbar-icon:focus-visible,
 .history-bar .hb-back:hover,
 .history-bar .hb-back:focus-visible {
   opacity: 1;
   background: var(--glass);
+}
+/* Top-right action group: the reminder bell (always) with the history glyph to
+   its left when there is history. The group carries the edge offset so the two
+   icons sit tight to the corner. */
+.topbar-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin: -8px -6px -8px 0;
+}
+.topbar-actions .recent-entry {
+  margin: 0;
 }
 /* Balances the back button so the wordmark stays centered in the history bar. */
 .hb-spacer {
