@@ -55,6 +55,16 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-13 — ElevenMind: history entry + footer links (parity)
+- **History & saved are now reachable on ElevenMind.** The top-bar orbit glyph
+  that opens "your sessions" was relaxed-only, so ElevenMind stored recents and
+  favorites with no way to view them. It now appears on both brands (once there
+  is history), and its first-reveal hint does too.
+- **ElevenMind footer gains Contact + Privacy.** Its footer had only "Daily
+  reminder"; it now matches relaxed with Contact (mailto) and Privacy links,
+  styled in the muted footer register (base `.foot-links a` added so the anchors
+  aren't browser-blue on non-relaxed brands).
+
 ### 2026-09-13 — ElevenMind home reaches parity with relaxed
 - **Same home information architecture on both brands.** The compact, editable
   greeting header (tap the name to edit) and the "make your own" flagship (above

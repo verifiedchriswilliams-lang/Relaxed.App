@@ -463,6 +463,16 @@ button {
 .foot-link-btn:focus-visible {
   text-decoration: underline;
 }
+/* Contact / Privacy anchors sit in the same muted register as the button, not
+   the browser's default link blue (relaxed overrides in relaxed.css). */
+.foot-links a {
+  color: inherit;
+  text-decoration: none;
+}
+.foot-links a:hover,
+.foot-links a:focus-visible {
+  text-decoration: underline;
+}
 
 /* ---------------------------------------------------- daily reminder sheet */
 .rm-scrim {

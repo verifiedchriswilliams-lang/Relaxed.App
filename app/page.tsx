@@ -522,7 +522,7 @@ export default function Home() {
   // after the first completed session lands the user back home), pulse it with a
   // small tooltip so the newly-appeared glyph is intuitive. Once, ever.
   useEffect(() => {
-    if (!IS_RELAXED || screen !== "setup" || hintDoneRef.current) return;
+    if (screen !== "setup" || hintDoneRef.current) return;
     if (recent.length === 0 && favs.length === 0) return;
     hintDoneRef.current = true;
     if (recentHintSeen()) return;
@@ -1648,7 +1648,7 @@ export default function Home() {
       <main className="wrap setup-scroll">
         <div className="topbar">
           <Wordmark />
-          {IS_RELAXED && (recent.length > 0 || favs.length > 0) && (
+          {(recent.length > 0 || favs.length > 0) && (
             <div className="recent-entry-wrap">
               <button
                 className={`recent-entry ${hintRecent ? "pulse" : ""}`}
@@ -1806,37 +1806,20 @@ export default function Home() {
             </>
           )}
           Not medical or therapeutic advice.
-          {IS_RELAXED ? (
-            <>
-              <br />
-              <span className="foot-links">
-                <button
-                  type="button"
-                  className="foot-link-btn"
-                  onClick={() => setReminderOpen(true)}
-                >
-                  Reminder
-                </button>
-                <span className="dotsep">·</span>
-                <a href={`mailto:${BRAND.support}`}>Contact</a>
-                <span className="dotsep">·</span>
-                <a href="/privacy">Privacy</a>
-              </span>
-            </>
-          ) : (
-            <>
-              <br />
-              <span className="foot-links">
-                <button
-                  type="button"
-                  className="foot-link-btn"
-                  onClick={() => setReminderOpen(true)}
-                >
-                  Daily reminder
-                </button>
-              </span>
-            </>
-          )}
+          <br />
+          <span className="foot-links">
+            <button
+              type="button"
+              className="foot-link-btn"
+              onClick={() => setReminderOpen(true)}
+            >
+              {IS_RELAXED ? "Reminder" : "Daily reminder"}
+            </button>
+            <span className="dotsep">·</span>
+            <a href={`mailto:${BRAND.support}`}>Contact</a>
+            <span className="dotsep">·</span>
+            <a href="/privacy">Privacy</a>
+          </span>
         </div>
 
         {reminderOpen && (
