@@ -401,6 +401,11 @@ export default function Home() {
   // known during SSR), so it starts false and the bell/sheet appear only in a
   // capable build.
   const [remindable, setRemindable] = useState(false);
+  // Guards the reminder sheet's tap-outside-to-close: only a press that both
+  // starts and ends on the backdrop itself closes the sheet. This stops iOS from
+  // closing it when the native time picker is dismissed (that dismissal can land
+  // a synthetic click on the scrim behind the sheet).
+  const rmScrimPressRef = useRef(false);
   // A warm greeting for the returning-user header, picked once per visit so it
   // holds steady across re-renders — rotating "welcome back" / "good to see you"
   // / "hello again" with the time of day. Both brands use it for returning users;
@@ -1901,7 +1906,18 @@ export default function Home() {
         {remindable && reminderOpen && (
           <div
             className="rm-scrim"
-            onClick={() => setReminderOpen(false)}
+            onPointerDown={(e) => {
+              rmScrimPressRef.current = e.target === e.currentTarget;
+            }}
+            onClick={(e) => {
+              // Close only on a deliberate backdrop tap (pressed and released on
+              // the scrim itself), never on a stray click bubbled up from the
+              // native time picker closing.
+              if (e.target === e.currentTarget && rmScrimPressRef.current) {
+                setReminderOpen(false);
+              }
+              rmScrimPressRef.current = false;
+            }}
             role="presentation"
           >
             <div
@@ -1934,7 +1950,10 @@ export default function Home() {
                   type="time"
                   className="rm-time"
                   value={`${pad2(reminder.hour)}:${pad2(reminder.minute)}`}
-                  disabled={reminderBusy || !reminder.enabled}
+                  // Not disabled on reminderBusy: toggling disabled while the iOS
+                  // time picker is open force-dismisses it mid-change. The save is
+                  // quick and idempotent, so it's safe to leave the field live.
+                  disabled={!reminder.enabled}
                   onChange={(e) => setReminderTime(e.target.value)}
                   aria-label="Reminder time"
                 />

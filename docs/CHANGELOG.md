@@ -69,6 +69,16 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-14 — Fix: the reminder sheet closed while setting the time (iOS)
+- **Changing the hour or minute closed the whole reminder sheet** as if "done"
+  had been tapped, before the user could finish. Two iOS interactions were to
+  blame: the backdrop closed on any click that reached it (including the stray
+  click the native time picker fires when it dismisses), and the time field was
+  briefly `disabled` on each change, which force-dismissed the open picker
+  mid-adjust. Now the backdrop closes only on a deliberate tap that both starts
+  and ends on it, and the time field stays live during its (quick, idempotent)
+  save. The sheet closes only via "done" or a real tap outside.
+
 ### 2026-09-14 — Daily reminder is now native-only
 - **The reminder bell and sheet are hidden on the web** (both brands). The
   reminder is a native local notification, and the web has no on-device
