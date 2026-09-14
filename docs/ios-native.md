@@ -61,12 +61,20 @@ flowchart LR
   (`notificationsAvailable()`, resolved after mount), so they are hidden on the web
   (no on-device scheduler there, and the pref wouldn't sync to the phone anyway)
   and on pre-1.2 builds. The feature simply appears once 1.2 is installed; there is
-  deliberately no "saved but won't fire yet" messaging. iOS shows its own
-  permission prompt on first enable. The toggle reflects the user's **intent** (it
-  flips on and persists immediately, never a dead switch); the sheet then shows
-  honest status — "we'll nudge you at HH:MM" when scheduled, or a "turn on
-  notifications in Settings" hint if permission was denied. (`lib/reminders.ts`
-  `applyReminder` returns `{ scheduled, blocked }` alongside the persisted pref.)
+  deliberately no "saved but won't fire yet" messaging. **Permission is requested
+  in context:** iOS shows its system prompt when the user turns the reminder on
+  (`toggleReminder` → `saveReminder(pref, prompt=true)`), and again when they
+  reopen the bell on an already-enabled reminder that isn't granted yet
+  (`openReminder` calls `requestNotificationPermission()`, which shows the prompt
+  only while the status is undetermined and otherwise returns the saved choice).
+  This closes the gap where a reminder could be on but was never actually asked
+  for permission, so it could never fire. The toggle reflects the user's
+  **intent** (it flips on and persists immediately, never a dead switch); the
+  sheet then shows honest status — "we'll nudge you at HH:MM" when scheduled, or a
+  "turn on notifications in Settings" hint if permission was denied (iOS only
+  prompts once, so a denied reminder is recovered from Settings).
+  (`lib/reminders.ts` `applyReminder` returns `{ scheduled, blocked }` alongside
+  the persisted pref.)
 
 ## 3. Native capabilities in use
 

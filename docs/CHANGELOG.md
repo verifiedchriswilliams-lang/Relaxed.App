@@ -69,6 +69,15 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-14 — Fix: the reminder now asks for notification permission
+- **A reminder could be set without ever prompting for notification permission,**
+  so it silently never fired (with notifications off at the OS level, there was
+  no way for it to deliver). Permission is now requested in context: the iOS
+  prompt shows when the reminder is turned on, and again when the bell is
+  reopened on an enabled reminder that hasn't been granted yet — so a reminder
+  that was set before permission was asked gets a chance to ask. If permission
+  was denied (iOS only prompts once), the sheet points the user to Settings.
+
 ### 2026-09-14 — Fix: the reminder sheet closed while setting the time (iOS)
 - **Changing the hour or minute closed the whole reminder sheet** as if "done"
   had been tapped, before the user could finish. Two iOS interactions were to

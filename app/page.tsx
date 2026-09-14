@@ -21,7 +21,7 @@ import {
   setPlaybackState,
   clearNowPlaying,
   notificationsAvailable,
-  checkNotificationPermission,
+  requestNotificationPermission,
 } from "@/lib/native";
 import {
   loadRecent,
@@ -859,15 +859,21 @@ export default function Home() {
     return `${hh}:${pad2(reminder.minute)} ${ap}`;
   })();
 
-  // Open the reminder sheet, and (for an already-on reminder) check whether the
-  // OS will actually deliver it so the sheet shows honest status on open.
-  function openReminder() {
+  // Open the reminder sheet. If a reminder is already on, actively make sure we
+  // have permission to deliver it: requestPermissions shows the iOS system prompt
+  // when the status is still undetermined (e.g. the reminder was turned on before
+  // we could ask, or on a build that couldn't), and simply returns the saved
+  // choice afterwards. A denied result flags the sheet to point the user at
+  // Settings. Requesting here (not just a silent check) closes the gap where an
+  // enabled reminder never actually asked for permission, so it could never fire.
+  async function openReminder() {
     setReminderOpen(true);
-    if (reminder.enabled && notificationsAvailable()) {
-      checkNotificationPermission().then((ok) => setReminderBlocked(!ok));
-    } else {
+    if (!reminder.enabled || !notificationsAvailable()) {
       setReminderBlocked(false);
+      return;
     }
+    const granted = await requestNotificationPermission();
+    setReminderBlocked(!granted);
   }
 
   async function toggleReminder(on: boolean) {
