@@ -55,6 +55,18 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-14 — Fix: the daily-reminder toggle did nothing
+- **The "remind me daily" switch was dead unless a notification could be
+  scheduled that instant.** `saveReminder` forced `enabled:false` whenever it
+  couldn't schedule (on the web, or before notification permission was granted),
+  so the toggle flipped straight back and the preference was even saved as
+  *disabled* — so it never activated later either. Now the toggle reflects the
+  user's **intent**: it turns on and persists immediately, then tries to schedule
+  and shows honest status ("we'll nudge you at HH:MM", a "turn on notifications in
+  Settings" hint if permission was denied, or "saved, delivered in the app" on the
+  web). The on-open re-sync no longer prompts for permission on launch. Regression
+  test added in `tests/reminders.test.ts`.
+
 ### 2026-09-13 — Home tightened to one screen; reminder becomes a top-right bell
 - **Fits on one screen again.** Trimmed the home's vertical spacing (hero padding,
   header height, the header→prompt gap, intention gaps) so it no longer overflows

@@ -15,7 +15,14 @@ import { asset } from "@/lib/assets";
 import { BRAND } from "@/lib/brand";
 import { StemGlyph, OrbitGlyph } from "@/lib/mark";
 import { SoundMotif } from "@/lib/soundMotifs";
-import { haptic, setNowPlaying, setPlaybackState, clearNowPlaying, isNativeApp } from "@/lib/native";
+import {
+  haptic,
+  setNowPlaying,
+  setPlaybackState,
+  clearNowPlaying,
+  notificationsAvailable,
+  checkNotificationPermission,
+} from "@/lib/native";
 import {
   loadRecent,
   loadFavs,
@@ -383,6 +390,10 @@ export default function Home() {
   });
   const [reminderOpen, setReminderOpen] = useState(false);
   const [reminderBusy, setReminderBusy] = useState(false);
+  // Native + notifications-allowed can't be known synchronously; this tracks
+  // "enabled but the OS won't deliver" so the sheet can point the user at Settings
+  // instead of the toggle silently doing nothing.
+  const [reminderBlocked, setReminderBlocked] = useState(false);
   // A warm greeting for the returning-user header, picked once per visit so it
   // holds steady across re-renders — rotating "welcome back" / "good to see you"
   // / "hello again" with the time of day. Both brands use it for returning users;
@@ -834,20 +845,40 @@ export default function Home() {
     return `${hh}:${pad2(reminder.minute)} ${ap}`;
   })();
 
+  // Open the reminder sheet, and (for an already-on reminder) check whether the
+  // OS will actually deliver it so the sheet shows honest status on open.
+  function openReminder() {
+    setReminderOpen(true);
+    if (reminder.enabled && notificationsAvailable()) {
+      checkNotificationPermission().then((ok) => setReminderBlocked(!ok));
+    } else {
+      setReminderBlocked(false);
+    }
+  }
+
   async function toggleReminder(on: boolean) {
+    // Reflect the user's intent immediately (never a dead switch) and persist it;
+    // then try to schedule and surface honest status.
+    haptic("light");
     setReminderBusy(true);
-    const next = await saveReminder({ ...reminder, enabled: on });
-    setReminder(next);
+    const res = await saveReminder({ ...reminder, enabled: on }, true);
+    setReminder(res.pref);
+    setReminderBlocked(res.blocked);
     setReminderBusy(false);
-    ev("reminder_set", { on: next.enabled });
+    ev("reminder_set", { on: res.pref.enabled });
   }
 
   async function setReminderTime(value: string) {
     const [h, m] = value.split(":").map((x) => Number(x));
     if (!Number.isFinite(h) || !Number.isFinite(m)) return;
     setReminderBusy(true);
-    const next = await saveReminder({ enabled: reminder.enabled, hour: h, minute: m });
-    setReminder(next);
+    // Reschedule at the new time without re-prompting (permission already handled).
+    const res = await saveReminder(
+      { enabled: reminder.enabled, hour: h, minute: m },
+      false
+    );
+    setReminder(res.pref);
+    setReminderBlocked(res.blocked);
     setReminderBusy(false);
   }
 
@@ -1674,7 +1705,7 @@ export default function Home() {
                 (both brands). The history glyph sits to its left when there's history. */}
             <button
               className="topbar-icon"
-              onClick={() => setReminderOpen(true)}
+              onClick={openReminder}
               aria-label="Daily reminder"
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -1885,12 +1916,21 @@ export default function Home() {
                   aria-label="Reminder time"
                 />
               </div>
-              {reminder.enabled && (
-                <p className="rm-conf">We&apos;ll nudge you at {reminderTimeLabel}.</p>
-              )}
-              {!isNativeApp() && (
-                <p className="rm-note">Reminders are delivered in the relaxed app.</p>
-              )}
+              {reminder.enabled &&
+                (reminderBlocked ? (
+                  <p className="rm-note">
+                    Notifications are off for relaxed. Turn them on in Settings to
+                    get your daily reminder.
+                  </p>
+                ) : notificationsAvailable() ? (
+                  <p className="rm-conf">
+                    We&apos;ll nudge you at {reminderTimeLabel}.
+                  </p>
+                ) : (
+                  <p className="rm-note">
+                    Saved. Reminders are delivered in the relaxed app.
+                  </p>
+                ))}
               <button
                 type="button"
                 className="rm-done"

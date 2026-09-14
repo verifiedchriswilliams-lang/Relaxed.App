@@ -10,8 +10,10 @@
 
 import {
   requestNotificationPermission,
+  checkNotificationPermission,
   scheduleDailyReminder,
   cancelDailyReminder,
+  notificationsAvailable,
 } from "./native";
 
 const REMINDER_KEY = "relaxed.reminder.v1";
@@ -60,36 +62,65 @@ function clampInt(v: unknown, lo: number, hi: number, dflt: number): number {
   return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : dflt;
 }
 
-// Persist the preference AND apply it to the OS schedule. Returns the effective
-// preference: if the user asked to enable it but permission was denied (or
-// notifications aren't available), `enabled` comes back false so the UI reflects
-// reality rather than a reminder that will never fire.
-export async function saveReminder(pref: ReminderPref): Promise<ReminderPref> {
-  const effective = await applyReminder(pref);
-  saveRaw(effective);
-  return effective;
+// The outcome of applying a reminder preference. `pref` is what to persist and
+// show — its `enabled` follows the user's intent and is never silently flipped
+// off — and the flags describe what actually happened so the UI can be honest.
+export interface ReminderApply {
+  pref: ReminderPref;
+  scheduled: boolean; // an OS notification is actually scheduled
+  blocked: boolean; // plugin present but permission not granted (fix in Settings)
 }
 
-// Push the preference to the OS: schedule when enabled (requesting permission
-// first), cancel when off. Does not persist (saveReminder does). Used on app
-// open to re-sync the stored preference to the schedule.
-export async function applyReminder(pref: ReminderPref): Promise<ReminderPref> {
+// Persist the preference AND try to apply it to the OS schedule. `prompt` shows
+// the system permission dialog (true when the user toggles it on; false for the
+// silent on-open re-sync). Enabling always persists the intent, so a reminder set
+// on the web — or before permission is granted — is not lost and activates on the
+// next sync.
+export async function saveReminder(
+  pref: ReminderPref,
+  prompt = true
+): Promise<ReminderApply> {
+  const res = await applyReminder(pref, prompt);
+  saveRaw(res.pref);
+  return res;
+}
+
+// Push the preference to the OS: schedule when enabled, cancel when off. Does not
+// persist (saveReminder does). Keeps the user's intent even when it can't schedule
+// yet (web, or notifications not allowed), so nothing is silently dropped.
+export async function applyReminder(
+  pref: ReminderPref,
+  prompt = false
+): Promise<ReminderApply> {
   if (!pref.enabled) {
     await cancelDailyReminder();
-    return { ...pref, enabled: false };
+    return { pref: { ...pref, enabled: false }, scheduled: false, blocked: false };
   }
-  const granted = await requestNotificationPermission();
-  if (!granted) return { ...pref, enabled: false };
+  // Enabling — keep the intent regardless of whether we can schedule right now.
+  const intent: ReminderPref = { ...pref, enabled: true };
+  if (!notificationsAvailable()) {
+    // Web, or a native build without the plugin: store the intent; it schedules
+    // on the next sync once notifications exist in the app.
+    return { pref: intent, scheduled: false, blocked: false };
+  }
+  const granted = prompt
+    ? await requestNotificationPermission()
+    : await checkNotificationPermission();
+  if (!granted) {
+    // Plugin present but not allowed — keep the intent, flag it for the UI.
+    return { pref: intent, scheduled: false, blocked: true };
+  }
   const body = BODIES[Math.floor(Math.random() * BODIES.length)];
   const ok = await scheduleDailyReminder(pref.hour, pref.minute, body);
-  return { ...pref, enabled: ok };
+  return { pref: intent, scheduled: ok, blocked: !ok };
 }
 
 // Re-sync the stored reminder to the OS schedule (call once on app open), so a
-// reminder set on a device that couldn't schedule yet (e.g. before the native
-// build shipped the plugin) starts firing once it can.
+// reminder set where it couldn't schedule yet (the web, or before the native
+// build shipped the plugin) starts firing once it can. Silent: never prompts for
+// permission on launch.
 export async function syncReminder(): Promise<void> {
   const pref = loadReminder();
   if (!pref.enabled) return;
-  await applyReminder(pref);
+  await applyReminder(pref, false);
 }

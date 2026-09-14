@@ -166,13 +166,34 @@ function localNotifications(): any {
 // and cancel is unambiguous.
 const REMINDER_ID = 4242;
 
-// Ask for notification permission. Returns true only if granted. No-op → false
-// where the plugin isn't present (web, or a native build without it yet).
+// Whether the local-notifications plugin is available at all (i.e. we're in a
+// native build that compiled it in). False on the web and on an older native
+// build that predates the plugin. Lets the UI distinguish "can't schedule here,
+// it'll apply in the app" from "notifications are turned off, fix in Settings".
+export function notificationsAvailable(): boolean {
+  return !!localNotifications();
+}
+
+// Ask for notification permission, showing the system prompt the first time.
+// Returns true only if granted. No-op → false where the plugin isn't present.
 export async function requestNotificationPermission(): Promise<boolean> {
   const LN = localNotifications();
   if (!LN) return false;
   try {
     const res = await LN.requestPermissions();
+    return res?.display === "granted";
+  } catch {
+    return false;
+  }
+}
+
+// Read the current notification permission without prompting. Used by the silent
+// on-open re-sync so we never trigger a permission dialog on launch.
+export async function checkNotificationPermission(): Promise<boolean> {
+  const LN = localNotifications();
+  if (!LN) return false;
+  try {
+    const res = await LN.checkPermissions();
     return res?.display === "granted";
   } catch {
     return false;

@@ -58,7 +58,12 @@ flowchart LR
   plugin must be compiled into the app (a `cap sync` on a build that includes the
   dependency, landing in **1.2**); until then the reminder UI stores the pref but
   can't schedule, and re-syncs on the next app open once the plugin is present.
-  iOS shows its own permission prompt on first enable.
+  iOS shows its own permission prompt on first enable. The toggle reflects the
+  user's **intent** (it flips on and persists immediately, never a dead switch);
+  the sheet then shows honest status — "we'll nudge you at HH:MM" when scheduled,
+  a "turn notifications on in Settings" hint if permission was denied, or "saved,
+  delivered in the app" on the web / an older build. (`lib/reminders.ts`
+  `applyReminder` returns `{ scheduled, blocked }` alongside the persisted pref.)
 
 ## 3. Native capabilities in use
 
