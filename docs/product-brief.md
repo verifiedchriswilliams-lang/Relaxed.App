@@ -151,8 +151,9 @@ A public privacy page ships with the app.
 ## 8. Where we are today (status)
 
 - **Web:** live in production, continuously deployed.
-- **iOS:** version 1.1.1 live on the App Store; **1.2** (adds the daily-reminder
-  plugin + refreshed screenshots) **is in review for the US and Canada**.
+- **iOS:** version **1.2** approved and released on the App Store (US + Canada);
+  it adds the daily-reminder plugin (which lights up the native-only reminder
+  bell) plus refreshed screenshots.
 - **Availability:** US + Canada. EU is next (see backlog), gated on Apple's
   Digital Services Act "trader" verification (submitted, in review).
 - The personalized pipeline, the meditation engine, instant start, the flagship

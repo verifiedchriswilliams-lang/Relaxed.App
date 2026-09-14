@@ -39,9 +39,9 @@ Phases 0–2 of the original plan):
   rotating warm greeting. All localStorage, no accounts. (`lib/history.ts`.)
 - **Breadth** — 15 soundscapes (Nature/Music/Frequencies), voices Her/Him ×
   US/UK or None, durations 5–60, several script variants per intention.
-- **iOS** — a Capacitor shell over the hosted site, live on the App Store
-  (1.1.1). **1.2 (daily-reminder plugin + refreshed screenshots) is in review
-  for US + Canada.**
+- **iOS** — a Capacitor shell over the hosted site, live on the App Store.
+  **1.2 (daily-reminder plugin + refreshed screenshots) is released for
+  US + Canada.**
 - **Brand parity** — relaxed.app and elevenmind.io run the same build and reach
   feature parity (home IA, greeting, history, footer), with ElevenMind retaining
   its ElevenLabs / ElevenMusic attribution.

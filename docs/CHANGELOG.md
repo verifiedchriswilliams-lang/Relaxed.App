@@ -18,6 +18,20 @@ build carried, not the review timeline.
 
 ## iOS — App Store releases
 
+### 1.2 — released 2026-09-14 (US + Canada)
+Approved and released; the first build with the on-device reminder.
+- **LocalNotifications plugin** (`@capacitor/local-notifications`) compiled in, so
+  the daily practice reminder can actually schedule a repeating local notification
+  at the user's chosen time (no server, no push tokens). This is the build the
+  native-only reminder bell needed: the bell and sheet, hidden on the web, now
+  appear in the app. iOS shows its permission prompt on first enable.
+- **Refreshed App Store screenshots** (iPhone 6.5" + iPad 13") showing the current
+  home, creation options, and history/saved screens, plus the improved iPad layout.
+- All the web-side work since 1.1.1 (welcome-back removal + rotating greeting,
+  reminder-as-top-right-bell, one-screen home, brand parity, the reminder toggle
+  fix, and the native-only reminder gating) reaches this build automatically, since
+  the app is a shell over the hosted site.
+
 ### 1.1.1 — released 2026-09-06
 Native corrections plus a marketing refresh of the release notes.
 - **Beveled launch screen.** The launch image now uses the app icon's exact

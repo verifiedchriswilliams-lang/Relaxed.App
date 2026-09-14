@@ -29,7 +29,7 @@ what you need and it makes one for you." The full strategy and phased plan live 
 | Dimension | State |
 |---|---|
 | Web | **Live in production** at `relaxed.app` (Vercel, deploys on every push to `main`). |
-| iOS | **On the App Store.** v1.1 released; v1.1.1 in review (see [CHANGELOG](./CHANGELOG.md)). |
+| iOS | **On the App Store.** v1.2 released for US + Canada (adds the daily-reminder plugin; see [CHANGELOG](./CHANGELOG.md)). |
 | Android | Not built. Capacitor supports it; deferred. |
 | Accounts | None. All per-user state is on-device (`localStorage`). |
 | Backend/DB | None. Three stateless serverless API routes; no persistence layer. |
