@@ -55,6 +55,18 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-14 — Daily reminder is now native-only
+- **The reminder bell and sheet are hidden on the web** (both brands). The
+  reminder is a native local notification, and the web has no on-device
+  scheduler, so the browser control could never fire (and its preference
+  wouldn't sync to the phone anyway). Rather than show a control that does
+  nothing, the bell now renders only where a notification can actually be
+  scheduled (`notificationsAvailable()`), so it appears in the app from 1.2 on
+  and is absent on the web and pre-1.2 builds. No "saved but won't fire yet"
+  messaging: the feature simply goes live once the capable build is installed.
+  The now-unreachable "delivered in the app" fallback copy was removed, and the
+  permission hint is brand-neutral.
+
 ### 2026-09-14 — Active-state reminder bell
 - **The top-right reminder bell now shows an active state when a reminder is
   on.** With a reminder set, the bell fills in (and reads at full strength

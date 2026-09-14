@@ -86,8 +86,8 @@ intensity and voice presence across the session.
 
 - **Home:** a compact, editable greeting ("Welcome back, Chris ✎", rotating with
   the time of day); "make your own" as the flagship; the common intentions below;
-  a top-right **reminder bell** and, once there's history, a **history/saved
-  glyph** beside it.
+  a top-right **reminder bell** (native app only) and, once there's history, a
+  **history/saved glyph** beside it.
 - **Make your own:** a short free-text prompt → a bespoke session.
 - **Options tray:** intention, duration, voice (Her/Him/None), accent (US/UK),
   soundscape (by family), a "remember me" toggle, Begin. Minimal by default,
@@ -96,7 +96,8 @@ intensity and voice presence across the session.
   motif, lock-screen controls, background audio, wall-clock timer.
 - **History & saved ("your sessions"):** recents (rolling 10) + saved
   (kept), each replayable in one tap; swipe to delete.
-- **Daily reminder:** an on-device local notification at a chosen time (no server).
+- **Daily reminder:** an on-device local notification at a chosen time (no server);
+  native app only (the bell is hidden on the web, where nothing could schedule it).
 - **Durations:** 5, 10, 15, 20, 30, 45, 60 minutes.
 - **Voices:** ElevenLabs Her/Him × US/UK, or None (sounds only).
 - **Soundscapes:** 15, across Nature / Music / Frequencies, each with a line motif

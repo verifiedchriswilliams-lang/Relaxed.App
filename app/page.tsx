@@ -394,6 +394,13 @@ export default function Home() {
   // "enabled but the OS won't deliver" so the sheet can point the user at Settings
   // instead of the toggle silently doing nothing.
   const [reminderBlocked, setReminderBlocked] = useState(false);
+  // The reminder is a native local notification, so it only exists where the
+  // notifications plugin is present (the app, from 1.2 on). On the web there is
+  // no on-device scheduler, so the whole reminder UI is hidden rather than
+  // offering a control that can never fire. Resolved after mount (it can't be
+  // known during SSR), so it starts false and the bell/sheet appear only in a
+  // capable build.
+  const [remindable, setRemindable] = useState(false);
   // A warm greeting for the returning-user header, picked once per visit so it
   // holds steady across re-renders — rotating "welcome back" / "good to see you"
   // / "hello again" with the time of day. Both brands use it for returning users;
@@ -527,6 +534,8 @@ export default function Home() {
     // set before the native plugin existed starts firing once it can).
     setReminder(loadReminder());
     syncReminder();
+    // Only surface the reminder UI where a notification can actually be scheduled.
+    setRemindable(notificationsAvailable());
   }, []);
 
   // The first time the recent/history entry appears (once there's history, e.g.
@@ -1702,7 +1711,11 @@ export default function Home() {
               </div>
             )}
             {/* Daily reminder: a bell to set a mindful-practice reminder, top-right
-                (both brands). The history glyph sits to its left when there's history. */}
+                (both brands). The history glyph sits to its left when there's
+                history. Native-only: the reminder is a local notification, so the
+                bell is hidden on the web (no on-device scheduler there) and appears
+                in the app once the notifications plugin is present. */}
+            {remindable && (
             <button
               className={`topbar-icon ${reminder.enabled ? "active" : ""}`}
               onClick={openReminder}
@@ -1736,6 +1749,7 @@ export default function Home() {
                 />
               </svg>
             </button>
+            )}
           </div>
         </div>
 
@@ -1884,7 +1898,7 @@ export default function Home() {
           </span>
         </div>
 
-        {reminderOpen && (
+        {remindable && reminderOpen && (
           <div
             className="rm-scrim"
             onClick={() => setReminderOpen(false)}
@@ -1925,19 +1939,18 @@ export default function Home() {
                   aria-label="Reminder time"
                 />
               </div>
+              {/* The sheet only renders where notifications can be scheduled
+                  (native, plugin present), so the status is either scheduled or
+                  permission-blocked, never the old web "saved but inert" case. */}
               {reminder.enabled &&
                 (reminderBlocked ? (
                   <p className="rm-note">
-                    Notifications are off for relaxed. Turn them on in Settings to
-                    get your daily reminder.
-                  </p>
-                ) : notificationsAvailable() ? (
-                  <p className="rm-conf">
-                    We&apos;ll nudge you at {reminderTimeLabel}.
+                    Notifications are off. Turn them on in Settings to get your
+                    daily reminder.
                   </p>
                 ) : (
-                  <p className="rm-note">
-                    Saved. Reminders are delivered in the relaxed app.
+                  <p className="rm-conf">
+                    We&apos;ll nudge you at {reminderTimeLabel}.
                   </p>
                 ))}
               <button

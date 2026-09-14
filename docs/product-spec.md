@@ -68,7 +68,10 @@ stateDiagram-v2
   disabled, there is no flagship and the fifth row is "breathe"/stress-relief.)
 - **Top-right glyphs (both brands, identical).** A **bell** opens the daily-reminder
   sheet (an on-device local notification at a chosen time, scheduled by the OS, no
-  server — see [ios-native.md](./ios-native.md)); it is always present. An
+  server — see [ios-native.md](./ios-native.md)). The bell is **native-only**: it
+  appears only in an app build that can actually schedule a notification (1.2 on),
+  and is hidden on the web and pre-1.2 builds rather than offering a control that
+  can't fire. When a reminder is on, the bell fills in to show the active state. An
   **orbit mark** appears just to its left once the user has any history, opening
   the History screen. (The reminder used to live in the footer as a text link.)
 - **Warm greeting.** For a returning user (with a saved name), the home header
