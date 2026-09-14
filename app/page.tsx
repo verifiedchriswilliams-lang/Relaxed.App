@@ -1704,21 +1704,30 @@ export default function Home() {
             {/* Daily reminder: a bell to set a mindful-practice reminder, top-right
                 (both brands). The history glyph sits to its left when there's history. */}
             <button
-              className="topbar-icon"
+              className={`topbar-icon ${reminder.enabled ? "active" : ""}`}
               onClick={openReminder}
-              aria-label="Daily reminder"
+              aria-label={reminder.enabled ? "Daily reminder is on" : "Daily reminder"}
             >
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 {/* Soft hand-bell (a calm meditation bell, not a sharp alert): a
                     small handle knob and a rounded body. Stroke weight matches the
-                    orbit glyph beside it (1.8) so the two read as the same size. */}
+                    orbit glyph beside it (1.8) so the two read as the same size.
+                    When a reminder is on, the bell fills in (matching the saved
+                    star's "filled = active" language) to signal the active state. */}
                 <circle cx="12" cy="4.1" r="1.3" fill="currentColor" />
-                <path
-                  d="M12 5.6c-3.05 0-4.95 2.35-4.95 5.55 0 2.65-.65 4.15-1.3 5.05-.5.7.05 1.7 1 1.7h10.5c.95 0 1.5-1 1-1.7-.65-.9-1.3-2.4-1.3-5.05 0-3.2-1.9-5.55-4.95-5.55Z"
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                  strokeLinejoin="round"
-                />
+                {reminder.enabled ? (
+                  <path
+                    d="M12 5.6c-3.05 0-4.95 2.35-4.95 5.55 0 2.65-.65 4.15-1.3 5.05-.5.7.05 1.7 1 1.7h10.5c.95 0 1.5-1 1-1.7-.65-.9-1.3-2.4-1.3-5.05 0-3.2-1.9-5.55-4.95-5.55Z"
+                    fill="currentColor"
+                  />
+                ) : (
+                  <path
+                    d="M12 5.6c-3.05 0-4.95 2.35-4.95 5.55 0 2.65-.65 4.15-1.3 5.05-.5.7.05 1.7 1 1.7h10.5c.95 0 1.5-1 1-1.7-.65-.9-1.3-2.4-1.3-5.05 0-3.2-1.9-5.55-4.95-5.55Z"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                    strokeLinejoin="round"
+                  />
+                )}
                 <path
                   d="M10.3 20.2a2 2 0 0 0 3.4 0"
                   stroke="currentColor"

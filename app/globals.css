@@ -1261,6 +1261,11 @@ button {
 .topbar-actions .recent-entry {
   margin: 0;
 }
+/* An active daily reminder: the filled bell reads at full strength (vs the 0.7
+   resting state) so "on" is obvious at a glance. */
+.topbar-icon.active {
+  opacity: 1;
+}
 /* Balances the back button so the wordmark stays centered in the history bar. */
 .hb-spacer {
   width: 40px;

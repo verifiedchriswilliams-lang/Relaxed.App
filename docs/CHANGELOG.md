@@ -55,6 +55,13 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-14 — Active-state reminder bell
+- **The top-right reminder bell now shows an active state when a reminder is
+  on.** With a reminder set, the bell fills in (and reads at full strength
+  instead of the resting 0.7), matching the saved-session star's "filled =
+  active" language, so an armed reminder is obvious at a glance from the home
+  screen. Its `aria-label` becomes "Daily reminder is on". Both brands.
+
 ### 2026-09-14 — Fix: the daily-reminder toggle did nothing
 - **The "remind me daily" switch was dead unless a notification could be
   scheduled that instant.** `saveReminder` forced `enabled:false` whenever it
