@@ -17,7 +17,8 @@ UI — runs in the hosted web app. Consequences:
   native plugins (haptics, splash, status bar).
 - If `relaxed.app` is unreachable, the app shows a minimal offline fallback
   (`native/www/index.html`): an Ink/Bone page with the stem mark and "You're
-  offline. Reconnect to begin a session."
+  offline. Reconnect when you're ready, and your session will begin." (safe-area
+  padded so it clears the notch and home indicator).
 
 ```mermaid
 flowchart LR

@@ -15,13 +15,16 @@
       }
       .wrap {
         height: 100%;
+        box-sizing: border-box;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 22px;
         text-align: center;
-        padding: 0 32px;
+        /* Clear the notch / home indicator on edge-to-edge devices. */
+        padding: max(24px, env(safe-area-inset-top)) 32px
+          max(24px, env(safe-area-inset-bottom));
       }
       svg {
         color: #efebe3;
@@ -49,7 +52,7 @@
         <path d="M40 74 V40 C40 30 49 26 60 26" stroke="currentColor" stroke-width="13" stroke-linecap="butt" />
       </svg>
       <div class="name">relaxed<span class="s">.app</span></div>
-      <div class="msg">You're offline. Reconnect to begin a session.</div>
+      <div class="msg">You're offline. Reconnect when you're ready, and your session will begin.</div>
     </div>
   </body>
 </html>
