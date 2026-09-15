@@ -21,7 +21,6 @@ import {
   setPlaybackState,
   clearNowPlaying,
   notificationsAvailable,
-  requestNotificationPermission,
 } from "@/lib/native";
 import {
   loadRecent,
@@ -859,21 +858,23 @@ export default function Home() {
     return `${hh}:${pad2(reminder.minute)} ${ap}`;
   })();
 
-  // Open the reminder sheet. If a reminder is already on, actively make sure we
-  // have permission to deliver it: requestPermissions shows the iOS system prompt
-  // when the status is still undetermined (e.g. the reminder was turned on before
-  // we could ask, or on a build that couldn't), and simply returns the saved
-  // choice afterwards. A denied result flags the sheet to point the user at
-  // Settings. Requesting here (not just a silent check) closes the gap where an
-  // enabled reminder never actually asked for permission, so it could never fire.
+  // Open the reminder sheet. If a reminder is already on, re-apply it: this shows
+  // the iOS permission prompt when the status is still undetermined (e.g. the
+  // reminder was turned on before we could ask) AND, crucially, schedules the
+  // notification when permission is granted. Requesting alone wasn't enough —
+  // allowing from the bell has to actually arm the schedule, or a reminder the
+  // user enabled and then allowed would still never fire. `saveReminder(_, true)`
+  // requests + schedules + persists; the prompt only appears once (iOS), so
+  // re-applying on each open is a safe no-op when already granted.
   async function openReminder() {
     setReminderOpen(true);
     if (!reminder.enabled || !notificationsAvailable()) {
       setReminderBlocked(false);
       return;
     }
-    const granted = await requestNotificationPermission();
-    setReminderBlocked(!granted);
+    const res = await saveReminder(reminder, true);
+    setReminder(res.pref);
+    setReminderBlocked(res.blocked);
   }
 
   async function toggleReminder(on: boolean) {

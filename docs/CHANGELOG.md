@@ -69,6 +69,15 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-15 — Fix: allowing notifications from the bell now schedules the reminder
+- **Granting permission from the reminder sheet asked, but never armed the
+  schedule.** `openReminder` requested permission yet didn't schedule, so a user
+  who enabled a reminder and *then* allowed notifications (without also touching
+  the time or toggle afterward) got permission but no scheduled notification, and
+  nothing fired. `openReminder` now re-applies the reminder (`saveReminder`),
+  which requests permission *and* schedules when granted. The prompt still only
+  appears once, so re-applying on open is a no-op when already allowed.
+
 ### 2026-09-14 — Fix: the reminder now asks for notification permission
 - **A reminder could be set without ever prompting for notification permission,**
   so it silently never fired (with notifications off at the OS level, there was
