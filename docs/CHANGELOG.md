@@ -69,6 +69,15 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-15 — Warmer, personalized reminder notifications
+- **The reminder copy is warmer and more varied,** expanded from three lines to
+  seven, and now **greets you by name** when one is saved ("Chris, a little calm
+  is waiting.") — falling back to a name-free line otherwise. The name is read
+  on-device and never leaves it.
+- **The notification title is now brand-aware** ("relaxed" for relaxed,
+  "ElevenMind" for ElevenMind). It was hardcoded to "relaxed", which would have
+  mislabeled an ElevenMind notification.
+
 ### 2026-09-15 — Fix: allowing notifications from the bell now schedules the reminder
 - **Granting permission from the reminder sheet asked, but never armed the
   schedule.** `openReminder` requested permission yet didn't schedule, so a user

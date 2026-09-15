@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { loadReminder, saveReminder } from "@/lib/reminders";
+import { loadReminder, saveReminder, reminderBody } from "@/lib/reminders";
 
 // In the node test env there is no Capacitor bridge, so notifications are
 // "unavailable" — the same situation as the web. The regression this guards:
@@ -34,5 +34,31 @@ describe("saveReminder", () => {
     expect(r.hour).toBeLessThanOrEqual(23);
     expect(r.minute).toBeGreaterThanOrEqual(0);
     expect(r.minute).toBeLessThanOrEqual(59);
+  });
+});
+
+describe("reminderBody", () => {
+  it("returns a name-free body when no name is saved", () => {
+    const body = reminderBody();
+    expect(body.length).toBeGreaterThan(0);
+    expect(body).not.toContain("undefined");
+    // No em dashes in user-facing copy (a golden rule).
+    expect(body).not.toContain("—");
+  });
+
+  it("greets by name when a name is saved on-device", () => {
+    localStorage.setItem("elevenmind.prefs.v1", JSON.stringify({ name: "Chris" }));
+    // Sample enough times to clear the random pick; every named variant includes
+    // the name, so any sample should contain it.
+    for (let i = 0; i < 20; i++) {
+      expect(reminderBody()).toContain("Chris");
+    }
+  });
+
+  it("ignores a blank name and falls back to a name-free body", () => {
+    localStorage.setItem("elevenmind.prefs.v1", JSON.stringify({ name: "   " }));
+    const body = reminderBody();
+    expect(body).not.toContain("undefined");
+    expect(body.trim().length).toBeGreaterThan(0);
   });
 });

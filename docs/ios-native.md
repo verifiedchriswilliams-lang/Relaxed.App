@@ -64,15 +64,19 @@ flowchart LR
   deliberately no "saved but won't fire yet" messaging. **Permission is requested
   in context:** iOS shows its system prompt when the user turns the reminder on
   (`toggleReminder` → `saveReminder(pref, prompt=true)`), and again when they
-  reopen the bell on an already-enabled reminder that isn't granted yet
-  (`openReminder` calls `requestNotificationPermission()`, which shows the prompt
-  only while the status is undetermined and otherwise returns the saved choice).
-  This closes the gap where a reminder could be on but was never actually asked
-  for permission, so it could never fire. The toggle reflects the user's
-  **intent** (it flips on and persists immediately, never a dead switch); the
-  sheet then shows honest status — "we'll nudge you at HH:MM" when scheduled, or a
-  "turn on notifications in Settings" hint if permission was denied (iOS only
-  prompts once, so a denied reminder is recovered from Settings).
+  reopen the bell on an already-enabled reminder (`openReminder` re-applies via
+  `saveReminder(pref, prompt=true)`, which shows the prompt only while the status
+  is undetermined **and schedules the notification once granted** — requesting
+  alone left an allowed reminder unscheduled). This closes the gap where a
+  reminder could be on but was never actually asked for permission, so it could
+  never fire. The toggle reflects the user's **intent** (it flips on and persists
+  immediately, never a dead switch); the sheet then shows honest status — "we'll
+  nudge you at HH:MM" when scheduled, or a "turn on notifications in Settings"
+  hint if permission was denied (iOS only prompts once, so a denied reminder is
+  recovered from Settings). The notification **title is brand-aware** ("relaxed"
+  vs "ElevenMind", never one brand's name on the other), and the **body rotates**
+  through a few gentle lines, greeting the user by name when one is saved
+  on-device (`reminderBody()`; the name never leaves the device).
   (`lib/reminders.ts` `applyReminder` returns `{ scheduled, blocked }` alongside
   the persisted pref.)
 

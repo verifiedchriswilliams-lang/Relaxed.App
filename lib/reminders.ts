@@ -15,8 +15,28 @@ import {
   cancelDailyReminder,
   notificationsAvailable,
 } from "./native";
+import { BRAND } from "./brand";
 
 const REMINDER_KEY = "relaxed.reminder.v1";
+
+// Mirrors PREFS_KEY in app/page.tsx — the on-device prefs blob that holds the
+// saved name. Read here (best-effort) so the reminder body can greet by name.
+const PREFS_KEY = "elevenmind.prefs.v1";
+
+function savedName(): string {
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    if (!raw) return "";
+    const p = JSON.parse(raw) as { name?: string };
+    return (p?.name || "").trim();
+  } catch {
+    return "";
+  }
+}
+
+// Brand-aware notification title: "relaxed" for relaxed, "ElevenMind" for
+// ElevenMind. Never hardcode one brand's name into the other's notification.
+const NOTIFY_TITLE = BRAND.id === "relaxed" ? BRAND.strong : BRAND.name;
 
 export interface ReminderPref {
   enabled: boolean;
@@ -32,7 +52,32 @@ const BODIES = [
   "A few quiet minutes for yourself. Ready when you are.",
   "Time to pause and breathe. Your session is a tap away.",
   "A little calm is waiting. Take a few minutes for you.",
+  "Your daily calm is here. A few minutes is all it takes.",
+  "Pause for a moment. A little stillness goes a long way.",
+  "Come back to your breath. A short session is waiting.",
+  "This is your window to slow down. Breathe, and begin.",
 ];
+
+// Warmer variants that open with the user's name, used when one is saved. Kept
+// short so they still read well on a lock screen. No em dashes.
+const NAMED_BODIES = [
+  (n: string) => `${n}, a little calm is waiting. Take a few minutes for you.`,
+  (n: string) => `A few quiet minutes for you, ${n}. Ready when you are.`,
+  (n: string) => `Time to pause and breathe, ${n}. Your session is a tap away.`,
+  (n: string) => `${n}, your daily calm is here. A few minutes is all it takes.`,
+];
+
+// Pick a reminder body for this schedule: a name-aware line when a name is saved
+// on-device, otherwise a name-free one. Chosen at schedule time, so it stays put
+// until the reminder is next re-applied.
+export function reminderBody(): string {
+  const name = savedName();
+  if (name) {
+    const f = NAMED_BODIES[Math.floor(Math.random() * NAMED_BODIES.length)];
+    return f(name);
+  }
+  return BODIES[Math.floor(Math.random() * BODIES.length)];
+}
 
 export function loadReminder(): ReminderPref {
   try {
@@ -110,8 +155,8 @@ export async function applyReminder(
     // Plugin present but not allowed — keep the intent, flag it for the UI.
     return { pref: intent, scheduled: false, blocked: true };
   }
-  const body = BODIES[Math.floor(Math.random() * BODIES.length)];
-  const ok = await scheduleDailyReminder(pref.hour, pref.minute, body);
+  const body = reminderBody();
+  const ok = await scheduleDailyReminder(pref.hour, pref.minute, body, NOTIFY_TITLE);
   return { pref: intent, scheduled: ok, blocked: !ok };
 }
 
