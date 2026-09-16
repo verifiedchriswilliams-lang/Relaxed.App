@@ -10,19 +10,28 @@ export type Soundscape =
   | "silence"
   | "rain"
   | "ocean"
+  | "birdsong"
   | "wind"
   | "thunder"
   | "windchimes"
+  | "brook"
+  | "campfire"
   | "pad"
   | "piano"
   | "lofi"
   | "bowls"
   | "harp"
+  | "strings"
+  | "kalimba"
+  | "flute"
   | "brown"
   | "pad432"
+  | "whitenoise"
   | "binaural"
   | "delta"
   | "theta"
+  | "green"
+  | "alpha"
   | "drone"
   | "pink"
   | "white";
@@ -31,10 +40,16 @@ export type SoundCat = "nature" | "music" | "frequencies";
 
 export type Accent = "us" | "uk";
 
+// Free vs premium. Data only for now: everything is unlocked and playable. The
+// paywall (StoreKit entitlement) is a separate project that will gate "premium"
+// beds; until then this just records the intended split.
+export type SoundTier = "free" | "premium";
+
 export interface SoundDef {
   id: Soundscape;
   label: string;
   cat: SoundCat;
+  tier?: SoundTier; // free (unlocked) vs premium (gated once the paywall ships)
   src?: string; // looping audio file (ElevenLabs); absent => synthesized
   soon?: boolean; // asset not added yet; shown but disabled
   // Measured loudness of the file (dBFS): integrated RMS and true peak. Used to

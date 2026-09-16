@@ -25,22 +25,34 @@ const run = promisify(execFile);
 
 // id → filename (must match the `src` values in SOUNDSCAPES) and the RMS already
 // measured in the app, so we can turn LUFS into a trim on top of RMS matching.
+// The 24 FLAC beds (must match the `src` basenames in lib/audio/soundscapes.ts).
+// The `rms` values here are placeholders carried from the old MP3 masters; run
+// this against the final FLAC uploads and paste the refreshed table back.
 const BEDS = [
-  { id: "rain", file: "Rain.mp3", rms: -42.5 },
-  { id: "ocean", file: "Ocean.mp3", rms: -25.1 },
-  { id: "wind", file: "Wind.mp3", rms: -43.4 },
-  { id: "thunder", file: "Thunderstorm.mp3", rms: -37.9 },
-  { id: "windchimes", file: "WindChimes.mp3", rms: -32.4 },
-  { id: "pad", file: "Ambient.mp3", rms: -21.7 },
-  { id: "piano", file: "Piano.mp3", rms: -36.2 },
-  { id: "lofi", file: "LoFi.mp3", rms: -16.1 },
-  { id: "bowls", file: "Singing-Bowl.mp3", rms: -14.6 },
-  { id: "harp", file: "Harp.mp3", rms: -17.4 },
-  { id: "brown", file: "BrownNoise.mp3", rms: -37.0 },
-  { id: "pad432", file: "432Hz.mp3", rms: -16.8 },
-  { id: "binaural", file: "Binaural.mp3", rms: -15.9 },
-  { id: "delta", file: "Delta.mp3", rms: -12.7 },
-  { id: "theta", file: "Theta.mp3", rms: -17.2 },
+  { id: "rain", file: "Rain.flac", rms: -42.5 },
+  { id: "ocean", file: "Ocean.flac", rms: -25.1 },
+  { id: "birdsong", file: "Birdsong.flac", rms: -24 },
+  { id: "wind", file: "Wind.flac", rms: -43.4 },
+  { id: "thunder", file: "Thunderstorm.flac", rms: -37.9 },
+  { id: "windchimes", file: "Windchimes.flac", rms: -32.4 },
+  { id: "brook", file: "BabblingBrook.flac", rms: -24 },
+  { id: "campfire", file: "Campfire.flac", rms: -24 },
+  { id: "pad", file: "Ambient.flac", rms: -21.7 },
+  { id: "piano", file: "Piano.flac", rms: -36.2 },
+  { id: "lofi", file: "LoFi.flac", rms: -16.1 },
+  { id: "bowls", file: "SingingBowls.flac", rms: -14.6 },
+  { id: "harp", file: "Harp.flac", rms: -17.4 },
+  { id: "strings", file: "WarmStrings.flac", rms: -20 },
+  { id: "kalimba", file: "Kalimba.flac", rms: -20 },
+  { id: "flute", file: "Flute.flac", rms: -20 },
+  { id: "brown", file: "BrownNoise.flac", rms: -37.0 },
+  { id: "pad432", file: "432Hz.flac", rms: -16.8 },
+  { id: "whitenoise", file: "WhiteNoise.flac", rms: -24 },
+  { id: "binaural", file: "Binaural.flac", rms: -15.9 },
+  { id: "delta", file: "Delta.flac", rms: -12.7 },
+  { id: "theta", file: "Theta.flac", rms: -17.2 },
+  { id: "green", file: "GreenNoise.flac", rms: -24 },
+  { id: "alpha", file: "Alpha.flac", rms: -20 },
 ];
 
 const dirArg = process.argv.indexOf("--dir");

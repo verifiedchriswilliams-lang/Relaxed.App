@@ -22,12 +22,21 @@ what you need and it makes one for you."
 | Name | free text (≤40 chars, on-device only) | empty | `PREFS` |
 | Phrase (custom only) | free text (≤70 chars) | — | custom input |
 
-### Soundscapes (15)
+### Soundscapes (24)
 
-- **Nature:** Rain, Ocean Waves, Wind, Thunderstorm, Windchimes.
-- **Music:** Ambient, Piano, LoFi, Singing Bowls, Harp.
-- **Frequencies:** Brown Noise, 432 Hz, Binaural, Delta, Theta (ElevenLabs
-  recordings, like the other families).
+Eight per family (3 free + 5 premium; the free/premium split is recorded on each
+bed but not yet enforced, so every bed is currently unlocked, see
+[roadmap](./roadmap.md)):
+
+- **Nature:** Rain, Ocean Waves, Birdsong, Wind, Thunderstorm, Windchimes,
+  Babbling Brook, Campfire.
+- **Music:** Ambient, Piano, LoFi, Singing Bowls, Harp, Warm Strings, Kalimba,
+  Flute.
+- **Frequencies:** Brown Noise, 432 Hz, White Noise, Binaural, Delta, Theta,
+  Green Noise, Alpha (ElevenLabs recordings, like the other families).
+
+The nine beds added in the 24-bed upgrade reuse the fallback line motif until
+bespoke motifs are drawn for them.
 
 Each soundscape also has a bespoke **line motif** that animates inside the player's
 breathing ring (`lib/soundMotifs.tsx`).

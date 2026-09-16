@@ -140,16 +140,21 @@ NEXT_PUBLIC_BLOB_BASE_URL="https://<store>.public.blob.vercel-storage.com" \
 node scripts/measure-beds.mjs --dir /path/to/sounds
 ```
 
-It prints recommended per-bed `trim` values (for `SOUNDSCAPES` in `app/page.tsx`)
-and per-preview gains (for `PREVIEW_GAIN`). Paste the numbers back into the code.
-The tool writes nothing itself. Background: [audio-engine.md](./audio-engine.md#5-loudness-normalization-the-it-just-sounds-right-work).
+It prints recommended per-bed `trim` values (for `SOUNDSCAPES` in
+`lib/audio/soundscapes.ts`) and per-preview gains (for `PREVIEW_GAIN`). Paste the
+numbers back into the code. The tool writes nothing itself. Background:
+[audio-engine.md](./audio-engine.md#5-loudness-normalization-the-it-just-sounds-right-work).
 
 ## Add a soundscape
 
-1. Add the bed file drop per `public/sounds/README.md` (seamless ~60s loop mp3).
-2. Add the entry to `SOUNDSCAPES` in `app/page.tsx` (id, label, cat, src, and
-   measured rms/peak/trim); add a motif in `lib/soundMotifs.tsx`.
-3. Upload via `upload-blob.mjs`, set `soon: false`, measure loudness, deploy.
+1. Add the bed file as a **seamless-loop FLAC** (see the file-format guidance in
+   [audio-engine.md](./audio-engine.md#6-soundscapes) — FLAC is required so the
+   loop is gapless; MP3/AAC reintroduce a seam).
+2. Add the entry to `SOUNDSCAPES` in `lib/audio/soundscapes.ts` (id, label, cat,
+   tier, src, and measured rms/peak/trim); add a motif in `lib/soundMotifs.tsx`
+   (or it falls back to the default wave).
+3. Upload via `upload-blob.mjs`, set `soon: false` if used, run `measure-beds.mjs`
+   and paste the levels back, then deploy.
 
 ## Rotate a key
 
@@ -206,7 +211,7 @@ voice cache and cost nothing at Anthropic. ElevenLabs bills separately for voice
 ## Commit & branch conventions
 
 - Small, focused commits with a scannable subject (see the git history for the
-  house style, e.g. `audio: level all 15 soundscapes by measured LUFS`).
+  house style, e.g. `audio: level all 24 soundscapes by measured LUFS`).
 - User-facing product copy must contain **no em dashes** (brand rule) — use
   commas, periods, or "and".
 - `main` is production; push there to deploy. Keep brand-scoped changes

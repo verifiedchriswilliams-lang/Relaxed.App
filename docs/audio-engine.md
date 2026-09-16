@@ -169,7 +169,7 @@ with per-source perceptual trims measured offline.
   RMS match, capped so true peaks stay under the ceiling.
 - **Per-voice** stats + trims (`VOICE_STATS`): the male voices are lifted ~+2.5 dB
   and one UK voice trimmed −3.5 dB, so Her/Him sit at equal perceived loudness.
-- **Per-bed** trims (`SOUNDSCAPES[].trim`): all 15 soundscapes were measured by
+- **Per-bed** trims (`SOUNDSCAPES[].trim`): all 24 soundscapes are measured by
   **LUFS (ITU-R BS.1770, via ffmpeg `ebur128`)** and trimmed to equal perceived
   loudness — e.g. the ocean bed was calmed, dull/low beds lifted.
 - `bedAndVoice(voice, accent, soundscape)` computes the voice gain and bed level
@@ -183,13 +183,18 @@ with per-source perceptual trims measured offline.
 
 ## 6. Soundscapes
 
-15 beds across three families:
+24 beds across three families, eight each (3 free + 5 premium per family; the
+`tier` is data only for now, everything is unlocked until the paywall project):
 
-- **Nature** (rain, ocean, wind, thunderstorm, windchimes), **Music** (ambient
-  pad, piano, lo-fi, singing bowls, harp), and **Frequencies** (brown noise,
-  432 Hz, binaural, delta, theta) are **all looping MP3 files** (ElevenLabs
-  recordings) served from Blob. (The Frequencies beds were once browser-synthesized
-  but are now files, like the rest; the engine's synth generators are unused.)
+- **Nature** (rain, ocean, birdsong, wind, thunderstorm, windchimes, babbling
+  brook, campfire), **Music** (ambient pad, piano, lo-fi, singing bowls, harp,
+  warm strings, kalimba, flute), and **Frequencies** (brown noise, 432 Hz, white
+  noise, binaural, delta, theta, green noise, alpha) are **all seamless looping
+  FLAC files** (ElevenLabs / ElevenMusic recordings) served from Blob. FLAC is
+  used because `decodeAudioData` + `loop = true` needs a format with no encoder
+  padding, or the loop seam clicks; lossy codecs (MP3/AAC) reintroduce that gap.
+  (The Frequencies beds were once browser-synthesized but are now files, like the
+  rest; the engine's synth generators are unused.)
 - `FIRST_TIME_SOUND = "rain"` is the default bed for a new user. A sounds-only
   session (voice = none) plays just the bed at the solo target with the breathing
   orb, calling neither AI provider.

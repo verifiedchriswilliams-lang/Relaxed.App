@@ -46,7 +46,7 @@ relaxed.app/
 | `lib/contexts.ts` | Intentions, durations, `VoiceChoice`, `CUSTOM_MAX_CHARS`, `CUSTOM_ENABLED`, the Claude `SCRIPT_SYSTEM_PROMPT`, duration bands, feature flags | [product-spec](./product-spec.md) |
 | `lib/engine.ts` | Meditation Engine: session blueprint (`blueprintFor`, scene arc + per-scene targets) + per-intention audio envelope (`audioProfile`) | [audio-engine](./audio-engine.md#9-the-meditation-engine-phase-1) |
 | `lib/audio/engine.ts` | The `AudioEngine` class: Web Audio graph, bloom, ducking, streaming, scene envelope, previews (extracted from `page.tsx`) | [audio-engine](./audio-engine.md) |
-| `lib/audio/soundscapes.ts` | The 15-bed catalog (`SOUNDSCAPES`), families, `catOf`/`soundDef` | [audio-engine](./audio-engine.md), [product-spec](./product-spec.md) |
+| `lib/audio/soundscapes.ts` | The 24-bed catalog (`SOUNDSCAPES`), families, tiers, `catOf`/`soundDef` | [audio-engine](./audio-engine.md), [product-spec](./product-spec.md) |
 | `lib/audio/levels.ts` | Loudness math (`normGain`) + bed/voice selection (`bedAndVoice`), level targets, `VOICE_STATS`, `PREVIEW_GAIN` | [audio-engine](./audio-engine.md#5-loudness-normalization-the-it-just-sounds-right-work) |
 | `lib/audio/types.ts` | Shared audio types (`Soundscape`, `SoundCat`, `SoundDef`, `Accent`) | — |
 | `lib/breath.ts` | The 14.5s breath clock (`breathAt`, `easeInOut`, `BREATH_*`) shared by orb + cue | [audio-engine](./audio-engine.md) |

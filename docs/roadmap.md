@@ -37,8 +37,8 @@ Phases 0–2 of the original plan):
 - **Continuity, on-device** — recents + saved (exact replay, revoiced never
   rewritten), post-session mood, a daily reminder (local notification), and a
   rotating warm greeting. All localStorage, no accounts. (`lib/history.ts`.)
-- **Breadth** — 15 soundscapes (Nature/Music/Frequencies), voices Her/Him ×
-  US/UK or None, durations 5–60, several script variants per intention.
+- **Breadth** — 24 soundscapes (Nature/Music/Frequencies, 8 each), voices Her/Him
+  × US/UK or None, durations 5–60, several script variants per intention.
 - **iOS** — a Capacitor shell over the hosted site, live on the App Store.
   **1.2 (daily-reminder plugin + refreshed screenshots) is released for
   US + Canada.**
@@ -57,20 +57,21 @@ largely pre-cached in Vercel Blob (only the name line is live TTS).
 
 The only planned work right now.
 
-1. **Soundscape audio → infinite sessions + ∞ slider.** Replace the current beds
-   with premium, seamless-looping audio, normalize levels (`measure-beds`), and
-   set loop points so there is no gap where the audio restarts. This unlocks
-   **infinite sessions** (the bed loops as long as the person wants), surfaced as
-   an **∞ stop** at the end of the duration slider
+1. **Soundscape audio → infinite sessions + ∞ slider.** Expand to **24 seamless
+   FLAC beds** (8 per family) and normalize levels (`measure-beds`). The catalog,
+   the `tier` field (3 free + 5 premium, unlocked for now), and the FLAC pipeline
+   are **built and staged**; everything is unlocked. This unlocks **infinite
+   sessions** (a seamless loop plays as long as the person wants), surfaced as an
+   **∞ stop** at the end of the duration slider
    (`5 · 10 · 15 · 20 · 30 · 45 · 60 · ∞`, kept as equal-spaced notches).
-   - **Dependency:** sourcing the right seamless-loop audio (in progress, not yet
-     found). Once the files exist the engineering is small — content +
-     normalization + loop points + one slider stop.
+   - **Dependency:** the producer's seamless-loop masters (in progress). Once they
+     land: convert to FLAC, run `measure-beds`, upload to Blob, then merge the
+     staged catalog. The ∞ slider stop is the remaining small engineering.
 
-2. **EU launch — 1.2.1.** Add the EU countries to availability and ship a 1.2.1
-   build.
-   - **Dependency:** Apple's DSA trader verification (submitted, in review). See
-     the [operations runbook](./operations-runbook.md) EU checklist.
+2. **EU launch — 1.2.1.** ✅ Done. DSA trader verification passed, EU/EEA (plus
+   AU/NZ) added to availability and live on the current build; the 1.2.1 build
+   (splash fix) is submitted. See the [operations runbook](./operations-runbook.md)
+   EU checklist.
 
 3. **Apple Watch — v1 companion.** A native watchOS (SwiftUI) app that rides in
    the existing Xcode project and shares the App Store listing + backend APIs:

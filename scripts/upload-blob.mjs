@@ -47,7 +47,19 @@ const dirs = (dirArgs.length ? dirArgs : ["public/sounds", "public/voice-cache"]
 );
 
 // Only these extensions are media worth hosting; skip READMEs etc.
-const MEDIA = new Set([".mp3", ".wav", ".ogg", ".m4a"]);
+const MEDIA = new Set([".mp3", ".wav", ".ogg", ".m4a", ".flac"]);
+
+// Serve each file with a content type matching its extension. The soundscape beds
+// are FLAC (lossless, gapless loops); voice-cache clips stay MP3.
+const CONTENT_TYPES = {
+  ".mp3": "audio/mpeg",
+  ".wav": "audio/wav",
+  ".ogg": "audio/ogg",
+  ".m4a": "audio/mp4",
+  ".flac": "audio/flac",
+};
+const contentTypeFor = (file) =>
+  CONTENT_TYPES[path.extname(file).toLowerCase()] || "application/octet-stream";
 
 function walk(dir) {
   const out = [];
@@ -115,7 +127,7 @@ await run(files, 8, async (file) => {
       token: TOKEN,
       addRandomSuffix: false,
       allowOverwrite: true,
-      contentType: "audio/mpeg",
+      contentType: contentTypeFor(file),
     });
     if (!base) base = new URL(res.url).origin;
     uploaded++;
