@@ -18,6 +18,18 @@ build carried, not the review timeline.
 
 ## iOS — App Store releases
 
+### 1.2.1 — released 2026-09-16 (US + Canada + EU/EEA, UK, AU, NZ)
+The splash fix and the EU/international launch.
+- **Corrected launch screen.** Regenerated the native `Splash.imageset` from the
+  smaller-"r" source (the 1.2 binary shipped the oversized "r" because `ios:assets`
+  wasn't re-run before archiving). The launch mark now has proper breathing room.
+- **International availability.** With DSA trader verification passed, the app is
+  now available across the EU/EEA, plus the UK, Australia, and New Zealand (42 new
+  territories), on top of US + Canada. Availability is an App Store Connect setting,
+  so it reached the live 1.2 build before this build; 1.2.1 carries it forward.
+- All web-side work since 1.2 (the reminder fixes and warmer/personalized reminder
+  copy) reaches this build automatically, as always.
+
 ### 1.2 — released 2026-09-14 (US + Canada)
 Approved and released; the first build with the on-device reminder.
 - **LocalNotifications plugin** (`@capacitor/local-notifications`) compiled in, so
