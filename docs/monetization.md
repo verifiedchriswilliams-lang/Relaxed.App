@@ -11,9 +11,9 @@
 - **Paid Applications Agreement (Schedule 2):** ✅ Active (signed 2026-09-16).
 - **Bank account:** ✅ Active (Bank of America, USD).
 - **U.S. tax form (W-9):** ✅ Active (submitted 2026-09-16).
-- **Small Business Program (SBP):** ☐ not enrolled yet — **the one remaining
-  groundwork step** (separate application; enroll to get the 15% rate before
-  selling anything).
+- **Small Business Program (SBP):** ⏳ enrollment **submitted 2026-09-17**, awaiting
+  Apple's approval email (approved within ~15 days of fiscal month-end). Grants the
+  15% commission rate.
 - **In-app purchases:** none yet. The app is free; the soundscape `tier` field
   (`free`/`premium`) is data only and everything is unlocked.
 - **Schedule 3 (Custom App Distribution / enterprise via Volume Content):** not
