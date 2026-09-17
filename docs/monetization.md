@@ -75,19 +75,46 @@ nuanced and largely mutually exclusive with a clean IAP model. **Default plan: I
 - **Bundles / Complete My Bundle** (§3.14): sell multiple apps together (less
   relevant with a single app today).
 
+## Decided model (2026-09-17)
+
+**A one-time, non-consumable in-app purchase at $4.99 (US) that unlocks all 15
+premium soundscapes** (the 5-per-family `tier: "premium"` beds). The 9 free beds
+stay free. No subscription for now — `relaxed+` stays parked in the roadmap
+"Someday" bucket.
+
+- **Product type:** non-consumable IAP (permanent unlock, one product across the
+  account). **Restore Purchases** is required (Apple), and StoreKit tracks the
+  purchase against the Apple ID so it restores on the user's other devices.
+- **Price:** $4.99 in the US; Apple auto-generates localized prices per storefront
+  from the chosen price point. At 15% (once SBP is approved) that nets ≈ $4.24
+  before tax.
+- **Entitlement:** cached on-device (fits the no-accounts model); the source of
+  truth is the StoreKit transaction, re-checked on launch.
+
+### Open question for the build — the web/native split
+The purchase is **StoreKit (native)**, but the app is a web shell and the premium
+beds are web-delivered (FLAC on Blob, gated by `tier`). So the native layer must
+signal "premium unlocked" to the web layer (a Capacitor bridge, like haptics /
+notifications), and the web gates the beds on it. **On the plain web (a browser),
+there is no StoreKit, so there is no purchase path** — decide whether premium is
+simply **locked/hidden on the web** (native-only unlock) or later sold on the web
+too (e.g. Stripe + the audio "reader" carve-out). Default: **native-only unlock**
+to start; premium beds show a lock + buy prompt in the app, and are hidden on the
+web. Resolve before building.
+
 ## To-do before we charge (the paywall project)
 
-1. **Enroll in the App Store Small Business Program** (→ 15%).
-2. **Complete banking + tax forms + tax category** in App Store Connect.
-3. **Build the StoreKit IAP:** premium-soundscapes unlock (non-consumable) and/or
-   `relaxed+` (auto-renewable). Include **Restore Purchases**; store the
-   entitlement **on-device** (fits the no-accounts model).
-4. **Add an in-app Terms of Use** link alongside `/privacy` (subscription
-   requirement).
-5. **Wire the `tier` gate** in `lib/audio/soundscapes.ts` to the entitlement (the
-   data is already there; nothing is gated today).
-6. **Decide the model** — one-time unlock vs subscription vs both — and set pricing
-   with the 15% cut and refund exposure in mind.
+1. **Enroll in the App Store Small Business Program** (→ 15%). *(submitted
+   2026-09-17, awaiting approval.)*
+2. **Complete banking + tax forms + tax category** in App Store Connect. *(done —
+   all Active.)*
+3. **Create the IAP product** in App Store Connect: one non-consumable, $4.99, e.g.
+   `app.relaxed.premium_soundscapes`, with review screenshot + description.
+4. **Build the StoreKit purchase + a Capacitor bridge** so the web layer can read
+   the unlock; include **Restore Purchases**; cache the entitlement on-device.
+5. **Wire the `tier` gate** in `lib/audio/soundscapes.ts` to the entitlement (data
+   is already there; nothing is gated today), plus the in-app lock + buy UI.
+6. **Resolve the web/native split** (above) before shipping.
 
 ## Content / marketing guardrails
 - Don't use child-pressuring purchase language ("buy now!", "upgrade now!") aimed
