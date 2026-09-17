@@ -106,6 +106,24 @@ beds show a small lock in the chip and still audition; the paywall appears only 
 **Begin**, if a locked bed is the chosen session soundscape. Preview keeps the
 "fall in love first" path intact.
 
+### Chip states (chosen 1.3 treatment)
+The soundscape carousel stays a single horizontal row (no cascading). Locks live
+inline on the chips; the only added element is one unlock bar below the carousel.
+- **Free, selected:** full Bone fill (today's `.on` state) — "it's yours."
+- **Premium, previewing (locked):** a **thick Bone outline**, glass interior, lock
+  still shown — reads as active/playing but visibly not-yet-owned (reuses the
+  selected *shape* while withholding the *fill*).
+- **Premium, idle:** glass pill with a small inline lock.
+
+### Unlock bar copy (must not read as a subscription)
+One calm bar under the carousel. It must make the one-time nature unmistakable
+(Apple guidelines + user trust). Chosen copy:
+- Title: **"unlock all 15 premium sounds"**
+- Sub: **"one time, not a subscription. previews are always free."**
+- Button: **"$4.99 once"**
+
+No renewal/subscription language anywhere. (House rule: no em dashes in this copy.)
+
 ### Open question for the build — the web/native split
 The purchase is **StoreKit (native)**, but the app is a web shell and the premium
 beds are web-delivered (FLAC on Blob, gated by `tier`). So the native layer must
