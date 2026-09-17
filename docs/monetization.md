@@ -91,6 +91,21 @@ stay free. No subscription for now — `relaxed+` stays parked in the roadmap
 - **Entitlement:** cached on-device (fits the no-accounts model); the source of
   truth is the StoreKit transaction, re-checked on launch.
 
+### Release sequencing
+1. **1.2.2 — all 24 soundscapes, free.** Launch the full library unlocked first, so
+   people experience the premium beds before anything is gated. (The audio itself is
+   web-delivered, so it reaches users on a Vercel deploy; a native 1.2.2 is only
+   needed if we want to refresh App Store screenshots to show the new sounds.)
+2. **1.3 — add the IAP.** Introduce the $4.99 unlock and gate the 15 premium beds.
+   This one **requires a native build** (StoreKit).
+
+### UX: locked sounds stay previewable
+Even after the gate goes up, **every sound previews free** on tap in the tray — the
+purchase unlocks *using a premium bed in a full session*, not hearing it. Locked
+beds show a small lock in the chip and still audition; the paywall appears only at
+**Begin**, if a locked bed is the chosen session soundscape. Preview keeps the
+"fall in love first" path intact.
+
 ### Open question for the build — the web/native split
 The purchase is **StoreKit (native)**, but the app is a web shell and the premium
 beds are web-delivered (FLAC on Blob, gated by `tier`). So the native layer must
