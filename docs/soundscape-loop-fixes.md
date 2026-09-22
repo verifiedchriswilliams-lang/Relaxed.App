@@ -23,7 +23,7 @@
 | 432 Hz | Frequencies | crossfade `d=2` | ✅ |
 | Green Noise | Frequencies | crossfade `d=2` | ✅ |
 | Theta | Frequencies | crossfade `d=1` | ✅ |
-| Delta | Frequencies | crossfade `d=2` | ⏳ file pending |
+| Delta | Frequencies | crossfade `d=3` (single low tone; d=3 A/B'd cleaner than d=2, no buzz/beating) | ✅ |
 | Alpha | Frequencies | crossfade `d=2` | ⏳ file pending |
 | Binaural | Frequencies | crossfade `d=0.2` **(pure tones: long xfade combs into a buzz; kept short like LoFi. Beat still pulses — recipe blends time, not channels)** | ✅ |
 | Kalimba | Music | crossfade `d=0.5` | ✅ |
