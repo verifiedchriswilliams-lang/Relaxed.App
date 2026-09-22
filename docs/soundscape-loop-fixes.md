@@ -36,7 +36,7 @@
 | LoFi | Music | crossfade `d=0.2` (has melody + beat; long xfade stacked two phrases → dissonant buzz, so kept short like the plucked beds) | ✅ |
 | Rain | Nature | none expected (broadband) | ⏳ test raw |
 | Ocean Waves | Nature | none expected (broadband) | ⏳ test raw |
-| Birdsong | Nature | none expected | ⏳ test raw |
+| Birdsong | Nature | crossfade `d=2` (chirps over ambience; blend undetectable, no doubled call) | ✅ |
 | Wind | Nature | none expected (broadband) | ⏳ test raw |
 | Thunderstorm | Nature | crossfade `d=2` (rain bed loops, but a clap near the edge made the seam abrupt) | ✅ |
 | Windchimes | Nature | none expected | ⏳ test raw |
