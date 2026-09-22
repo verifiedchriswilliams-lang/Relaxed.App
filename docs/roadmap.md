@@ -79,8 +79,11 @@ The only planned work right now.
    Capacitor shell) vs. what would require a native Apple Spatial Audio / head-
    tracking pipeline (a big departure from the web-shell model), and what the
    producer would need to deliver (spatialize existing stems, or ambisonic/binaural
-   beds). A findings brief is being prepared; **do not start until we review it.**
-   Candidate for a **1.2.2**-style release *if* it stays web-deliverable.
+   beds). See the [spatial-audio research brief](./spatial-audio-research.md) —
+   short version: Tier 1 (in-browser HRTF panners + convolution reverb) gives real
+   "enveloping calm" with no native build; native Apple head-tracking would break
+   the web-shell model. Candidate for a **1.2.2**-style release *if* it stays
+   web-deliverable. **Do not start until we decide.**
 
 4. **Apple Watch — v1 companion.** A native watchOS (SwiftUI) app that rides in
    the existing Xcode project and shares the App Store listing + backend APIs:

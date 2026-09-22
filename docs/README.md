@@ -38,6 +38,8 @@ grounded in the actual code, with every non-obvious claim traceable to a file.
 - [blob-migration.md](./blob-migration.md) — moving media to Vercel Blob.
 - [voice-cache.md](./voice-cache.md) — the pre-voiced line cache.
 - [qa-phase0.md](./qa-phase0.md) — the Phase 0 QA checklist (historical record).
+- [spatial-audio-research.md](./spatial-audio-research.md) — findings brief for the
+  spatial-audio backlog item (options, tiers, source-audio needs; decision-support).
 - [brand/relaxed-stem/](./brand/relaxed-stem/README.md) — the formal brand identity
   handoff: mark geometry, palette, type, motion, and production SVG artwork + tokens.
 - `screenshots/` — reference captures of the main screens (home, tray, composing, player).
