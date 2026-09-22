@@ -22,7 +22,7 @@
 | Brown Noise | Frequencies | crossfade `d=2` | ✅ |
 | 432 Hz | Frequencies | crossfade `d=2` | ✅ |
 | Green Noise | Frequencies | crossfade `d=2` | ⏳ expected |
-| Theta | Frequencies | crossfade `d=2` | ⏳ expected |
+| Theta | Frequencies | crossfade `d=1` | ✅ |
 | Delta | Frequencies | crossfade `d=2` | ⏳ file pending |
 | Alpha | Frequencies | crossfade `d=2` | ⏳ file pending |
 | Binaural | Frequencies | crossfade `d=2` **(special: keep true L/R; test the beat carefully)** | ⏳ file pending |
