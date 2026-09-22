@@ -39,6 +39,6 @@
 | Birdsong | Nature | crossfade `d=2` (chirps over ambience; blend undetectable, no doubled call) | ✅ |
 | Wind | Nature | none expected (broadband) | ⏳ test raw |
 | Thunderstorm | Nature | crossfade `d=2` (rain bed loops, but a clap near the edge made the seam abrupt) | ✅ |
-| Windchimes | Nature | none expected | ⏳ test raw |
+| Windchimes | Nature | raw (no crossfade) — pitched chimes; both d=1 and d=0.5 dulled the attack, raw is the cleanest | ✅ |
 | Babbling Brook | Nature | crossfade `d=3` (faint water-texture seam; long blend since water has no rhythm to smear) | ✅ |
 | Campfire | Nature | crossfade `d=2` (crackle at the head made the seam pop; random crackle blends, no dissonance risk) | ✅ |
