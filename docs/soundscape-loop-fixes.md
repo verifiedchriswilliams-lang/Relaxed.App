@@ -21,7 +21,7 @@
 | White Noise | Frequencies | none (clean raw) | ✅ |
 | Brown Noise | Frequencies | crossfade `d=2` | ✅ |
 | 432 Hz | Frequencies | crossfade `d=2` | ✅ |
-| Green Noise | Frequencies | crossfade `d=2` | ⏳ expected |
+| Green Noise | Frequencies | crossfade `d=2` | ✅ |
 | Theta | Frequencies | crossfade `d=1` | ✅ |
 | Delta | Frequencies | crossfade `d=2` | ⏳ file pending |
 | Alpha | Frequencies | crossfade `d=2` | ⏳ file pending |
