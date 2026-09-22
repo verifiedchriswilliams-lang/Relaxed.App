@@ -33,7 +33,7 @@
 | Piano | Music | crossfade `d=0.3` (plucked; between harp 0.2 and kalimba 0.5) | ✅ |
 | Singing Bowls | Music | crossfade `d=2`+ (long sustain) | ⏳ file pending |
 | Harp | Music | crossfade `d=0.2` (sharp plucks, less overlap than kalimba) | ✅ |
-| LoFi | Music | TBD (may have a beat → short, or already trimmed) | ⏳ file pending |
+| LoFi | Music | crossfade `d=0.2` (has melody + beat; long xfade stacked two phrases → dissonant buzz, so kept short like the plucked beds) | ✅ |
 | Rain | Nature | none expected (broadband) | ⏳ test raw |
 | Ocean Waves | Nature | none expected (broadband) | ⏳ test raw |
 | Birdsong | Nature | none expected | ⏳ test raw |
