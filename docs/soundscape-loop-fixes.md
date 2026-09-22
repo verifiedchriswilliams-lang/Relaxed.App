@@ -37,7 +37,7 @@
 | Rain | Nature | none expected (broadband) | ⏳ test raw |
 | Ocean Waves | Nature | none expected (broadband) | ⏳ test raw |
 | Birdsong | Nature | crossfade `d=2` (chirps over ambience; blend undetectable, no doubled call) | ✅ |
-| Wind | Nature | none expected (broadband) | ⏳ test raw |
+| Wind | Nature | crossfade `d=2` (gusty; a gust-level mismatch caught at the seam) | ✅ |
 | Thunderstorm | Nature | crossfade `d=2` (rain bed loops, but a clap near the edge made the seam abrupt) | ✅ |
 | Windchimes | Nature | raw (no crossfade) — pitched chimes; both d=1 and d=0.5 dulled the attack, raw is the cleanest | ✅ |
 | Babbling Brook | Nature | crossfade `d=3` (faint water-texture seam; long blend since water has no rhythm to smear) | ✅ |
