@@ -32,7 +32,7 @@
 | Ambient | Music | crossfade `d=2` | ⏳ file pending |
 | Piano | Music | short crossfade `~d=0.5` (plucked/decaying) | ⏳ file pending |
 | Singing Bowls | Music | crossfade `d=2`+ (long sustain) | ⏳ file pending |
-| Harp | Music | short crossfade `~d=0.5` (plucked) | ⏳ file pending |
+| Harp | Music | crossfade `d=0.2` (sharp plucks, less overlap than kalimba) | ✅ |
 | LoFi | Music | TBD (may have a beat → short, or already trimmed) | ⏳ file pending |
 | Rain | Nature | none expected (broadband) | ⏳ test raw |
 | Ocean Waves | Nature | none expected (broadband) | ⏳ test raw |
