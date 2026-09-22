@@ -27,7 +27,7 @@
 | Alpha | Frequencies | crossfade `d=2` | ⏳ file pending |
 | Binaural | Frequencies | crossfade `d=2` **(special: keep true L/R; test the beat carefully)** | ⏳ file pending |
 | Kalimba | Music | crossfade `d=0.5` | ✅ |
-| Warm Strings | Music | crossfade `d=2` | ⏳ to fix |
+| Warm Strings | Music | producer re-cutting the loop (loop point itself is off; crossfade won't fix a bad loop) | ⏳ back to producer |
 | Flute | Music | crossfade `d=2` | ⏳ expected |
 | Ambient | Music | crossfade `d=2` | ⏳ file pending |
 | Piano | Music | short crossfade `~d=0.5` (plucked/decaying) | ⏳ file pending |
