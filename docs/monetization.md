@@ -82,6 +82,11 @@ premium soundscapes** (the 5-per-family `tier: "premium"` beds). The 9 free beds
 stay free. No subscription for now — `relaxed+` stays parked in the roadmap
 "Someday" bucket.
 
+**Under consideration for 1.3 (not decided):** the same $4.99 unlock could also
+gate **long / infinite sessions** — e.g. durations past 60 minutes and the ∞ stop
+behind the unlock, with the standard 5–60 lengths free. Bundle it into the one
+"premium" entitlement rather than a second product. Revisit when we build 1.3.
+
 - **Product type:** non-consumable IAP (permanent unlock, one product across the
   account). **Restore Purchases** is required (Apple), and StoreKit tracks the
   purchase against the Apple ID so it restores on the user's other devices.
