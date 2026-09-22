@@ -24,7 +24,7 @@
 | Green Noise | Frequencies | crossfade `d=2` | ✅ |
 | Theta | Frequencies | crossfade `d=1` | ✅ |
 | Delta | Frequencies | crossfade `d=3` (single low tone; d=3 A/B'd cleaner than d=2, no buzz/beating) | ✅ |
-| Alpha | Frequencies | crossfade `d=2` | ⏳ file pending |
+| Alpha | Frequencies | crossfade `d=3` (single tone like Delta; clean, no buzz) | ✅ |
 | Binaural | Frequencies | crossfade `d=0.2` **(pure tones: long xfade combs into a buzz; kept short like LoFi. Beat still pulses — recipe blends time, not channels)** | ✅ |
 | Kalimba | Music | crossfade `d=0.5` | ✅ |
 | Warm Strings | Music | producer re-cutting the loop (loop point itself is off; crossfade won't fix a bad loop) | ⏳ back to producer |
