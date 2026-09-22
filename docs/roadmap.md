@@ -73,7 +73,16 @@ The only planned work right now.
    (which also fixes the launch screen) is released. See the
    [operations runbook](./operations-runbook.md) EU checklist.
 
-3. **Apple Watch — v1 companion.** A native watchOS (SwiftUI) app that rides in
+3. **Spatial audio (research → decide).** Turn the flat stereo soundscape into a
+   gently enveloping, immersive space. Under investigation: how much is achievable
+   purely in the browser (Web Audio HRTF panners + convolution reverb, works in the
+   Capacitor shell) vs. what would require a native Apple Spatial Audio / head-
+   tracking pipeline (a big departure from the web-shell model), and what the
+   producer would need to deliver (spatialize existing stems, or ambisonic/binaural
+   beds). A findings brief is being prepared; **do not start until we review it.**
+   Candidate for a **1.2.2**-style release *if* it stays web-deliverable.
+
+4. **Apple Watch — v1 companion.** A native watchOS (SwiftUI) app that rides in
    the existing Xcode project and shares the App Store listing + backend APIs:
    a **breathing-haptic pacer** on the wrist (no audio pipeline needed),
    **start / pause / end** a session that plays on the phone (WatchConnectivity),
