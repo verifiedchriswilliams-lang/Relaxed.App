@@ -68,10 +68,10 @@ The only planned work right now.
      land: convert to FLAC, run `measure-beds`, upload to Blob, then merge the
      staged catalog. The ∞ slider stop is the remaining small engineering.
 
-2. **EU launch — 1.2.1.** ✅ Done. DSA trader verification passed, EU/EEA (plus
-   AU/NZ) added to availability and live on the current build; the 1.2.1 build
-   (splash fix) is submitted. See the [operations runbook](./operations-runbook.md)
-   EU checklist.
+2. **EU launch — 1.2.1.** ✅ Done. DSA trader verification passed; the EU/EEA
+   (plus UK, Australia, and New Zealand) were added to availability, and 1.2.1
+   (which also fixes the launch screen) is released. See the
+   [operations runbook](./operations-runbook.md) EU checklist.
 
 3. **Apple Watch — v1 companion.** A native watchOS (SwiftUI) app that rides in
    the existing Xcode project and shares the App Store listing + backend APIs:

@@ -152,11 +152,11 @@ A public privacy page ships with the app.
 ## 8. Where we are today (status)
 
 - **Web:** live in production, continuously deployed.
-- **iOS:** version **1.2** approved and released on the App Store (US + Canada);
-  it adds the daily-reminder plugin (which lights up the native-only reminder
-  bell) plus refreshed screenshots.
-- **Availability:** US + Canada. EU is next (see backlog), gated on Apple's
-  Digital Services Act "trader" verification (submitted, in review).
+- **iOS:** version **1.2.1** released on the App Store; it adds the daily-reminder
+  plugin (which lights up the native-only reminder bell), refreshed screenshots,
+  and the corrected launch screen.
+- **Availability:** US + Canada, the EU/EEA, UK, Australia, and New Zealand. Apple's
+  Digital Services Act "trader" verification passed, unlocking the EU/EEA.
 - The personalized pipeline, the meditation engine, instant start, the flagship
   home, on-device continuity (recents/saved/reminder), and the audio craft are
   all shipped.
@@ -176,9 +176,9 @@ Deliberately three items. Everything else has been parked or cut to protect focu
    *Dependency:* sourcing the right seamless-loop source audio (in progress, not
    yet found). Once files exist, the engineering is small.
 
-2. **EU launch (version 1.2.1).**
-   Add EU countries to availability and ship 1.2.1.
-   *Dependency:* Apple's DSA trader verification (submitted, in review).
+2. **EU launch (version 1.2.1).** ✅ Done.
+   DSA trader verification passed; the EU/EEA (plus UK, Australia, New Zealand) were
+   added to availability, and 1.2.1 shipped (also fixing the launch screen).
 
 3. **Apple Watch — v1 "companion."**
    A native watchOS (SwiftUI) app that shares the App Store listing and backend:
