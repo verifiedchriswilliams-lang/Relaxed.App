@@ -35,7 +35,7 @@
 | Harp | Music | crossfade `d=0.2` (sharp plucks, less overlap than kalimba) | ✅ |
 | LoFi | Music | crossfade `d=0.2` (has melody + beat; long xfade stacked two phrases → dissonant buzz, so kept short like the plucked beds) | ✅ |
 | Rain | Nature | none expected (broadband) | ⏳ test raw |
-| Ocean Waves | Nature | none expected (broadband) | ⏳ test raw |
+| Ocean Waves | Nature | crossfade `d=1` (light blend cleared the swell seam; undetectable) | ✅ |
 | Birdsong | Nature | crossfade `d=2` (chirps over ambience; blend undetectable, no doubled call) | ✅ |
 | Wind | Nature | crossfade `d=2` (gusty; a gust-level mismatch caught at the seam) | ✅ |
 | Thunderstorm | Nature | crossfade `d=2` (rain bed loops, but a clap near the edge made the seam abrupt) | ✅ |
