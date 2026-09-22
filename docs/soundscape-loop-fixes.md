@@ -40,5 +40,5 @@
 | Wind | Nature | none expected (broadband) | ⏳ test raw |
 | Thunderstorm | Nature | none expected | ⏳ test raw |
 | Windchimes | Nature | none expected | ⏳ test raw |
-| Babbling Brook | Nature | none expected (broadband) | ⏳ test raw |
+| Babbling Brook | Nature | crossfade `d=3` (faint water-texture seam; long blend since water has no rhythm to smear) | ✅ |
 | Campfire | Nature | none expected (broadband) | ⏳ test raw |
