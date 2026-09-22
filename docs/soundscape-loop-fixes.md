@@ -29,7 +29,7 @@
 | Kalimba | Music | crossfade `d=0.5` | ✅ |
 | Warm Strings | Music | producer re-cutting the loop (loop point itself is off; crossfade won't fix a bad loop) | ⏳ back to producer |
 | Flute | Music | **re-edit needed** — end fades to silence then jumps (bounced with a fade ending, not a loop); crossfade can't fix. Raw is a placeholder, NOT shippable. | ↩️ back to producer |
-| Ambient | Music | crossfade `d=2` | ⏳ file pending |
+| Ambient | Music | crossfade `d=2` (sustained pad; clean, no chord doubling) | ✅ |
 | Piano | Music | crossfade `d=0.3` (plucked; between harp 0.2 and kalimba 0.5) | ✅ |
 | Singing Bowls | Music | crossfade `d=3` (long metallic sustain; blend clean, no two-tone ring) | ✅ |
 | Harp | Music | crossfade `d=0.2` (sharp plucks, less overlap than kalimba) | ✅ |
