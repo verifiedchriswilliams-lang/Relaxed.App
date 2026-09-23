@@ -111,6 +111,8 @@ second product.
 2. **1.3 — add the IAP.** Introduce the $4.99 unlock; gate the **9 premium beds +
    infinite**; flip the catalog `tier` values to the 15-free / 9-premium split.
    Requires a native build (StoreKit) and the paywall UI below.
+   **Gate: submit 1.3 only after 1.2.2 is approved and released** — do not have two
+   builds in review at once.
 
 ### UX: locked sounds stay previewable
 Even after the gate goes up, **every sound previews free** on tap in the tray — the
