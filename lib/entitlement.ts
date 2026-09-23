@@ -69,7 +69,18 @@ function nativePlugin(): PremiumPlugin | null {
 }
 
 export function isNativePurchaseAvailable(): boolean {
-  return nativePlugin() !== null;
+  return nativePlugin() !== null || devGateForced();
+}
+
+// Dev-only: ?devGate=1 forces the paywall "active" in a browser (no native
+// plugin) so the locked UI can be tested/screenshotted. Never true in a real
+// build unless the flag is present.
+export function devGateForced(): boolean {
+  try {
+    return new URLSearchParams(location.search).get("devGate") === "1";
+  } catch {
+    return false;
+  }
 }
 
 // Subscribe once to native transaction updates so out-of-band changes flip the

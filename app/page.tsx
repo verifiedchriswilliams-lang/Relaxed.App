@@ -382,6 +382,11 @@ export default function Home() {
   const [moreVoicesOpen, setMoreVoicesOpen] = useState(false);
   // Premium entitlement (the $4.99 unlock) + the paywall sheet visibility.
   const [entitled, setEntitledState] = useState(false);
+  // Whether a real purchase is possible here (the native StoreKit plugin is
+  // present, i.e. a 1.3+ app build). The paywall only activates where someone can
+  // actually buy — so the plain web and pre-1.3 apps stay fully unlocked and are
+  // never disrupted. See docs/monetization.md (web/native split).
+  const [purchaseAvailable, setPurchaseAvailable] = useState(false);
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [paywallNote, setPaywallNote] = useState("");
   const [paywallBusy, setPaywallBusy] = useState(false);
@@ -516,6 +521,7 @@ export default function Home() {
   useEffect(() => {
     applyDevUnlockFlag();
     setEntitledState(isEntitled());
+    setPurchaseAvailable(isNativePurchaseAvailable());
     refreshEntitlement().then((e) => setEntitledState(e));
     return onEntitlementChange(setEntitledState);
   }, []);
@@ -584,10 +590,13 @@ export default function Home() {
           ] ?? null;
 
   // Paywall gating. Premium beds, premium voices, and infinite sessions require
-  // the unlock; everything is previewable, the gate only bites at Begin.
-  const bedLocked = (id: Soundscape) => soundDef(id)?.tier === "premium" && !entitled;
-  const voiceLocked = (v: VoiceChoice) => isPremiumVoice(v) && !entitled;
-  const infiniteLocked = isInfinite(duration) && !entitled;
+  // the unlock; everything is previewable, the gate only bites at Begin. `gate`
+  // is on only where a purchase is possible and it isn't already owned, so the
+  // web and pre-1.3 apps show no locks (nothing to disrupt, no way to buy there).
+  const gate = !entitled && purchaseAvailable;
+  const bedLocked = (id: Soundscape) => soundDef(id)?.tier === "premium" && gate;
+  const voiceLocked = (v: VoiceChoice) => isPremiumVoice(v) && gate;
+  const infiniteLocked = isInfinite(duration) && gate;
   const sessionLocked =
     bedLocked(soundscape) || voiceLocked(voice) || infiniteLocked;
 
@@ -2265,11 +2274,11 @@ export default function Home() {
                   aria-expanded={moreVoicesOpen || isPremiumVoice(voice)}
                   onClick={() => setMoreVoicesOpen((o) => !o)}
                 >
-                  {!entitled && (
+                  {gate && (
                     <span className="mv-lock" aria-hidden><LockGlyph /></span>
                   )}
                   more voices
-                  {!entitled && <span className="mv-tag">premium</span>}
+                  {gate && <span className="mv-tag">premium</span>}
                   <span className="mv-chev" aria-hidden>
                     {moreVoicesOpen || isPremiumVoice(voice) ? "▴" : "▾"}
                   </span>
@@ -2297,7 +2306,7 @@ export default function Home() {
                               }}
                             >
                               {pv.name}
-                              {!entitled && (
+                              {gate && (
                                 <span className="mv-clock" aria-hidden><LockGlyph /></span>
                               )}
                             </button>
