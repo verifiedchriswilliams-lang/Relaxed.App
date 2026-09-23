@@ -84,8 +84,28 @@ premium soundscapes plus infinite (∞) sessions.** No subscription for now —
 **Split revised 2026-09-23 (was 3 free / 5 premium per family):** now **5 free +
 3 premium per family**, so **15 free + 9 premium** across the 24. The catalog's
 `tier` values currently encode the OLD ratio (9 free / 15 premium) and must be
-flipped when 1.3 is built. **To decide in 1.3:** which 3 beds per family stay
-premium (pick the most "premium-feeling" of each family's current five).
+flipped when 1.3 is built.
+
+**Row ordering + premium picks (working proposal 2026-09-23).** The array order in
+`lib/audio/soundscapes.ts` *is* the tray display order, so reordering and tiering
+happen in one pass. Principle: **order each row by broad appeal descending
+(most-familiar free beds on the left), with the 3 most distinctive "specialty"
+beds anchored on the far right as the locked premium set** — so a new user meets
+the crowd-pleasers first and the lock reads as the deluxe end of the shelf, not a
+random gate. Same rule across all three families; keep Rain first in Nature (it's
+`FIRST_TIME_SOUND`).
+
+| Family | Free (left → right) | Premium (locked 3, far right) |
+|---|---|---|
+| Nature | Rain · Ocean · Thunderstorm · Wind · Birdsong | Babbling Brook · Campfire · Windchimes |
+| Music | Ambient · Piano · LoFi · Warm Strings · Harp | Singing Bowls · Kalimba · Flute |
+| Frequencies | White Noise · Brown Noise · Green Noise · 432 Hz · Alpha | Binaural · Theta · Delta |
+
+Rationale per family: Nature locks the cozy/niche textures and keeps classic
+weather/water free; Music keeps the broad music beds free and locks the signature
+instruments; Frequencies keeps mainstream noises + a taste of brainwave (Alpha)
+free and locks the deep-entrainment set (binaural beats, theta, delta). Still a
+proposal — confirm before the 1.3 reorder.
 
 **Infinite is part of the unlock (decided).** The ∞ stop ships **free** in the
 marketing build, then in 1.3 the $4.99 entitlement gates it (standard 5–60
