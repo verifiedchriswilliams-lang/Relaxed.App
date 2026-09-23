@@ -13,10 +13,16 @@ next-env.d.ts
 # only the manifest (lib/voiceCacheManifest.json) is tracked.
 /public/sounds/*.mp3
 /public/sounds/**/*.mp3
+# The 24 soundscape beds are lossless FLAC now (still Blob-hosted, not in git).
+/public/sounds/*.flac
+/public/sounds/**/*.flac
 /public/voice-cache/*.mp3
 /public/voice-previews/*.mp3
+# Small tray-audition clips, also Blob-hosted (built by build-sound-previews.sh).
+/public/sound-previews/*.mp3
 # No audio belongs at the repo root.
 /*.mp3
+/*.flac
 
 # Capacitor iOS. The ios/ project is generated on a Mac by `npx cap add ios`
 # and should be committed EXCEPT the parts below (CocoaPods, build output, and
