@@ -133,15 +133,16 @@ Voices (ElevenLabs library voice IDs = the slug at the end of each voice URL):
 | Natasha | F | American | `Atp5cNFg1Wj5gyKD7HWV` |
 | Mira | F | German | `thNHFcPYszCz6ZPG6mUp` |
 | Almee | F | English | `zA6D7RyKdc2EClouEMkP` |
-| Alisa | F | Indian | **needs correct URL** (dup of Almee) |
+| Alisa | F | Indian | `J8Jo6V3F3HsRR4u13XbM` |
 | Kai | M | Australian | `3FP8zog6uhdEdir09I9N` |
 | Drew | M | American | `wgHvco1wiREKN0BdyVx5` |
 | Brad | M | Australian | `HZTk7bUIkiI7yT7FKH4h` |
 | Solomon | M | American | `PTX7PgQRJRPEzGT9exN9` |
-| Gavin | M | South African | **needs correct URL** (dup of Solomon) |
+| Gavin | M | South African | `zUbTLhK65qJM6Ic7eQj1` |
 
-**To confirm:** the two duplicate IDs (Alisa, Gavin) and per-voice **commercial
-distribution rights** for each library voice (ties into third-party-ip.md).
+All 10 IDs unique (confirmed 2026-09-23). **Still to confirm:** per-voice
+**commercial distribution rights** for each library voice (ties into
+third-party-ip.md).
 
 Unlock copy grows to cover all three (see unlock-bar copy below):
 "unlock 9 sounds, 10 voices, and infinite."
