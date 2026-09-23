@@ -95,22 +95,56 @@ the crowd-pleasers first and the lock reads as the deluxe end of the shelf, not 
 random gate. Same rule across all three families; keep Rain first in Nature (it's
 `FIRST_TIME_SOUND`).
 
+**CONFIRMED 2026-09-23** (Frequencies premium changed from the proposal: Binaural
+→ Green Noise, so Binaural is free and Green Noise is locked).
+
 | Family | Free (left → right) | Premium (locked 3, far right) |
 |---|---|---|
 | Nature | Rain · Ocean · Thunderstorm · Wind · Birdsong | Babbling Brook · Campfire · Windchimes |
 | Music | Ambient · Piano · LoFi · Warm Strings · Harp | Singing Bowls · Kalimba · Flute |
-| Frequencies | White Noise · Brown Noise · Green Noise · 432 Hz · Alpha | Binaural · Theta · Delta |
+| Frequencies | White Noise · Brown Noise · 432 Hz · Binaural · Alpha | Green Noise · Theta · Delta |
 
 Rationale per family: Nature locks the cozy/niche textures and keeps classic
 weather/water free; Music keeps the broad music beds free and locks the signature
-instruments; Frequencies keeps mainstream noises + a taste of brainwave (Alpha)
-free and locks the deep-entrainment set (binaural beats, theta, delta). Still a
-proposal — confirm before the 1.3 reorder.
+instruments; Frequencies keeps the mainstream noises + 432 Hz + binaural free and
+locks green noise and the deep-entrainment tones (theta, delta).
 
 **Infinite is part of the unlock (decided).** The ∞ stop ships **free** in the
 marketing build, then in 1.3 the $4.99 entitlement gates it (standard 5–60
 lengths stay free). One "premium" entitlement covers both the 9 beds and ∞, not a
 second product.
+
+**Premium voices (added 2026-09-23, in 1.3).** Ten named premium voices (5 female,
+5 male) join the **same** $4.99 unlock — no price change, more value. The free
+`her / him / none` control is unchanged (those four already have personas in
+`lib/voices.json`: Charlie, Mila, Tyler, Hunter); premium voices live in a
+collapsed **"more voices"** reveal beneath it, shown as named chips with the same
+paywall grammar as beds (preview always free, lock, thick-outline "previewing"
+state, gate only at Begin). **No pre-cache:** premium voices stream live via the
+existing per-line TTS path (like the custom flow), so Blob storage stays flat
+(pre-caching 10 voices would add ~430 MB and blow the 1 GB free tier). Cost is
+per-play ElevenLabs at runtime only. Each voice needs one small tray-preview clip.
+
+Voices (ElevenLabs library voice IDs = the slug at the end of each voice URL):
+
+| Name | Gender | Accent | Voice ID |
+|---|---|---|---|
+| Willow | F | English | `82LXuLkvkwPWqokoMRFf` |
+| Natasha | F | American | `Atp5cNFg1Wj5gyKD7HWV` |
+| Mira | F | German | `thNHFcPYszCz6ZPG6mUp` |
+| Almee | F | English | `zA6D7RyKdc2EClouEMkP` |
+| Alisa | F | Indian | **needs correct URL** (dup of Almee) |
+| Kai | M | Australian | `3FP8zog6uhdEdir09I9N` |
+| Drew | M | American | `wgHvco1wiREKN0BdyVx5` |
+| Brad | M | Australian | `HZTk7bUIkiI7yT7FKH4h` |
+| Solomon | M | American | `PTX7PgQRJRPEzGT9exN9` |
+| Gavin | M | South African | **needs correct URL** (dup of Solomon) |
+
+**To confirm:** the two duplicate IDs (Alisa, Gavin) and per-voice **commercial
+distribution rights** for each library voice (ties into third-party-ip.md).
+
+Unlock copy grows to cover all three (see unlock-bar copy below):
+"unlock 9 sounds, 10 voices, and infinite."
 
 - **Product type:** non-consumable IAP (permanent unlock, one product across the
   account). **Restore Purchases** is required (Apple), and StoreKit tracks the
@@ -153,7 +187,8 @@ inline on the chips; the only added element is one unlock bar below the carousel
 ### Unlock bar copy (must not read as a subscription)
 One calm bar under the carousel. It must make the one-time nature unmistakable
 (Apple guidelines + user trust). Chosen copy:
-- Title: **"unlock 9 premium sounds + infinite"**
+- Title: **"unlock 9 sounds, 10 voices, and infinite"** (or the shorter "unlock all
+  premium" with the "9 sounds · 10 voices · infinite" line beneath, as mocked)
 - Sub: **"one time, not a subscription. previews are always free."**
 - Button: **"$4.99 once"**
 
