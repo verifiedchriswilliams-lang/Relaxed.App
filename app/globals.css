@@ -982,6 +982,116 @@ button {
   opacity: 0.8;
   vertical-align: 1px;
 }
+/* Premium-locked bed: the small lock, and a thick-outline (auditioning) look
+   when selected instead of the filled "owned" fill of .chip.on. */
+.chip .chip-lock {
+  display: inline-flex;
+  margin-left: 7px;
+  opacity: 0.5;
+  vertical-align: -1px;
+}
+.chip.locked.on {
+  background: var(--glass);
+  color: var(--ink-0);
+  border: 2px solid var(--ink-0);
+  padding: 8px 15px;
+}
+.chip.locked.on .chip-lock {
+  opacity: 0.75;
+}
+
+/* Paywall sheet (above the tray). One unlock: beds + voices + infinite. */
+.pw-scrim {
+  z-index: 20;
+}
+.paywall {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 520px;
+  z-index: 21;
+  text-align: center;
+  background: rgba(18, 20, 34, 0.72);
+  -webkit-backdrop-filter: blur(30px) saturate(1.5);
+  backdrop-filter: blur(30px) saturate(1.5);
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 28px 28px 0 0;
+  padding: 12px 24px calc(26px + env(safe-area-inset-bottom));
+  box-shadow: 0 -24px 60px -24px rgba(0, 0, 0, 0.8);
+  animation: pw-rise 0.42s var(--ease-out);
+}
+@keyframes pw-rise {
+  from {
+    transform: translateX(-50%) translateY(24px);
+    opacity: 0;
+  }
+}
+.paywall .pw-x {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.pw-title {
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--ink-0);
+  margin-top: 6px;
+}
+.pw-value {
+  font-size: 14px;
+  color: var(--ink-1);
+  margin-top: 10px;
+}
+.pw-sub {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  margin-top: 6px;
+}
+.pw-buy {
+  display: block;
+  width: 100%;
+  margin-top: 20px;
+  padding: 15px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--ink-0);
+  color: #14162a;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.pw-buy:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.pw-restore {
+  margin-top: 14px;
+  background: none;
+  border: 0;
+  color: var(--ink-2);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.pw-note {
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--ink-1);
+}
 
 /* duration slider (snaps to stops) */
 .slider {

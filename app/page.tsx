@@ -20,6 +20,15 @@ import {
   isPremiumVoice,
   premiumVoice,
 } from "@/lib/premiumVoices";
+import {
+  isEntitled,
+  onEntitlementChange,
+  refreshEntitlement,
+  applyDevUnlockFlag,
+  purchasePremium,
+  restorePurchase,
+  isNativePurchaseAvailable,
+} from "@/lib/entitlement";
 import { asset } from "@/lib/assets";
 import { BRAND } from "@/lib/brand";
 import { StemGlyph, OrbitGlyph } from "@/lib/mark";
@@ -371,6 +380,11 @@ export default function Home() {
   // The premium "more voices" list is collapsed by default so the tray stays
   // minimal; it opens on tap, or automatically when a premium voice is active.
   const [moreVoicesOpen, setMoreVoicesOpen] = useState(false);
+  // Premium entitlement (the $4.99 unlock) + the paywall sheet visibility.
+  const [entitled, setEntitledState] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
+  const [paywallNote, setPaywallNote] = useState("");
+  const [paywallBusy, setPaywallBusy] = useState(false);
   const [accent, setAccent] = useState<Accent>("us");
   // Whether the user has picked a voice this tray-open. Starts false so nothing
   // is highlighted on open — the first tap both selects and plays a preview,
@@ -497,6 +511,15 @@ export default function Home() {
     wakeLockRef.current = null;
   }
 
+  // Premium entitlement: sync from StoreKit (native) on mount, honor the dev
+  // flag, and subscribe to changes. On web this stays locked (native-only unlock).
+  useEffect(() => {
+    applyDevUnlockFlag();
+    setEntitledState(isEntitled());
+    refreshEntitlement().then((e) => setEntitledState(e));
+    return onEntitlementChange(setEntitledState);
+  }, []);
+
   // Tray auditions. Voice greetings are short cached clips per voice slot;
   // soundscape previews play a few seconds of the real bed, level-matched. Both
   // fail silently if the asset isn't there yet (e.g. clips not generated).
@@ -559,6 +582,14 @@ export default function Home() {
         : (GUIDES as Record<string, { name: string; blurb: string }>)[
             `${voice}-${accent}`
           ] ?? null;
+
+  // Paywall gating. Premium beds, premium voices, and infinite sessions require
+  // the unlock; everything is previewable, the gate only bites at Begin.
+  const bedLocked = (id: Soundscape) => soundDef(id)?.tier === "premium" && !entitled;
+  const voiceLocked = (v: VoiceChoice) => isPremiumVoice(v) && !entitled;
+  const infiniteLocked = isInfinite(duration) && !entitled;
+  const sessionLocked =
+    bedLocked(soundscape) || voiceLocked(voice) || infiniteLocked;
 
   useEffect(() => {
     try {
@@ -1018,7 +1049,44 @@ export default function Home() {
     await new Promise((r) => setTimeout(r, 1150));
   }
 
+  // Buy the one-time unlock via the native StoreKit bridge. On the plain web
+  // there's no StoreKit, so we tell the person it unlocks in the app. On success
+  // the entitlement flips (via the bridge → onEntitlementChange) and the sheet
+  // closes; the pending session isn't auto-started (they tap Begin again).
+  async function handlePurchase() {
+    setPaywallNote("");
+    if (!isNativePurchaseAvailable()) {
+      setPaywallNote("Premium unlocks in the relaxed app on your iPhone.");
+      return;
+    }
+    setPaywallBusy(true);
+    try {
+      const ok = await purchasePremium();
+      if (ok) {
+        setPaywallOpen(false);
+        haptic("success");
+      } else {
+        setPaywallNote("Purchase didn't complete.");
+      }
+    } catch {
+      setPaywallNote("Something went wrong. Please try again.");
+    } finally {
+      setPaywallBusy(false);
+    }
+  }
+
   async function begin() {
+    // Paywall gate: if the chosen session uses a locked premium bed, premium
+    // voice, or infinite duration, open the unlock sheet instead of starting.
+    // (Everything remains previewable in the tray; the gate is only here.)
+    if (sessionLocked) {
+      engineRef.current.stopPreview();
+      haptic("light");
+      setPaywallNote("");
+      setPaywallOpen(true);
+      return;
+    }
+
     // Unlock the audio engine within this tap so mobile browsers will let the
     // voice + soundscape play once ready. Stop any tray audition first.
     engineRef.current.stopPreview();
@@ -2197,9 +2265,11 @@ export default function Home() {
                   aria-expanded={moreVoicesOpen || isPremiumVoice(voice)}
                   onClick={() => setMoreVoicesOpen((o) => !o)}
                 >
-                  <span className="mv-lock" aria-hidden><LockGlyph /></span>
+                  {!entitled && (
+                    <span className="mv-lock" aria-hidden><LockGlyph /></span>
+                  )}
                   more voices
-                  <span className="mv-tag">premium</span>
+                  {!entitled && <span className="mv-tag">premium</span>}
                   <span className="mv-chev" aria-hidden>
                     {moreVoicesOpen || isPremiumVoice(voice) ? "▴" : "▾"}
                   </span>
@@ -2217,7 +2287,9 @@ export default function Home() {
                             <button
                               key={pv.id}
                               type="button"
-                              className={`mv-chip ${voice === pv.id ? "on" : ""}`}
+                              className={`mv-chip ${voice === pv.id ? "on" : ""} ${
+                                voiceLocked(pv.id) ? "locked" : ""
+                              }`}
                               onClick={() => {
                                 setVoicePicked(true);
                                 setVoice(pv.id);
@@ -2225,7 +2297,9 @@ export default function Home() {
                               }}
                             >
                               {pv.name}
-                              <span className="mv-clock" aria-hidden><LockGlyph /></span>
+                              {!entitled && (
+                                <span className="mv-clock" aria-hidden><LockGlyph /></span>
+                              )}
                             </button>
                           ))}
                         </div>
@@ -2281,9 +2355,11 @@ export default function Home() {
                     disabled={s.soon}
                     className={`chip ${
                       soundPicked && soundscape === s.id ? "on" : ""
-                    } ${s.soon ? "soon" : ""}`}
+                    } ${s.soon ? "soon" : ""} ${bedLocked(s.id) ? "locked" : ""}`}
                     onClick={() => {
                       if (s.soon) return;
+                      // Locked premium beds still preview and select (the gate is
+                      // at Begin); the lock just signals they need the unlock.
                       setSoundPicked(true);
                       setSoundscape(s.id);
                       previewSound(s.id);
@@ -2291,6 +2367,9 @@ export default function Home() {
                   >
                     {s.label}
                     {s.soon && <span className="soon-tag">soon</span>}
+                    {bedLocked(s.id) && (
+                      <span className="chip-lock" aria-hidden><LockGlyph /></span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -2335,6 +2414,48 @@ export default function Home() {
             <button className="goback" onClick={() => setTrayOpen(false)}>
               Go back
             </button>
+          </div>
+        </>
+      )}
+
+      {/* Paywall sheet: shown when Begin is tapped on a locked premium session.
+          One unlock covers the premium beds, the premium voices, and infinite. */}
+      {paywallOpen && (
+        <>
+          <div className="scrim open pw-scrim" onClick={() => setPaywallOpen(false)} />
+          <div className="paywall" role="dialog" aria-label="Unlock premium">
+            <div className="grab" />
+            <button
+              className="pw-x"
+              aria-label="Close"
+              onClick={() => setPaywallOpen(false)}
+            >
+              ×
+            </button>
+            <div className="pw-title">unlock all premium</div>
+            <div className="pw-value">
+              9 soundscapes · 10 voices · infinite sessions
+            </div>
+            <div className="pw-sub">
+              one time, not a subscription. previews are always free.
+            </div>
+            <button className="pw-buy" disabled={paywallBusy} onClick={handlePurchase}>
+              {paywallBusy ? "…" : "$4.99 once"}
+            </button>
+            <button
+              className="pw-restore"
+              onClick={async () => {
+                setPaywallNote("");
+                const ok = await restorePurchase();
+                if (ok) setPaywallOpen(false);
+                else if (!isNativePurchaseAvailable())
+                  setPaywallNote("Premium unlocks in the relaxed app on your iPhone.");
+                else setPaywallNote("No previous purchase found on this Apple ID.");
+              }}
+            >
+              Restore purchase
+            </button>
+            {paywallNote && <div className="pw-note">{paywallNote}</div>}
           </div>
         </>
       )}
