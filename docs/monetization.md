@@ -77,15 +77,20 @@ nuanced and largely mutually exclusive with a clean IAP model. **Default plan: I
 
 ## Decided model (2026-09-17)
 
-**A one-time, non-consumable in-app purchase at $4.99 (US) that unlocks all 15
-premium soundscapes** (the 5-per-family `tier: "premium"` beds). The 9 free beds
-stay free. No subscription for now — `relaxed+` stays parked in the roadmap
-"Someday" bucket.
+**A one-time, non-consumable in-app purchase at $4.99 (US) that unlocks the 9
+premium soundscapes plus infinite (∞) sessions.** No subscription for now —
+`relaxed+` stays parked in the roadmap "Someday" bucket.
 
-**Under consideration for 1.3 (not decided):** the same $4.99 unlock could also
-gate **long / infinite sessions** — e.g. durations past 60 minutes and the ∞ stop
-behind the unlock, with the standard 5–60 lengths free. Bundle it into the one
-"premium" entitlement rather than a second product. Revisit when we build 1.3.
+**Split revised 2026-09-23 (was 3 free / 5 premium per family):** now **5 free +
+3 premium per family**, so **15 free + 9 premium** across the 24. The catalog's
+`tier` values currently encode the OLD ratio (9 free / 15 premium) and must be
+flipped when 1.3 is built. **To decide in 1.3:** which 3 beds per family stay
+premium (pick the most "premium-feeling" of each family's current five).
+
+**Infinite is part of the unlock (decided).** The ∞ stop ships **free** in the
+marketing build, then in 1.3 the $4.99 entitlement gates it (standard 5–60
+lengths stay free). One "premium" entitlement covers both the 9 beds and ∞, not a
+second product.
 
 - **Product type:** non-consumable IAP (permanent unlock, one product across the
   account). **Restore Purchases** is required (Apple), and StoreKit tracks the
@@ -97,12 +102,15 @@ behind the unlock, with the standard 5–60 lengths free. Bundle it into the one
   truth is the StoreKit transaction, re-checked on launch.
 
 ### Release sequencing
-1. **1.2.2 — all 24 soundscapes, free.** Launch the full library unlocked first, so
-   people experience the premium beds before anything is gated. (The audio itself is
-   web-delivered, so it reaches users on a Vercel deploy; a native 1.2.2 is only
-   needed if we want to refresh App Store screenshots to show the new sounds.)
-2. **1.3 — add the IAP.** Introduce the $4.99 unlock and gate the 15 premium beds.
-   This one **requires a native build** (StoreKit).
+1. **1.2.2 — all 24 soundscapes + infinite, free (marketing build).** The audio,
+   ∞ sessions, instant previews and new motifs are already live on the web (prod),
+   so this is a **native build to refresh the App Store listing**: "What's New"
+   copy (24 sounds, infinite sessions, upgraded voice model — verify the exact
+   ElevenLabs model id before claiming a version), refreshed screenshots, then
+   submit. Everything unlocked; no StoreKit. Free version, no IAP.
+2. **1.3 — add the IAP.** Introduce the $4.99 unlock; gate the **9 premium beds +
+   infinite**; flip the catalog `tier` values to the 15-free / 9-premium split.
+   Requires a native build (StoreKit) and the paywall UI below.
 
 ### UX: locked sounds stay previewable
 Even after the gate goes up, **every sound previews free** on tap in the tray — the
@@ -123,7 +131,7 @@ inline on the chips; the only added element is one unlock bar below the carousel
 ### Unlock bar copy (must not read as a subscription)
 One calm bar under the carousel. It must make the one-time nature unmistakable
 (Apple guidelines + user trust). Chosen copy:
-- Title: **"unlock all 15 premium sounds"**
+- Title: **"unlock 9 premium sounds + infinite"**
 - Sub: **"one time, not a subscription. previews are always free."**
 - Button: **"$4.99 once"**
 
