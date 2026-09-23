@@ -202,9 +202,11 @@ signal "premium unlocked" to the web layer (a Capacitor bridge, like haptics /
 notifications), and the web gates the beds on it. **On the plain web (a browser),
 there is no StoreKit, so there is no purchase path** — decide whether premium is
 simply **locked/hidden on the web** (native-only unlock) or later sold on the web
-too (e.g. Stripe + the audio "reader" carve-out). Default: **native-only unlock**
-to start; premium beds show a lock + buy prompt in the app, and are hidden on the
-web. Resolve before building.
+too (e.g. Stripe + the audio "reader" carve-out).
+**DECIDED 2026-09-23: native-only unlock.** Premium (beds, voices, ∞) is
+purchasable only in the iOS app via StoreKit; on the plain web those items show
+locked (previewable, not usable in a session), no web purchase for now. Web
+selling (Stripe) stays a later option.
 
 ## To-do before we charge (the paywall project)
 

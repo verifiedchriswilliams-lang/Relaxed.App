@@ -15,11 +15,14 @@ describe("soundscape catalog", () => {
     }
   });
 
-  it("splits each family into 3 free + 5 premium", () => {
+  it("splits each family into 5 free + 3 premium, with the 3 premium last", () => {
     for (const cat of SOUND_CATS) {
       const inCat = SOUNDSCAPES.filter((s) => s.cat === cat.id);
-      expect(inCat.filter((s) => s.tier === "free")).toHaveLength(3);
-      expect(inCat.filter((s) => s.tier === "premium")).toHaveLength(5);
+      expect(inCat.filter((s) => s.tier === "free")).toHaveLength(5);
+      expect(inCat.filter((s) => s.tier === "premium")).toHaveLength(3);
+      // Premium beds are anchored at the end of the row (paywall on the right).
+      expect(inCat.slice(-3).every((s) => s.tier === "premium")).toBe(true);
+      expect(inCat.slice(0, 5).every((s) => s.tier === "free")).toBe(true);
     }
     // Every bed carries a tier so the future paywall can gate on it.
     for (const s of SOUNDSCAPES) {
