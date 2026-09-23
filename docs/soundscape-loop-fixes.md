@@ -54,3 +54,23 @@ pitched*, not sustained vs. plucked)
 | Windchimes | Nature | raw (no crossfade) — pitched chimes; both d=1 and d=0.5 dulled the attack, raw is the cleanest | ✅ |
 | Babbling Brook | Nature | crossfade `d=3` (faint water-texture seam; long blend since water has no rhythm to smear) | ✅ |
 | Campfire | Nature | crossfade `d=2` (crackle at the head made the seam pop; random crackle blends, no dissonance risk) | ✅ |
+
+## Finalize pipeline
+
+All 24 ✅ beds are rebuilt from the raw masters in one pass by
+`scripts/finalize-beds.sh` (applies the locked crossfade above **and** transcodes
+to FLAC 48 kHz / 16-bit / stereo into `public/sounds/`). Do **not** ship the
+`<name>-loop.wav` QA files — those hold intermediate A/B values.
+
+Raw-master → catalog mapping used by the finalizer (masters delivered with
+inconsistent names; two were non-obvious and confirmed by the owner):
+
+| Raw master (in Downloads) | Catalog bed |
+|---|---|
+| `WHITE NOISE.wav` | WhiteNoise |
+| `tone.wav` | 432Hz |
+| `AMBIENT.wav` | Ambient |
+| `bowls.wav` | SingingBowls |
+| `brook.wav` | BabblingBrook |
+| `strings.wav` | WarmStrings |
+| the rest | lowercase name = bed (`rain.wav`→Rain, `green.wav`→GreenNoise, …) |
