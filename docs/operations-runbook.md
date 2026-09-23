@@ -128,21 +128,37 @@ Or run the **"Sync media to Blob"** Action. The script prints the Blob base URL;
 set it as `NEXT_PUBLIC_BLOB_BASE_URL` in the Vercel project. See
 [blob-migration.md](./blob-migration.md).
 
+## Rebuild the beds from producer masters
+
+When a fresh batch of masters arrives, QA each one's loop in a hard sample-accurate
+player and record the crossfade it needs in
+[soundscape-loop-fixes.md](./soundscape-loop-fixes.md). Then rebuild all beds in one
+pass (applies the recorded crossfade **and** transcodes to catalog FLAC; requires a
+real Homebrew/apt `ffmpeg`):
+
+```bash
+bash scripts/finalize-beds.sh ~/Downloads     # masters folder; outputs to public/sounds
+```
+
+Do not ship the `<name>-loop.wav` QA files; they may hold intermediate A/B values.
+The raw-master → catalog name map lives in the finalize script and the loop-fix log.
+
 ## Rebalance audio loudness
 
 To re-measure and re-level beds or voice previews (requires a real `ffmpeg` with
-the `ebur128` filter — the Homebrew/apt build, not a stripped one):
+the `ebur128` + `volumedetect` filters — the Homebrew/apt build, not a stripped one):
 
 ```bash
 NEXT_PUBLIC_BLOB_BASE_URL="https://<store>.public.blob.vercel-storage.com" \
   node scripts/measure-beds.mjs
 # or point at a local folder:
-node scripts/measure-beds.mjs --dir /path/to/sounds
+node scripts/measure-beds.mjs --dir public/sounds
 ```
 
-It prints recommended per-bed `trim` values (for `SOUNDSCAPES` in
-`lib/audio/soundscapes.ts`) and per-preview gains (for `PREVIEW_GAIN`). Paste the
-numbers back into the code. The tool writes nothing itself. Background:
+It measures RMS + true peak + LUFS per file and prints ready-to-paste `rms`/`peak`/
+`trim` for `SOUNDSCAPES` in `lib/audio/soundscapes.ts` (and per-preview gains for
+`PREVIEW_GAIN`). Paste the numbers back into the code. The tool writes nothing
+itself. Background:
 [audio-engine.md](./audio-engine.md#5-loudness-normalization-the-it-just-sounds-right-work).
 
 ## Add a soundscape

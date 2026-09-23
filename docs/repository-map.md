@@ -75,7 +75,8 @@ relaxed.app/
 | `scripts/build-voice-cache.mjs` | `build:voices` | Pre-voice common lines → Blob + manifest |
 | `scripts/build-voice-previews.mjs` | `build:previews` | Build the four tray audition clips |
 | `scripts/upload-blob.mjs` | — (CI/local) | Upload `public/**` media to Blob |
-| `scripts/measure-beds.mjs` | — (local) | Measure LUFS/peak → recommend trims/gains |
+| `scripts/finalize-beds.sh` | — (local) | One-pass: apply each bed's loop crossfade + transcode masters → catalog FLACs |
+| `scripts/measure-beds.mjs` | — (local) | Measure RMS/true-peak/LUFS → recommend rms/peak/trim |
 
 ## `public/`, `assets/`, `native/`
 
