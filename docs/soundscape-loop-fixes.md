@@ -27,7 +27,7 @@
 | Alpha | Frequencies | crossfade `d=3` (single tone like Delta; clean, no buzz) | ✅ |
 | Binaural | Frequencies | crossfade `d=0.2` **(pure tones: long xfade combs into a buzz; kept short like LoFi. Beat still pulses — recipe blends time, not channels)** | ✅ |
 | Kalimba | Music | crossfade `d=0.5` | ✅ |
-| Warm Strings | Music | producer re-cutting the loop (loop point itself is off; crossfade won't fix a bad loop) | ⏳ back to producer |
+| Warm Strings | Music | crossfade `d=0.2` (re-cut file; long xfade squawked/combed on the bowed pitch, only a very short blend was clean) | ✅ |
 | Flute | Music | **re-edit needed** — end fades to silence then jumps (bounced with a fade ending, not a loop); crossfade can't fix. Raw is a placeholder, NOT shippable. | ↩️ back to producer |
 | Ambient | Music | crossfade `d=2` (sustained pad; clean, no chord doubling) | ✅ |
 | Piano | Music | crossfade `d=0.3` (plucked; between harp 0.2 and kalimba 0.5) | ✅ |
