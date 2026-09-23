@@ -76,6 +76,7 @@ relaxed.app/
 | `scripts/build-voice-previews.mjs` | `build:previews` | Build the four tray audition clips |
 | `scripts/upload-blob.mjs` | — (CI/local) | Upload `public/**` media to Blob |
 | `scripts/finalize-beds.sh` | — (local) | One-pass: apply each bed's loop crossfade + transcode masters → catalog FLACs |
+| `scripts/build-sound-previews.sh` | — (local) | Cut a small ~6s tray-audition MP3 per bed → `public/sound-previews/` |
 | `scripts/measure-beds.mjs` | — (local) | Measure RMS/true-peak/LUFS → recommend rms/peak/trim |
 
 ## `public/`, `assets/`, `native/`

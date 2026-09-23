@@ -171,6 +171,9 @@ itself. Background:
    (or it falls back to the default wave).
 3. Upload via `upload-blob.mjs`, set `soon: false` if used, run `measure-beds.mjs`
    and paste the levels back, then deploy.
+4. Cut its tray-audition clip with `build-sound-previews.sh` and upload
+   `public/sound-previews` (the tray auditions the small clip, not the full bed,
+   so previews start instantly; a missing clip just falls back to the full file).
 
 ## Rotate a key
 

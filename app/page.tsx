@@ -496,8 +496,16 @@ export default function Home() {
       def.rms != null && def.peak != null
         ? normGain(def.rms, def.peak, BED_SOLO + (def.trim ?? 0))
         : 0.7;
-    // Skip past the bed's fade-in intro so the audition is audible at once.
-    engineRef.current.preview(asset(def.src), { seconds: 6, gain, offset: 2.5 });
+    // Audition a small dedicated preview clip (near-instant), falling back to the
+    // full bed if the clip isn't uploaded yet. A quick 0.2s fade-in eases it in
+    // rather than punching. Preview clips: /sound-previews/<Bed>.mp3.
+    const previewSrc = def.src.replace("/sounds/", "/sound-previews/").replace(/\.flac$/, ".mp3");
+    engineRef.current.preview(asset(previewSrc), {
+      seconds: 6,
+      gain,
+      fadeIn: 0.2,
+      fallback: asset(def.src),
+    });
   }
 
   // Silence any audition the moment the tray closes (scrim tap, begin, etc.).

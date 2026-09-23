@@ -104,6 +104,22 @@ export class AudioEngine {
     });
   }
 
+  // Fetch + decode a URL into an AudioBuffer, caching it for later previews.
+  // Returns null (never throws) if the file is missing or undecodable, so the
+  // caller can fall back or stay quiet.
+  private async fetchDecode(ctx: AudioContext, url: string): Promise<AudioBuffer | null> {
+    const cached = this.previewCache.get(url);
+    if (cached) return cached;
+    try {
+      const arr = await (await fetch(url)).arrayBuffer();
+      const buf = await this.decode(ctx, arr);
+      this.previewCache.set(url, buf);
+      return buf;
+    } catch {
+      return null;
+    }
+  }
+
   // Play the spoken session as a sequence of segments, each followed by a real
   // silence, all scheduled on the AudioContext's own clock. The pauses are held
   // here on the client (ElevenLabs can't render long silences reliably), so a
@@ -597,7 +613,7 @@ export class AudioEngine {
   // from a tap, so the context unlocks. Any prior preview is faded out first.
   async preview(
     src: string,
-    opts?: { seconds?: number; gain?: number; offset?: number }
+    opts?: { seconds?: number; gain?: number; offset?: number; fadeIn?: number; fallback?: string }
   ) {
     // Fade out any current preview first (this bumps the token counter), THEN
     // claim our token — otherwise stopPreview would invalidate our own token
@@ -607,18 +623,18 @@ export class AudioEngine {
     const ctx = this.ensureCtx();
     await ctx.resume().catch(() => {});
     const token = ++this.previewToken;
-    let buf = this.previewCache.get(src);
-    if (!buf) {
-      try {
-        const arr = await (await fetch(src)).arrayBuffer();
-        buf = await this.decode(ctx, arr);
-        this.previewCache.set(src, buf);
-      } catch {
-        return; // clip missing/undecodable (e.g. not generated yet) — stay quiet
-      }
-    }
+    // Prefer a small dedicated preview clip (near-instant to fetch + decode); if
+    // it's missing, fall back to the full bed so the audition is never silent.
+    // Full beds are long lossless files, so the fallback path is slower — that's
+    // the graceful degradation, not the normal path.
+    let buf =
+      this.previewCache.get(src) ??
+      (await this.fetchDecode(ctx, src)) ??
+      (opts?.fallback
+        ? this.previewCache.get(opts.fallback) ?? (await this.fetchDecode(ctx, opts.fallback))
+        : null);
     // Superseded by a newer tap, or the engine was torn down, while decoding.
-    if (token !== this.previewToken || this.ctx !== ctx) return;
+    if (!buf || token !== this.previewToken || this.ctx !== ctx) return;
 
     const target = opts?.gain ?? 0.6;
     // Start a little way into the file: many beds ramp in from ~1-2s of near
@@ -626,9 +642,9 @@ export class AudioEngine {
     // air. Clamp so we never seek past the end.
     const offset = Math.min(Math.max(opts?.offset ?? 0, 0), Math.max(0, buf.duration - 1));
     const dur = Math.min(opts?.seconds ?? buf.duration, buf.duration - offset);
-    // Near-instant onset so the audition registers the moment you tap (a hair
-    // of fade avoids a click), with a gentle tail so it doesn't cut off harshly.
-    const fadeIn = 0.02;
+    // Quick but audible fade-in so the audition eases in the moment you tap
+    // rather than punching in, with a gentle tail so it doesn't cut off harshly.
+    const fadeIn = opts?.fadeIn ?? 0.02;
     const fadeOut = 0.4;
     const gain = ctx.createGain();
     const src2 = ctx.createBufferSource();
