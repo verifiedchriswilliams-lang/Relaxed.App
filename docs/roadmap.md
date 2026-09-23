@@ -37,8 +37,8 @@ Phases 0–2 of the original plan):
 - **Continuity, on-device** — recents + saved (exact replay, revoiced never
   rewritten), post-session mood, a daily reminder (local notification), and a
   rotating warm greeting. All localStorage, no accounts. (`lib/history.ts`.)
-- **Breadth** — 15 soundscapes (Nature/Music/Frequencies), voices Her/Him ×
-  US/UK or None, durations 5–60, several script variants per intention.
+- **Breadth** — 24 soundscapes (Nature/Music/Frequencies, 8 each), voices Her/Him
+  × US/UK or None, durations 5–60, several script variants per intention.
 - **iOS** — a Capacitor shell over the hosted site, live on the App Store.
   **1.2 (daily-reminder plugin + refreshed screenshots) is released for
   US + Canada.**
@@ -57,22 +57,35 @@ largely pre-cached in Vercel Blob (only the name line is live TTS).
 
 The only planned work right now.
 
-1. **Soundscape audio → infinite sessions + ∞ slider.** Replace the current beds
-   with premium, seamless-looping audio, normalize levels (`measure-beds`), and
-   set loop points so there is no gap where the audio restarts. This unlocks
-   **infinite sessions** (the bed loops as long as the person wants), surfaced as
-   an **∞ stop** at the end of the duration slider
+1. **Soundscape audio → infinite sessions + ∞ slider.** Expand to **24 seamless
+   FLAC beds** (8 per family) and normalize levels (`measure-beds`). The catalog,
+   the `tier` field (3 free + 5 premium, unlocked for now), and the FLAC pipeline
+   are **built and staged**; everything is unlocked. This unlocks **infinite
+   sessions** (a seamless loop plays as long as the person wants), surfaced as an
+   **∞ stop** at the end of the duration slider
    (`5 · 10 · 15 · 20 · 30 · 45 · 60 · ∞`, kept as equal-spaced notches).
-   - **Dependency:** sourcing the right seamless-loop audio (in progress, not yet
-     found). Once the files exist the engineering is small — content +
-     normalization + loop points + one slider stop.
+   - **Dependency:** the producer's seamless-loop masters (in progress). Once they
+     land: convert to FLAC, run `measure-beds`, upload to Blob, then merge the
+     staged catalog. The ∞ slider stop is the remaining small engineering.
 
 2. **EU launch — 1.2.1.** ✅ Done. DSA trader verification passed; the EU/EEA
    (plus UK, Australia, and New Zealand) were added to availability, and 1.2.1
    (which also fixes the launch screen) is released. See the
    [operations runbook](./operations-runbook.md) EU checklist.
 
-3. **Apple Watch — v1 companion.** A native watchOS (SwiftUI) app that rides in
+3. **Spatial audio (research → decide).** Turn the flat stereo soundscape into a
+   gently enveloping, immersive space. Under investigation: how much is achievable
+   purely in the browser (Web Audio HRTF panners + convolution reverb, works in the
+   Capacitor shell) vs. what would require a native Apple Spatial Audio / head-
+   tracking pipeline (a big departure from the web-shell model), and what the
+   producer would need to deliver (spatialize existing stems, or ambisonic/binaural
+   beds). See the [spatial-audio research brief](./spatial-audio-research.md) —
+   short version: Tier 1 (in-browser HRTF panners + convolution reverb) gives real
+   "enveloping calm" with no native build; native Apple head-tracking would break
+   the web-shell model. Candidate for a **1.2.2**-style release *if* it stays
+   web-deliverable. **Do not start until we decide.**
+
+4. **Apple Watch — v1 companion.** A native watchOS (SwiftUI) app that rides in
    the existing Xcode project and shares the App Store listing + backend APIs:
    a **breathing-haptic pacer** on the wrist (no audio pipeline needed),
    **start / pause / end** a session that plays on the phone (WatchConnectivity),

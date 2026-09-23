@@ -44,7 +44,7 @@ describe("bedAndVoice (selection -> concrete gains + bed)", () => {
   it("returns a bed source and level for a real soundscape", () => {
     const r = bedAndVoice("female", "us", "rain");
     expect(r.src).toBeTruthy();
-    expect(r.src).toContain("Rain.mp3");
+    expect(r.src).toContain("Rain.flac");
     expect(typeof r.level).toBe("number");
     expect(r.voiceGain).toBeGreaterThan(0);
   });

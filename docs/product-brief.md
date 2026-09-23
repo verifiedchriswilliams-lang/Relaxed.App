@@ -100,8 +100,9 @@ intensity and voice presence across the session.
   native app only (the bell is hidden on the web, where nothing could schedule it).
 - **Durations:** 5, 10, 15, 20, 30, 45, 60 minutes.
 - **Voices:** ElevenLabs Her/Him × US/UK, or None (sounds only).
-- **Soundscapes:** 15, across Nature / Music / Frequencies, each with a line motif
-  in the player.
+- **Soundscapes:** 24, across Nature / Music / Frequencies (8 each), seamless FLAC
+  loops with a line motif in the player. A 3-free / 5-premium split per family is
+  recorded but not yet enforced (all unlocked until the paywall project).
 
 ---
 

@@ -81,7 +81,27 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
-### 2026-09-15 — Warmer, personalized reminder notifications
+### 2026-09-16 — Soundscape library expanded to 24 (seamless FLAC)
+- **The soundscape catalog grows from 15 to 24 beds**, eight per family: Nature
+  adds Birdsong, Babbling Brook, and Campfire; Music adds Warm Strings, Kalimba,
+  and Flute; Frequencies adds White Noise, Green Noise, and Alpha.
+- **All beds move to seamless-looping FLAC.** The engine loops the whole decoded
+  buffer, so lossy MP3/AAC leave an audible gap at the loop seam; lossless FLAC
+  has none, and it plays on iOS. This is also what makes infinitely long sessions
+  possible (a clean loop plays forever).
+- **A free/premium split is recorded per bed** (3 free + 5 premium per family) but
+  **not yet enforced — every soundscape is unlocked.** The paywall that gates the
+  premium beds is a separate, later project.
+- **Every bed passed a seamless-loop QA pass.** Each master was auditioned on a
+  hard sample-accurate loop (the way the engine plays it) and given the crossfade
+  it needed so the wrap is inaudible; formless beds take a long blend, pitched
+  ones a short one, two were re-cut by the producer. Settings are recorded in
+  [soundscape-loop-fixes.md](./soundscape-loop-fixes.md) and applied in one pass
+  by `scripts/finalize-beds.sh`.
+- **Levels are measured, not guessed.** All 24 were normalized from measured RMS +
+  true peak + a K-weighted (LUFS) perceptual trim, so no bed overpowers the voice
+  and they sit at equal perceived loudness (`scripts/measure-beds.mjs`).
+- Under the hood: `tier` field on the catalog and a FLAC-aware upload pipeline.
 - **The reminder copy is warmer and more varied,** expanded from three lines to
   seven, and now **greets you by name** when one is saved ("Chris, a little calm
   is waiting.") — falling back to a name-free line otherwise. The name is read

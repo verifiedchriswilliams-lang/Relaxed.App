@@ -45,9 +45,13 @@
   run; there is no enforced ruleset today.
 - 🟢 **No dependency scanning.** No Dependabot/Snyk; low-cost to add.
 - 🟢 **Dead/legacy audio code.** The `AudioEngine` retains procedural bed
-  generators (noise/tones/binaural), but all 15 soundscapes are now files, so that
+  generators (noise/tones/binaural), but all 24 soundscapes are now files, so that
   synthesis path is unused. Remove it, or re-wire a soundscape to it, to avoid
   confusion.
+- 🟢 **New beds use the fallback motif.** The nine soundscapes added in the 24-bed
+  upgrade (birdsong, babbling brook, campfire, warm strings, kalimba, flute, white
+  noise, green noise, alpha) reuse the default line motif in `lib/soundMotifs.tsx`
+  until bespoke motifs are drawn.
 
 ## Security & abuse
 <a id="security--abuse"></a>

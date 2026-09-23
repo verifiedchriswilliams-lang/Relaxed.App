@@ -23,24 +23,36 @@ import { promisify } from "node:util";
 
 const run = promisify(execFile);
 
-// id → filename (must match the `src` values in SOUNDSCAPES) and the RMS already
-// measured in the app, so we can turn LUFS into a trim on top of RMS matching.
+// The 24 FLAC beds (id → filename; must match the `src` basenames in
+// lib/audio/soundscapes.ts). `rms`/`peak`/`trim` are all now MEASURED from the
+// files themselves (volumedetect + ebur128), so the `rms` field below is only a
+// vestigial label — the script no longer trusts it. Run against the final FLACs
+// and paste the printed rms/peak/trim table back into the catalog.
 const BEDS = [
-  { id: "rain", file: "Rain.mp3", rms: -42.5 },
-  { id: "ocean", file: "Ocean.mp3", rms: -25.1 },
-  { id: "wind", file: "Wind.mp3", rms: -43.4 },
-  { id: "thunder", file: "Thunderstorm.mp3", rms: -37.9 },
-  { id: "windchimes", file: "WindChimes.mp3", rms: -32.4 },
-  { id: "pad", file: "Ambient.mp3", rms: -21.7 },
-  { id: "piano", file: "Piano.mp3", rms: -36.2 },
-  { id: "lofi", file: "LoFi.mp3", rms: -16.1 },
-  { id: "bowls", file: "Singing-Bowl.mp3", rms: -14.6 },
-  { id: "harp", file: "Harp.mp3", rms: -17.4 },
-  { id: "brown", file: "BrownNoise.mp3", rms: -37.0 },
-  { id: "pad432", file: "432Hz.mp3", rms: -16.8 },
-  { id: "binaural", file: "Binaural.mp3", rms: -15.9 },
-  { id: "delta", file: "Delta.mp3", rms: -12.7 },
-  { id: "theta", file: "Theta.mp3", rms: -17.2 },
+  { id: "rain", file: "Rain.flac", rms: -42.5 },
+  { id: "ocean", file: "Ocean.flac", rms: -25.1 },
+  { id: "birdsong", file: "Birdsong.flac", rms: -24 },
+  { id: "wind", file: "Wind.flac", rms: -43.4 },
+  { id: "thunder", file: "Thunderstorm.flac", rms: -37.9 },
+  { id: "windchimes", file: "Windchimes.flac", rms: -32.4 },
+  { id: "brook", file: "BabblingBrook.flac", rms: -24 },
+  { id: "campfire", file: "Campfire.flac", rms: -24 },
+  { id: "pad", file: "Ambient.flac", rms: -21.7 },
+  { id: "piano", file: "Piano.flac", rms: -36.2 },
+  { id: "lofi", file: "LoFi.flac", rms: -16.1 },
+  { id: "bowls", file: "SingingBowls.flac", rms: -14.6 },
+  { id: "harp", file: "Harp.flac", rms: -17.4 },
+  { id: "strings", file: "WarmStrings.flac", rms: -20 },
+  { id: "kalimba", file: "Kalimba.flac", rms: -20 },
+  { id: "flute", file: "Flute.flac", rms: -20 },
+  { id: "brown", file: "BrownNoise.flac", rms: -37.0 },
+  { id: "pad432", file: "432Hz.flac", rms: -16.8 },
+  { id: "whitenoise", file: "WhiteNoise.flac", rms: -24 },
+  { id: "binaural", file: "Binaural.flac", rms: -15.9 },
+  { id: "delta", file: "Delta.flac", rms: -12.7 },
+  { id: "theta", file: "Theta.flac", rms: -17.2 },
+  { id: "green", file: "GreenNoise.flac", rms: -24 },
+  { id: "alpha", file: "Alpha.flac", rms: -20 },
 ];
 
 const dirArg = process.argv.indexOf("--dir");
@@ -51,26 +63,35 @@ if (!localDir && !base) {
   process.exit(1);
 }
 
-// Run ffmpeg's ebur128 and parse integrated loudness (I) + true peak. ffmpeg
-// logs the summary to stderr and exits 0 on success, so read stderr from BOTH
-// the resolved result and any error, with a big buffer for the per-frame logs.
-async function measure(path) {
-  let out = "";
+// Run ffmpeg twice per file and parse: (1) ebur128 → integrated loudness (I,
+// LUFS) + true peak; (2) volumedetect → mean_volume (integrated RMS, dBFS) which
+// the catalog stores as `rms` and the engine normalizes from. ffmpeg logs both
+// summaries to stderr and exits 0, so read stderr from resolved + error, with a
+// big buffer for the per-frame logs.
+async function ff(path, filter) {
   try {
     const r = await run(
       "ffmpeg",
-      ["-hide_banner", "-nostats", "-i", path, "-af", "ebur128=peak=true", "-f", "null", "-"],
+      ["-hide_banner", "-nostats", "-i", path, "-af", filter, "-f", "null", "-"],
       { maxBuffer: 1024 * 1024 * 128 }
     );
-    out = (r.stderr || "") + (r.stdout || "");
+    return (r.stderr || "") + (r.stdout || "");
   } catch (e) {
-    out = (e.stderr || "") + (e.stdout || "");
+    return (e.stderr || "") + (e.stdout || "");
   }
-  const lufs = out.match(/I:\s*(-?\d+(?:\.\d+)?)\s*LUFS/g)?.pop();
-  const peak = out.match(/Peak:\s*(-?\d+(?:\.\d+)?)\s*dBFS/g)?.pop();
+}
+async function measure(path) {
+  const eb = await ff(path, "ebur128=peak=true");
+  const vd = await ff(path, "volumedetect");
+  const lufs = eb.match(/I:\s*(-?\d+(?:\.\d+)?)\s*LUFS/g)?.pop();
+  const tpeak = eb.match(/Peak:\s*(-?\d+(?:\.\d+)?)\s*dBFS/g)?.pop();
+  const mean = vd.match(/mean_volume:\s*(-?\d+(?:\.\d+)?)\s*dB/)?.[1];
+  const maxv = vd.match(/max_volume:\s*(-?\d+(?:\.\d+)?)\s*dB/)?.[1];
   return {
     lufs: lufs ? parseFloat(lufs.match(/(-?\d+(?:\.\d+)?)/)[1]) : NaN,
-    peak: peak ? parseFloat(peak.match(/(-?\d+(?:\.\d+)?)/)[1]) : NaN,
+    // Prefer ebur128 true peak; fall back to volumedetect sample peak.
+    peak: tpeak ? parseFloat(tpeak.match(/(-?\d+(?:\.\d+)?)/)[1]) : (maxv ? parseFloat(maxv) : NaN),
+    rms: mean ? parseFloat(mean) : NaN,
   };
 }
 
@@ -106,7 +127,9 @@ for (const b of BEDS) {
   const path = await pathFor("sounds", b.file, b.id);
   if (!path) continue;
   const m = await measure(path);
-  rows.push({ ...b, ...m, excess: m.lufs - b.rms });
+  // Perceptual excess is measured LUFS vs the file's own measured RMS (not the
+  // stale hardcoded value), so it's correct for freshly transcoded beds.
+  rows.push({ ...b, ...m, excess: m.lufs - m.rms });
 }
 
 // Voice previews: level them to a comfortable common LUFS, capped so peaks stay
@@ -132,15 +155,16 @@ if (tmp) await rm(tmp, { recursive: true, force: true });
 const valid = rows.filter((r) => Number.isFinite(r.excess));
 const med = valid.map((r) => r.excess).sort((a, b) => a - b)[Math.floor(valid.length / 2)] ?? 0;
 
-console.log("\nid           LUFS     truePeak   trim (paste into SOUNDSCAPES)");
+console.log("\nid            rms    peak    LUFS    trim   (paste all of this back)");
 for (const r of rows) {
   const trim = Number.isFinite(r.excess) ? Math.round((med - r.excess) * 2) / 2 : NaN;
   console.log(
     r.id.padEnd(12),
-    String(r.lufs).padStart(6),
-    String(r.peak).padStart(8),
-    "   ",
-    Number.isFinite(trim) ? (trim === 0 ? "0" : `trim: ${trim}`) : "measure FAILED"
+    String(r.rms).padStart(6),
+    String(r.peak).padStart(7),
+    String(r.lufs).padStart(7),
+    "  ",
+    Number.isFinite(trim) ? (trim === 0 ? "0" : String(trim)) : "measure FAILED"
   );
 }
 console.log("\nReference (median) perceived excess:", med.toFixed(1), "dB — trims are relative to it.\n");

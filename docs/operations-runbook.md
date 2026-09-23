@@ -128,28 +128,49 @@ Or run the **"Sync media to Blob"** Action. The script prints the Blob base URL;
 set it as `NEXT_PUBLIC_BLOB_BASE_URL` in the Vercel project. See
 [blob-migration.md](./blob-migration.md).
 
+## Rebuild the beds from producer masters
+
+When a fresh batch of masters arrives, QA each one's loop in a hard sample-accurate
+player and record the crossfade it needs in
+[soundscape-loop-fixes.md](./soundscape-loop-fixes.md). Then rebuild all beds in one
+pass (applies the recorded crossfade **and** transcodes to catalog FLAC; requires a
+real Homebrew/apt `ffmpeg`):
+
+```bash
+bash scripts/finalize-beds.sh ~/Downloads     # masters folder; outputs to public/sounds
+```
+
+Do not ship the `<name>-loop.wav` QA files; they may hold intermediate A/B values.
+The raw-master → catalog name map lives in the finalize script and the loop-fix log.
+
 ## Rebalance audio loudness
 
 To re-measure and re-level beds or voice previews (requires a real `ffmpeg` with
-the `ebur128` filter — the Homebrew/apt build, not a stripped one):
+the `ebur128` + `volumedetect` filters — the Homebrew/apt build, not a stripped one):
 
 ```bash
 NEXT_PUBLIC_BLOB_BASE_URL="https://<store>.public.blob.vercel-storage.com" \
   node scripts/measure-beds.mjs
 # or point at a local folder:
-node scripts/measure-beds.mjs --dir /path/to/sounds
+node scripts/measure-beds.mjs --dir public/sounds
 ```
 
-It prints recommended per-bed `trim` values (for `SOUNDSCAPES` in `app/page.tsx`)
-and per-preview gains (for `PREVIEW_GAIN`). Paste the numbers back into the code.
-The tool writes nothing itself. Background: [audio-engine.md](./audio-engine.md#5-loudness-normalization-the-it-just-sounds-right-work).
+It measures RMS + true peak + LUFS per file and prints ready-to-paste `rms`/`peak`/
+`trim` for `SOUNDSCAPES` in `lib/audio/soundscapes.ts` (and per-preview gains for
+`PREVIEW_GAIN`). Paste the numbers back into the code. The tool writes nothing
+itself. Background:
+[audio-engine.md](./audio-engine.md#5-loudness-normalization-the-it-just-sounds-right-work).
 
 ## Add a soundscape
 
-1. Add the bed file drop per `public/sounds/README.md` (seamless ~60s loop mp3).
-2. Add the entry to `SOUNDSCAPES` in `app/page.tsx` (id, label, cat, src, and
-   measured rms/peak/trim); add a motif in `lib/soundMotifs.tsx`.
-3. Upload via `upload-blob.mjs`, set `soon: false`, measure loudness, deploy.
+1. Add the bed file as a **seamless-loop FLAC** (see the file-format guidance in
+   [audio-engine.md](./audio-engine.md#6-soundscapes) — FLAC is required so the
+   loop is gapless; MP3/AAC reintroduce a seam).
+2. Add the entry to `SOUNDSCAPES` in `lib/audio/soundscapes.ts` (id, label, cat,
+   tier, src, and measured rms/peak/trim); add a motif in `lib/soundMotifs.tsx`
+   (or it falls back to the default wave).
+3. Upload via `upload-blob.mjs`, set `soon: false` if used, run `measure-beds.mjs`
+   and paste the levels back, then deploy.
 
 ## Rotate a key
 
@@ -206,7 +227,7 @@ voice cache and cost nothing at Anthropic. ElevenLabs bills separately for voice
 ## Commit & branch conventions
 
 - Small, focused commits with a scannable subject (see the git history for the
-  house style, e.g. `audio: level all 15 soundscapes by measured LUFS`).
+  house style, e.g. `audio: level all 24 soundscapes by measured LUFS`).
 - User-facing product copy must contain **no em dashes** (brand rule) — use
   commas, periods, or "and".
 - `main` is production; push there to deploy. Keep brand-scoped changes

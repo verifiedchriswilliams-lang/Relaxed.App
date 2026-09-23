@@ -8,10 +8,22 @@ import {
 } from "@/lib/audio/soundscapes";
 
 describe("soundscape catalog", () => {
-  it("ships 15 beds across three families, five each", () => {
-    expect(SOUNDSCAPES).toHaveLength(15);
+  it("ships 24 beds across three families, eight each", () => {
+    expect(SOUNDSCAPES).toHaveLength(24);
     for (const cat of SOUND_CATS) {
-      expect(SOUNDSCAPES.filter((s) => s.cat === cat.id)).toHaveLength(5);
+      expect(SOUNDSCAPES.filter((s) => s.cat === cat.id)).toHaveLength(8);
+    }
+  });
+
+  it("splits each family into 3 free + 5 premium", () => {
+    for (const cat of SOUND_CATS) {
+      const inCat = SOUNDSCAPES.filter((s) => s.cat === cat.id);
+      expect(inCat.filter((s) => s.tier === "free")).toHaveLength(3);
+      expect(inCat.filter((s) => s.tier === "premium")).toHaveLength(5);
+    }
+    // Every bed carries a tier so the future paywall can gate on it.
+    for (const s of SOUNDSCAPES) {
+      expect(s.tier === "free" || s.tier === "premium").toBe(true);
     }
   });
 
