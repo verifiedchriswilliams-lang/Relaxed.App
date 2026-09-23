@@ -15,10 +15,10 @@ what you need and it makes one for you."
 | Choice | Options | Default | Source |
 |---|---|---|---|
 | Intention | meditate, sleep, flow, relax, and either "In your words" (relaxed) or "breathe"/stress-relief | meditation | `lib/contexts.ts` |
-| Duration | 5, 10, 15, 20, 30, 45, 60 minutes | 10 | `DURATIONS` |
+| Duration | 5, 10, 15, 20, 30, 45, 60 minutes, or ∞ (endless) | 10 | `DURATION_STOPS` |
 | Voice | Her, Him, or None (sounds only) | Her | `VoiceChoice` |
 | Accent | US, UK | US | `Accent` |
-| Soundscape | 15 across Nature / Music / Frequencies | rain (first-time) | `SOUNDSCAPES` |
+| Soundscape | 24 across Nature / Music / Frequencies (8 each) | rain (first-time) | `SOUNDSCAPES` |
 | Name | free text (≤40 chars, on-device only) | empty | `PREFS` |
 | Phrase (custom only) | free text (≤70 chars) | — | custom input |
 
@@ -116,6 +116,11 @@ screen and go straight to the player.
   highlights the active line, and play/pause/end controls.
 - The session timer is wall-clock based, so it stays correct across the screen
   locking or the app backgrounding.
+- **Endless (∞) sessions** count up (`0:02 / ∞`) instead of down and never
+  auto-complete: the bed loops until the person taps End. With a voice, the guide
+  plays a normal-length arc (`INFINITE_GUIDE_MIN`) and then the soundscape carries
+  on alone; with None it is soundscape-only throughout. The voice is never
+  re-injected into the endless tail.
 - Lock-screen / Now Playing controls (native app) with per-soundscape artwork.
 
 ### 3e. Complete

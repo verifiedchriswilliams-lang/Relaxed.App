@@ -180,6 +180,23 @@ export function getContext(id: string): SessionContext | undefined {
 export const DURATIONS = [5, 10, 15, 20, 30, 45, 60] as const;
 export type Duration = (typeof DURATIONS)[number];
 
+// Endless session: the soundscape loops until the person ends it, shown as an ∞
+// stop past 60 on the slider. The sentinel is a negative number so it never
+// collides with a real minute count and survives JSON round-trips (unlike
+// Infinity, which JSON.stringify turns into null and would break saved replays).
+export const INFINITE = -1 as const;
+export const DURATION_STOPS = [...DURATIONS, INFINITE] as const;
+export type DurationChoice = Duration | typeof INFINITE;
+export const isInfinite = (d: number): boolean => d === INFINITE;
+
+// When an endless session has a voice, the guide still runs a normal-length arc
+// and then the bed carries on forever (we never inject voice back into the tail).
+// This is that guided-arc length, in minutes, used for script generation and the
+// audio envelope; a voice-less endless session is pure soundscape from the start.
+export const INFINITE_GUIDE_MIN = 20;
+export const guideMinutes = (d: number): number =>
+  isInfinite(d) ? INFINITE_GUIDE_MIN : d;
+
 export type VoiceChoice = "female" | "male" | "none";
 
 // ---------------------------------------------------------------------------

@@ -3,12 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import {
   CONTEXTS,
-  DURATIONS,
+  DURATION_STOPS,
+  INFINITE,
+  isInfinite,
+  guideMinutes,
   getContext,
   CUSTOM_MAX_CHARS,
   CUSTOM_ENABLED,
   type ContextId,
-  type Duration,
+  type DurationChoice,
   type VoiceChoice,
 } from "@/lib/contexts";
 import { asset } from "@/lib/assets";
@@ -242,7 +245,7 @@ function DurationSlider({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
-  const idx = Math.max(0, stops.indexOf(value as Duration));
+  const idx = Math.max(0, stops.indexOf(value));
   const pct = (idx / (stops.length - 1)) * 100;
 
   function idxFromClientX(clientX: number) {
@@ -313,12 +316,17 @@ function DurationSlider({
       <div className="ticklabels">
         {stops.map((m, i) => (
           <span key={m} className={i === idx ? "on" : ""}>
-            {m}
+            {m === INFINITE ? "∞" : m}
           </span>
         ))}
       </div>
     </>
   );
+}
+
+// UI label for a chosen duration: "∞" for an endless session, else "N min".
+function durLabel(d: number): string {
+  return isInfinite(d) ? "∞" : `${d} min`;
 }
 
 type Screen = "setup" | "history" | "generating" | "player" | "complete";
@@ -338,7 +346,7 @@ export default function Home() {
   const [nameCommitted, setNameCommitted] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [context, setContext] = useState<ContextId>("meditation");
-  const [duration, setDuration] = useState<Duration>(10);
+  const [duration, setDuration] = useState<DurationChoice>(10);
   const [voice, setVoice] = useState<VoiceChoice>("female");
   const [accent, setAccent] = useState<Accent>("us");
   // Whether the user has picked a voice this tray-open. Starts false so nothing
@@ -500,7 +508,10 @@ export default function Home() {
   const selected = getContext(context) ?? CONTEXTS[0];
   const soundLabel =
     SOUNDSCAPES.find((s) => s.id === soundscape)?.label ?? "Off";
-  const totalSecs = duration * 60;
+  // Infinite sessions never auto-complete: the clock counts up and only the
+  // person's End stops it, so the target is +∞ (the tick's `e >= totalSecs`
+  // is never true).
+  const totalSecs = isInfinite(duration) ? Infinity : duration * 60;
   // The named guide for the current voice + accent (null when "None").
   const guide =
     voice !== "none"
@@ -826,7 +837,7 @@ export default function Home() {
     return {
       context,
       label,
-      sub: `${duration} min · ${soundBit}`,
+      sub: `${durLabel(duration)} · ${soundBit}`,
       duration,
       voice,
       accent,
@@ -913,7 +924,7 @@ export default function Home() {
     setError(null);
     setPlayOrigin(screen);
     setContext(r.context as ContextId);
-    setDuration(r.duration as Duration);
+    setDuration(r.duration as DurationChoice);
     setVoice(r.voice as VoiceChoice);
     setVoicePicked(true);
     setAccent(r.accent as Accent);
@@ -1019,7 +1030,7 @@ export default function Home() {
         body: JSON.stringify({
           name,
           context,
-          durationMin: duration,
+          durationMin: guideMinutes(duration),
           voice,
           accent,
           variantSeq: nextVariantSeq(context),
@@ -1101,9 +1112,11 @@ export default function Home() {
     eng.startAmbient(soundscape, src, level);
     // Scene-based audio: the per-intention envelope shapes the bed + voice over
     // the session's length (e.g. the voice thins out toward sleep).
-    eng.setSession(audioProfile(context), duration * 60);
+    eng.setSession(audioProfile(context), guideMinutes(duration) * 60);
     eng.playBell({ gain: 0.06, f0: 396, decay: 4.5 }); // soft "enter" cue
-    eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
+    // Endless: the guide lands, then the bed carries on (no fade, no auto-end).
+    // Finite: the bed fades once the voice finishes.
+    eng.onVoiceEnded = isInfinite(duration) ? null : () => eng.fadeOutAmbient(8);
 
     const fetchAudio = async (text: string): Promise<ArrayBuffer | null> => {
       try {
@@ -1136,7 +1149,7 @@ export default function Home() {
         body: JSON.stringify({
           name,
           phrase: customText.trim(),
-          durationMin: duration,
+          durationMin: guideMinutes(duration),
           leadSeconds,
           // The exact arrival already spoken, so the body continues from it
           // instead of greeting/settling a second time.
@@ -1188,7 +1201,8 @@ export default function Home() {
   ) {
     haptic("medium");
     const eng = engineRef.current;
-    eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
+    // Endless keeps the bed after the guide ends; finite fades it out.
+    eng.onVoiceEnded = isInfinite(duration) ? null : () => eng.fadeOutAmbient(8);
 
     // Shared loudness normalization: voice to the common target, bed quiet under
     // the voice or louder solo (see bedAndVoice).
@@ -1197,7 +1211,7 @@ export default function Home() {
     eng.startAmbient(soundscape, src, level);
     // Scene-based audio: shape the bed + voice over the session (e.g. the voice
     // thins out toward the end of a Sleep session while the bed carries on).
-    eng.setSession(audioProfile(context), duration * 60);
+    eng.setSession(audioProfile(context), guideMinutes(duration) * 60);
     eng.playBell({ gain: 0.06, f0: 396, decay: 4.5 }); // soft "enter" cue
     eng.playSegments(segments);
     clockStart();
@@ -1230,9 +1244,9 @@ export default function Home() {
     );
     eng.voiceGainValue = voiceGain;
     eng.startAmbient(r.soundscape as Soundscape, src, level);
-    eng.setSession(audioProfile(r.context as ContextId), r.duration * 60);
+    eng.setSession(audioProfile(r.context as ContextId), guideMinutes(r.duration) * 60);
     eng.playBell({ gain: 0.06, f0: 396, decay: 4.5 });
-    eng.onVoiceEnded = () => eng.fadeOutAmbient(8);
+    eng.onVoiceEnded = isInfinite(r.duration) ? null : () => eng.fadeOutAmbient(8);
 
     // Sounds-only sessions have no voice to reproduce; the bed + timer carry it.
     if (rVoice !== "none" && lines.length) {
@@ -1302,8 +1316,9 @@ export default function Home() {
   function end() {
     // Left the player before the session completed → an abandon (with how far
     // in). Completing flips completedRef first, so a natural finish isn't logged
-    // here. No free text, just the shape.
-    if (screen === "player" && !completedRef.current) {
+    // here. Endless sessions have no fixed end, so tapping End is their normal
+    // finish, not an abandon. No free text, just the shape.
+    if (screen === "player" && !completedRef.current && !isInfinite(duration)) {
       ev("session_abandon", {
         context,
         duration,
@@ -1370,11 +1385,11 @@ export default function Home() {
               {selected.custom && customText.trim() ? (
                 <>
                   {name.trim() || "You"} · &ldquo;{customText.trim()}&rdquo; ·{" "}
-                  {duration} min
+                  {durLabel(duration)}
                 </>
               ) : (
                 <>
-                  {name.trim() || "You"} · {selected.label} · {duration} min ·{" "}
+                  {name.trim() || "You"} · {selected.label} · {durLabel(duration)} ·{" "}
                   {soundLabel}
                 </>
               )}
@@ -1423,8 +1438,8 @@ export default function Home() {
             ))}
           </div>
           <div className="gen-foot">
-            No progress bar. Settle in, and find a position you can hold for{" "}
-            {duration} minutes.
+            No progress bar. Settle in, and find a position you can hold
+            {isInfinite(duration) ? " for as long as you like." : ` for ${duration} minutes.`}
           </div>
         </div>
       </main>
@@ -1437,7 +1452,7 @@ export default function Home() {
             {selected.label} · {soundLabel}
           </div>
           <div className="time">
-            {mmss(elapsed)} / {mmss(totalSecs)}
+            {mmss(elapsed)} / {isInfinite(duration) ? "∞" : mmss(totalSecs)}
           </div>
         </div>
 
@@ -1610,7 +1625,7 @@ export default function Home() {
     // so every row shows length, voice, accent, and soundscape — and older
     // entries upgrade to the fuller line too. Voiceless sessions read "sounds only".
     const metaLine = (r: RecentSession) => {
-      const mins = `${r.duration} min`;
+      const mins = durLabel(r.duration);
       if (r.voice === "none") return `${mins} · sounds only`;
       const who = r.voice === "male" ? "Him" : "Her";
       const acc = r.accent === "uk" ? "UK" : "US";
@@ -2148,9 +2163,9 @@ export default function Home() {
             <div className="opt">
               <div className="ol">Duration</div>
               <DurationSlider
-                stops={DURATIONS}
+                stops={DURATION_STOPS}
                 value={duration}
-                onChange={(v) => setDuration(v as Duration)}
+                onChange={(v) => setDuration(v as DurationChoice)}
               />
             </div>
 

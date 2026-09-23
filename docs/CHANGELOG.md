@@ -81,6 +81,17 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-23 — Infinite sessions (∞)
+- **A new ∞ stop past 60 on the duration slider** starts an endless session: the
+  seamless bed loops until the person taps End, and the player clock counts up
+  instead of down to a target.
+- **The voice is never injected into the endless tail.** With a voice, the guide
+  runs a normal-length arc and then the soundscape carries on on its own (no fade,
+  no auto-end); with the voice set to None it's pure soundscape from the first
+  second. This is the sleep / focus / sound-machine use case.
+- Groundwork for the just-shipped seamless-loop beds, which is what makes a bed
+  that plays for hours without a seam possible.
+
 ### 2026-09-16 — Soundscape library expanded to 24 (seamless FLAC)
 - **The soundscape catalog grows from 15 to 24 beds**, eight per family: Nature
   adds Birdsong, Babbling Brook, and Campfire; Music adds Warm Strings, Kalimba,

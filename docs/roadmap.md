@@ -57,16 +57,16 @@ largely pre-cached in Vercel Blob (only the name line is live TTS).
 
 The only planned work right now.
 
-1. **Soundscape audio → infinite sessions + ∞ slider.** Expand to **24 seamless
-   FLAC beds** (8 per family) and normalize levels (`measure-beds`). The catalog,
-   the `tier` field (3 free + 5 premium, unlocked for now), and the FLAC pipeline
-   are **built and staged**; everything is unlocked. This unlocks **infinite
-   sessions** (a seamless loop plays as long as the person wants), surfaced as an
-   **∞ stop** at the end of the duration slider
-   (`5 · 10 · 15 · 20 · 30 · 45 · 60 · ∞`, kept as equal-spaced notches).
-   - **Dependency:** the producer's seamless-loop masters (in progress). Once they
-     land: convert to FLAC, run `measure-beds`, upload to Blob, then merge the
-     staged catalog. The ∞ slider stop is the remaining small engineering.
+1. **Soundscape audio → infinite sessions + ∞ slider.** ✅ Done. Expanded to
+   **24 seamless FLAC beds** (8 per family), each loop-QA'd and crossfaded, with
+   levels measured and normalized (`measure-beds`); the `tier` field (3 free +
+   5 premium) is recorded but unlocked, everything is free. **Infinite sessions**
+   ship as an **∞ stop** past 60 on the duration slider
+   (`5 · 10 · 15 · 20 · 30 · 45 · 60 · ∞`, equal-spaced notches): with a voice the
+   guide runs a normal-length arc (`INFINITE_GUIDE_MIN`) and then the bed carries
+   on; without a voice it's pure soundscape from the start. Either way the clock
+   counts up and only the person's End stops it. See
+   [soundscape-loop-fixes.md](./soundscape-loop-fixes.md) for the loop settings.
 
 2. **EU launch — 1.2.1.** ✅ Done. DSA trader verification passed; the EU/EEA
    (plus UK, Australia, and New Zealand) were added to availability, and 1.2.1
