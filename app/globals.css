@@ -968,6 +968,15 @@ button {
 .ticklabels span.on {
   color: var(--ink-0);
 }
+/* The ∞ glyph reads visually smaller than the digits at the same size, so bump
+   it up and optically center it to match the height of 45 / 60. */
+.ticklabels span.inf {
+  font-size: 18px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  transform: translateY(1px);
+}
 
 /* remember toggle */
 .remember {

@@ -315,7 +315,10 @@ function DurationSlider({
       </div>
       <div className="ticklabels">
         {stops.map((m, i) => (
-          <span key={m} className={i === idx ? "on" : ""}>
+          <span
+            key={m}
+            className={`${i === idx ? "on" : ""}${m === INFINITE ? " inf" : ""}`.trim()}
+          >
             {m === INFINITE ? "∞" : m}
           </span>
         ))}
