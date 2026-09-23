@@ -48,10 +48,12 @@
   generators (noise/tones/binaural), but all 24 soundscapes are now files, so that
   synthesis path is unused. Remove it, or re-wire a soundscape to it, to avoid
   confusion.
-- 🟢 **New beds use the fallback motif.** The nine soundscapes added in the 24-bed
-  upgrade (birdsong, babbling brook, campfire, warm strings, kalimba, flute, white
-  noise, green noise, alpha) reuse the default line motif in `lib/soundMotifs.tsx`
-  until bespoke motifs are drawn.
+- 🟢 **Build-time Google Fonts fetch can flake.** `app/layout.tsx` loads Manrope
+  and Figtree via `next/font/google`, which fetches from Google Fonts at build
+  time. A transient fetch failure throws `Cannot read properties of null` in
+  `@next/font` and fails the build (seen once in CI on `ee24ddd`; cleared on the
+  next commit). It can also hit a Vercel production build. Durable fix: self-host
+  the two faces with `next/font/local` so builds have no network dependency.
 
 ## Security & abuse
 <a id="security--abuse"></a>
