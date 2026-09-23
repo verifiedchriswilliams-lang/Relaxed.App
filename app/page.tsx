@@ -1463,7 +1463,8 @@ export default function Home() {
             {selected.label} · {soundLabel}
           </div>
           <div className="time">
-            {mmss(elapsed)} / {isInfinite(duration) ? "∞" : mmss(totalSecs)}
+            {mmss(elapsed)} /{" "}
+            {isInfinite(duration) ? <span className="inf">∞</span> : mmss(totalSecs)}
           </div>
         </div>
 

@@ -1623,6 +1623,12 @@ button {
 .player-top .time {
   font-variant-numeric: tabular-nums;
 }
+/* The ∞ glyph reads smaller than the digits, so bump it to match the timer. */
+.player-top .time .inf {
+  font-size: 1.5em;
+  line-height: 0;
+  vertical-align: -0.06em;
+}
 .player-center {
   flex: 1;
   display: flex;

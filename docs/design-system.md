@@ -103,10 +103,13 @@ language as the rest of the identity, no fill, no color.
 
 ## 5. Soundscape motifs
 
-Each soundscape has a distinct line motif (`lib/soundMotifs.tsx`) that animates
-inside the player's breathing ring, with per-motif keyframes (ripple, fall, drift,
-spin, sway, pulse, shimmer, flash, bob, pluck, swirl, chime). These are the only
-"illustration" in the relaxed world and stay monochrome line art.
+Each of the 24 soundscapes has a distinct line motif (`lib/soundMotifs.tsx`) that
+animates inside the player's breathing ring, with per-motif keyframes (ripple,
+fall, drift, spin, sway, pulse, shimmer, flash, bob, pluck, swirl, chime). The
+Frequencies family shares an oscilloscope language (a faint centre axis; noise
+beds draw spikes, tones draw waves). These are the only "illustration" in the
+relaxed world and stay monochrome line art; an id with no bespoke motif falls
+back to a calm single wave.
 
 ## 6. Accessibility & motion
 

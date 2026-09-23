@@ -151,6 +151,56 @@ const MOTIFS: Record<string, Inner> = {
     </>
   ),
 
+  // Three distant birds gliding, each bobbing gently on its own beat.
+  birdsong: (
+    <>
+      {[
+        ["M30 43 Q36 36 42 43 Q48 36 54 43", 0],
+        ["M50 33 Q54 28.5 58 33 Q62 28.5 66 33", 0.9],
+        ["M37 56 Q41 51.5 45 56 Q49 51.5 53 56", 1.8],
+      ].map(([d, delay], i) => (
+        <path
+          key={i}
+          className="s thin m-bob"
+          style={{ animationDelay: `${delay}s` }}
+          d={d as string}
+        />
+      ))}
+    </>
+  ),
+  // Gentle parallel currents with two slow eddies rippling open.
+  brook: (
+    <>
+      <Wave y={43} amp={2.4} step={16} dur={7} />
+      <Wave y={52} amp={2.4} step={15} dur={9} />
+      <Wave y={61} amp={2.4} step={16} dur={8} />
+      <circle className="s thin m-ripple" cx={43} cy={52} r={4} />
+      <circle
+        className="s thin m-ripple"
+        cx={60}
+        cy={47}
+        r={4}
+        style={{ animationDelay: "2.3s" }}
+      />
+    </>
+  ),
+  // Two crossed logs, a flame swaying above, embers pulsing off the tip.
+  campfire: (
+    <>
+      <line className="s thin" x1={35} y1={69} x2={62} y2={61} />
+      <line className="s thin" x1={38} y1={61} x2={65} y2={69} />
+      <path className="s thin m-sway" d="M50 60 Q39 51 46 40 Q49 33 50 38 Q52 29 57 39 Q63 50 50 60 Z" />
+      <circle className="fillc m-pulse" cx={45} cy={31} r={1.6} />
+      <circle
+        className="fillc m-pulse"
+        cx={56}
+        cy={28}
+        r={1.4}
+        style={{ animationDelay: "1.6s" }}
+      />
+    </>
+  ),
+
   // ---- Music ----
   bowls: (
     <>
@@ -231,6 +281,62 @@ const MOTIFS: Record<string, Inner> = {
     </>
   ),
 
+  // Four warm strings sustaining, a bow drawn across them.
+  strings: (
+    <>
+      {[41, 48, 55, 62].map((y, i) => (
+        <line
+          key={i}
+          className="s thin m-shimmer"
+          x1={30}
+          y1={y}
+          x2={70}
+          y2={y}
+          style={{ animationDelay: `${i * 0.5}s` }}
+        />
+      ))}
+      <line className="s thin" x1={36} y1={34} x2={64} y2={68} />
+    </>
+  ),
+  // The thumb piano: graduated tines on a bridge, plucked in turn.
+  kalimba: (
+    <>
+      <line className="s thin" x1={30} y1={62} x2={70} y2={62} />
+      {[46, 41, 37, 33, 37, 41, 46].map((top, i) => {
+        const x = 34 + i * 5.3;
+        return (
+          <line
+            key={i}
+            className="s thin m-pluck"
+            x1={x}
+            y1={62}
+            x2={x}
+            y2={top}
+            style={{ animationDelay: `${(i % 4) * 0.4}s` }}
+          />
+        );
+      })}
+    </>
+  ),
+  // A flute laid flat with its tone holes; two notes drift off the end.
+  flute: (
+    <>
+      <line className="s" x1={28} y1={53} x2={66} y2={53} />
+      <circle className="fillc" cx={31} cy={53} r={1.7} />
+      {[39, 47, 55, 62].map((x, i) => (
+        <circle key={i} className="fillc" cx={x} cy={53} r={1.4} />
+      ))}
+      <circle className="s thin m-pulse" cx={70} cy={47} r={3.2} />
+      <circle
+        className="s thin m-pulse"
+        cx={75}
+        cy={42}
+        r={2.4}
+        style={{ animationDelay: "1.8s" }}
+      />
+    </>
+  ),
+
   // ---- Frequencies (oscilloscope: a faint centre axis unifies the family) ----
   brown: (
     <>
@@ -285,6 +391,55 @@ const MOTIFS: Record<string, Inner> = {
     <>
       {AXIS}
       <Wave y={50} amp={9} step={17} dur={8} />
+    </>
+  ),
+  // White noise: the densest, tallest spikes of the noise beds.
+  whitenoise: (
+    <>
+      {AXIS}
+      {Array.from({ length: 17 }).map((_, i) => {
+        const x = 27 + i * 2.8;
+        const hh = [10, 16, 8, 18, 12, 20, 9, 17, 13, 19, 10, 16, 8, 15, 11, 18, 9][i];
+        return (
+          <line
+            key={i}
+            className="s thin m-shimmer"
+            x1={x}
+            y1={50 - hh / 2}
+            x2={x}
+            y2={50 + hh / 2}
+            style={{ animationDelay: `${(i % 6) * 0.15}s` }}
+          />
+        );
+      })}
+    </>
+  ),
+  // Green noise: mid-band, so mid-height spikes between brown and white.
+  green: (
+    <>
+      {AXIS}
+      {Array.from({ length: 15 }).map((_, i) => {
+        const x = 28 + i * 3.1;
+        const hh = [8, 13, 9, 14, 10, 12, 8, 15, 9, 13, 10, 11, 8, 12, 9][i];
+        return (
+          <line
+            key={i}
+            className="s thin m-shimmer"
+            x1={x}
+            y1={50 - hh / 2}
+            x2={x}
+            y2={50 + hh / 2}
+            style={{ animationDelay: `${(i % 5) * 0.22}s` }}
+          />
+        );
+      })}
+    </>
+  ),
+  // Alpha: a smooth, steady rhythmic wave (calmer than theta, tighter than 432).
+  alpha: (
+    <>
+      {AXIS}
+      <Wave y={50} amp={7} step={15} dur={7} />
     </>
   ),
 };
