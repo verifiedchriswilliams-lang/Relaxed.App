@@ -53,6 +53,12 @@ interface PremiumPlugin {
   getEntitlement(): Promise<{ entitled: boolean }>;
   purchase(): Promise<{ entitled: boolean }>;
   restore(): Promise<{ entitled: boolean }>;
+  // Fired when a transaction lands out of band (Ask to Buy, another device, a
+  // refund). Optional so web / older shells don't break.
+  addListener?(
+    event: "entitlementChanged",
+    cb: (data: { entitled: boolean }) => void
+  ): unknown;
 }
 
 function nativePlugin(): PremiumPlugin | null {
@@ -66,11 +72,27 @@ export function isNativePurchaseAvailable(): boolean {
   return nativePlugin() !== null;
 }
 
+// Subscribe once to native transaction updates so out-of-band changes flip the
+// UI live. No-op without the plugin.
+let nativeWatchAttached = false;
+function watchNativeEntitlement(): void {
+  if (nativeWatchAttached) return;
+  const p = nativePlugin();
+  if (!p?.addListener) return;
+  try {
+    p.addListener("entitlementChanged", (d) => setEntitled(!!d?.entitled));
+    nativeWatchAttached = true;
+  } catch {
+    /* ignore */
+  }
+}
+
 // Ask StoreKit for the current entitlement and sync the cache. Safe to call on
 // launch; no-op (keeps the cache) when there's no native plugin.
 export async function refreshEntitlement(): Promise<boolean> {
   const p = nativePlugin();
   if (!p) return read();
+  watchNativeEntitlement();
   try {
     const { entitled } = await p.getEntitlement();
     setEntitled(entitled);

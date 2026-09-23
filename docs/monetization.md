@@ -214,13 +214,17 @@ selling (Stripe) stays a later option.
    2026-09-17, awaiting approval.)*
 2. **Complete banking + tax forms + tax category** in App Store Connect. *(done —
    all Active.)*
-3. **Create the IAP product** in App Store Connect: one non-consumable, $4.99, e.g.
-   `app.relaxed.premium_soundscapes`, with review screenshot + description.
-4. **Build the StoreKit purchase + a Capacitor bridge** so the web layer can read
-   the unlock; include **Restore Purchases**; cache the entitlement on-device.
-5. **Wire the `tier` gate** in `lib/audio/soundscapes.ts` to the entitlement (data
-   is already there; nothing is gated today), plus the in-app lock + buy UI.
-6. **Resolve the web/native split** (above) before shipping.
+3. **Create the IAP product** in App Store Connect: one non-consumable, $4.99,
+   product ID **`app.relaxed.premium`** (matches the plugin), review screenshot +
+   description. *(pending — see native/ios-plugin/README.md.)*
+4. **StoreKit purchase + Capacitor bridge.** *(scaffolded on `iap-1.3`:*
+   *`lib/entitlement.ts` + `native/ios-plugin/` — Swift StoreKit 2 plugin with*
+   *getEntitlement / purchase / restore + a live updates listener. Remaining: add*
+   *the two files to the Xcode project and test, per the plugin README.)*
+5. **`tier` gate + lock/buy UI.** *(done on `iap-1.3`: lock states on premium beds*
+   *and voices, the gate at Begin covering beds + voices + infinite, and the unlock*
+   *sheet. Everything still previews free.)*
+6. **Web/native split.** *(decided: native-only unlock — see above.)*
 
 ## Content / marketing guardrails
 - Don't use child-pressuring purchase language ("buy now!", "upgrade now!") aimed

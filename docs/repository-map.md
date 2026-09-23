@@ -88,6 +88,9 @@ relaxed.app/
   for `@capacitor/assets`.
 - `native/www/index.html` — the offline fallback shown if the hosted site is
   unreachable.
+- `native/ios-plugin/` — the StoreKit 2 Capacitor plugin for the premium IAP
+  (Swift + `.m` + a `.storekit` test config + README); dragged into the Xcode
+  project on the Mac (the `ios/` project isn't in this repo).
 - `public/aurora.jpg` — the ElevenMind night-sky background (relaxed uses none).
 
 ## Where to make common changes
