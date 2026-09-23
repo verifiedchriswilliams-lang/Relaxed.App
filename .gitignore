@@ -33,3 +33,8 @@ next-env.d.ts
 /ios/DerivedData/
 *.xcuserstate
 xcuserdata/
+
+# Never commit real secrets (.env.local holds API keys + the Blob token).
+# Keep the .env.example template tracked as the reference.
+.env*
+!.env.example
