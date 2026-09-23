@@ -18,6 +18,13 @@ build carried, not the review timeline.
 
 ## iOS — App Store releases
 
+### 1.2.2 — submitted 2026-09-23 (pending review)
+The "24 sounds + infinite" marketing build. **Free, no IAP.** No native code
+changed; the features were already live on the web (24 seamless FLAC soundscapes,
+infinite ∞ sessions, instant previews, bespoke motifs). This build refreshes the
+App Store listing: new "What's New", description, and screenshots (iPhone 6.5" +
+iPad 13"). 1.3 (the IAP build) is gated on this one's approval.
+
 ### 1.2.1 — released 2026-09-16 (US + Canada + EU/EEA, UK, AU, NZ)
 The splash fix and the EU/international launch.
 - **Corrected launch screen.** Regenerated the native `Splash.imageset` from the
