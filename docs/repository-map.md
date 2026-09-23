@@ -73,7 +73,8 @@ relaxed.app/
 | File | npm script | Purpose |
 |---|---|---|
 | `scripts/build-voice-cache.mjs` | `build:voices` | Pre-voice common lines → Blob + manifest |
-| `scripts/build-voice-previews.mjs` | `build:previews` | Build the four tray audition clips |
+| `scripts/build-voice-previews.mjs` | `build:previews` | Build the four free tray audition clips |
+| `scripts/build-premium-voice-previews.mjs` | — (local) | Build the 10 premium-voice audition clips (reads `lib/premiumVoices.ts`) |
 | `scripts/upload-blob.mjs` | — (CI/local) | Upload `public/**` media to Blob |
 | `scripts/finalize-beds.sh` | — (local) | One-pass: apply each bed's loop crossfade + transcode masters → catalog FLACs |
 | `scripts/build-sound-previews.sh` | — (local) | Cut a small ~6s tray-audition MP3 per bed → `public/sound-previews/` |
