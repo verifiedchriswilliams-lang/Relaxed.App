@@ -14,6 +14,12 @@ import {
   type DurationChoice,
   type VoiceChoice,
 } from "@/lib/contexts";
+import {
+  PREMIUM_VOICES_FEMALE,
+  PREMIUM_VOICES_MALE,
+  isPremiumVoice,
+  premiumVoice,
+} from "@/lib/premiumVoices";
 import { asset } from "@/lib/assets";
 import { BRAND } from "@/lib/brand";
 import { StemGlyph, OrbitGlyph } from "@/lib/mark";
@@ -332,6 +338,17 @@ function durLabel(d: number): string {
   return isInfinite(d) ? "∞" : `${d} min`;
 }
 
+// A small monochrome padlock in the stem-mark language (single stroke,
+// currentColor), used to mark premium-locked voices in the tray.
+function LockGlyph() {
+  return (
+    <svg className="lockglyph" width="11" height="11" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" strokeWidth="2" />
+      <path d="M8 11 V8 a4 4 0 0 1 8 0 V11" fill="none" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
+
 type Screen = "setup" | "history" | "generating" | "player" | "complete";
 
 // The one-tap post-session reflection. Warm, low-pressure, all positive-or-
@@ -351,6 +368,9 @@ export default function Home() {
   const [context, setContext] = useState<ContextId>("meditation");
   const [duration, setDuration] = useState<DurationChoice>(10);
   const [voice, setVoice] = useState<VoiceChoice>("female");
+  // The premium "more voices" list is collapsed by default so the tray stays
+  // minimal; it opens on tap, or automatically when a premium voice is active.
+  const [moreVoicesOpen, setMoreVoicesOpen] = useState(false);
   const [accent, setAccent] = useState<Accent>("us");
   // Whether the user has picked a voice this tray-open. Starts false so nothing
   // is highlighted on open — the first tap both selects and plays a preview,
@@ -485,6 +505,12 @@ export default function Home() {
       engineRef.current.stopPreview();
       return;
     }
+    // Premium voices audition from their own clip (/voice-previews/<id>.mp3), no
+    // accent slot; free voices use the <gender>-<accent> clip.
+    if (isPremiumVoice(v)) {
+      engineRef.current.preview(asset(`/voice-previews/${v}.mp3`), { gain: 0.85 });
+      return;
+    }
     engineRef.current.preview(asset(`/voice-previews/${v}-${a}.mp3`), {
       gain: PREVIEW_GAIN[`${v}-${a}`] ?? 0.85,
     });
@@ -523,13 +549,16 @@ export default function Home() {
   // person's End stops it, so the target is +∞ (the tick's `e >= totalSecs`
   // is never true).
   const totalSecs = isInfinite(duration) ? Infinity : duration * 60;
-  // The named guide for the current voice + accent (null when "None").
+  // The named guide for the current voice (null when "None"). Premium voices
+  // carry their own name/blurb; free voices look up by <voice>-<accent>.
   const guide =
-    voice !== "none"
-      ? (GUIDES as Record<string, { name: string; blurb: string }>)[
-          `${voice}-${accent}`
-        ]
-      : null;
+    voice === "none"
+      ? null
+      : isPremiumVoice(voice)
+        ? premiumVoice(voice) ?? null
+        : (GUIDES as Record<string, { name: string; blurb: string }>)[
+            `${voice}-${accent}`
+          ] ?? null;
 
   useEffect(() => {
     try {
@@ -2132,7 +2161,7 @@ export default function Home() {
                     None
                   </button>
                 </div>
-                {voicePicked && voice !== "none" && (
+                {voicePicked && voice !== "none" && !isPremiumVoice(voice) && (
                   <div className="flags">
                     <button
                       className={`flagbtn ${accent === "us" ? "on" : ""}`}
@@ -2157,6 +2186,55 @@ export default function Home() {
                   </div>
                 )}
               </div>
+
+              {/* Premium voices: a quiet reveal beneath the free control. All are
+                  previewable; the paywall (a later step) locks USING them in a
+                  full session. Chips carry a lock; selecting one previews it. */}
+              <div className="morevoices">
+                <button
+                  type="button"
+                  className={`mv-toggle ${moreVoicesOpen || isPremiumVoice(voice) ? "open" : ""}`}
+                  aria-expanded={moreVoicesOpen || isPremiumVoice(voice)}
+                  onClick={() => setMoreVoicesOpen((o) => !o)}
+                >
+                  <span className="mv-lock" aria-hidden><LockGlyph /></span>
+                  more voices
+                  <span className="mv-tag">premium</span>
+                  <span className="mv-chev" aria-hidden>
+                    {moreVoicesOpen || isPremiumVoice(voice) ? "▴" : "▾"}
+                  </span>
+                </button>
+                {(moreVoicesOpen || isPremiumVoice(voice)) && (
+                  <div className="mv-body">
+                    {[
+                      { label: "women", list: PREMIUM_VOICES_FEMALE },
+                      { label: "men", list: PREMIUM_VOICES_MALE },
+                    ].map((grp) => (
+                      <div className="mv-grp" key={grp.label}>
+                        <div className="mv-grpl">{grp.label}</div>
+                        <div className="mv-chips">
+                          {grp.list.map((pv) => (
+                            <button
+                              key={pv.id}
+                              type="button"
+                              className={`mv-chip ${voice === pv.id ? "on" : ""}`}
+                              onClick={() => {
+                                setVoicePicked(true);
+                                setVoice(pv.id);
+                                previewVoice(pv.id, accent);
+                              }}
+                            >
+                              {pv.name}
+                              <span className="mv-clock" aria-hidden><LockGlyph /></span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Always rendered so the tray height stays fixed; when "None"
                   is selected it's simply an empty reserved line. */}
               <div

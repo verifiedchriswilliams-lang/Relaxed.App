@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  voiceConfig,
+  voiceConfigFor,
   synthesizeBytes,
-  type Gender,
   type Accent,
 } from "@/lib/tts";
 import { enforceRateLimit } from "@/lib/rateLimit";
@@ -15,7 +14,7 @@ export const maxDuration = 60;
 
 interface TtsBody {
   text?: string;
-  voice?: "female" | "male";
+  voice?: string; // "female" | "male" | a premium voice id
   accent?: "us" | "uk";
 }
 
@@ -33,10 +32,10 @@ export async function POST(req: NextRequest) {
   const text = (body.text || "").trim().slice(0, 600);
   if (!text) return NextResponse.json({ error: "No text" }, { status: 400 });
 
-  const voice: Gender = body.voice === "male" ? "male" : "female";
+  const voice = (body.voice || "female").toString();
   const accent: Accent = body.accent === "uk" ? "uk" : "us";
 
-  const cfg = voiceConfig(voice, accent);
+  const cfg = voiceConfigFor(voice, accent);
   if (!cfg) {
     // No ElevenLabs key configured; the client treats this line as silence.
     return NextResponse.json({ error: "Voice not configured" }, { status: 503 });

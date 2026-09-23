@@ -747,6 +747,89 @@ button {
   margin-right: 8px;
   opacity: 0.7;
 }
+
+/* Premium voices: a quiet, collapsible reveal beneath the free her/him/none. */
+.morevoices {
+  margin-top: 14px;
+}
+.mv-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: 0;
+  padding: 8px 2px;
+  color: var(--ink-1);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mv-toggle .mv-lock {
+  display: inline-flex;
+  opacity: 0.8;
+}
+.mv-toggle .mv-tag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  border: 1px solid var(--glass-line);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+.mv-toggle .mv-chev {
+  margin-left: auto;
+  color: var(--ink-2);
+  font-size: 11px;
+}
+.mv-grp {
+  margin-top: 12px;
+}
+.mv-grpl {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin-bottom: 9px;
+}
+.mv-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 13px;
+  border-radius: 12px;
+  background: var(--glass);
+  border: 1px solid var(--glass-line);
+  color: var(--ink-1);
+  cursor: pointer;
+  transition: all var(--t-ui) var(--ease-ui);
+}
+.mv-chip .mv-clock {
+  display: inline-flex;
+  opacity: 0.55;
+}
+/* Selected-but-not-owned: a thick foreground outline (auditioning), the same
+   grammar the premium soundscape chips use. It withholds the filled "owned"
+   look until the unlock is purchased. */
+.mv-chip.on {
+  border: 2px solid var(--ink-0);
+  color: var(--ink-0);
+  padding: 8px 12px;
+}
+.lockglyph {
+  display: block;
+}
 .seg {
   display: inline-flex;
   background: var(--glass);

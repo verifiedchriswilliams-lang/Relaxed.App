@@ -197,7 +197,12 @@ export const INFINITE_GUIDE_MIN = 20;
 export const guideMinutes = (d: number): number =>
   isInfinite(d) ? INFINITE_GUIDE_MIN : d;
 
-export type VoiceChoice = "female" | "male" | "none";
+// A voice selection is either a free voice (female/male, paired with an accent),
+// "none" (sounds only), or a named premium voice id (accent is baked in, see
+// lib/premiumVoices.ts). Premium ids widen this union so the whole app can carry
+// one voice value.
+import type { PremiumVoiceId } from "./premiumVoices";
+export type VoiceChoice = "female" | "male" | "none" | PremiumVoiceId;
 
 // ---------------------------------------------------------------------------
 // Expand / contract engine.
