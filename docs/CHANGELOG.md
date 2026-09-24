@@ -18,6 +18,19 @@ build carried, not the review timeline.
 
 ## iOS — App Store releases
 
+### 1.3 — submitted 2026-09-24 (in review)
+The **in-app purchase** build. First native code since the shell: a StoreKit 2
+Capacitor plugin (`Premium`, product `app.relaxed.premium`) registered via a
+`CAPBridgeViewController` subclass, plus the In-App Purchase capability. Adds the
+**$4.99 one-time "unlock all premium"** (non-consumable): 9 premium soundscapes,
+10 named premium voices (a "more voices" reveal), and infinite (∞) sessions.
+Everything stays free to preview; the gate is only at Begin. The paywall
+activates **only where a purchase is possible** (`purchaseAvailable`), so the
+live web and pre-1.3 builds are unaffected. Purchase, restore, restore-on-launch,
+and purchase-into-session were verified in the StoreKit test environment.
+Submitted with the IAP in one review submission (required for a first IAP).
+Version 1.3, build 8; set to auto-release after approval.
+
 ### 1.2.2 — released 2026-09-24
 The "24 sounds + infinite" marketing build. **Free, no IAP.** No native code
 changed; the features were already live on the web (24 seamless FLAC soundscapes,
