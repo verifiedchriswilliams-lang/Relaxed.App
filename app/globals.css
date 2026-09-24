@@ -1169,6 +1169,21 @@ button {
   display: inline-flex;
   align-items: center;
   transform: translateY(1px);
+  position: relative;
+}
+/* Premium lock on the endless (∞) stop. A small badge centered above the glyph
+   so it never widens the space-between tick row or clips at the tray edge. The
+   ∞ stays selectable (previewable); the gate is at Begin, like beds/voices. */
+.ticklabels span.inf .inf-lock {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  line-height: 0;
+  color: var(--ink-2);
+}
+.ticklabels span.inf.locked.on .inf-lock {
+  color: var(--ink-0);
 }
 
 /* remember toggle */

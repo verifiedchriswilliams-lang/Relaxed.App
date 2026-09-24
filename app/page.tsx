@@ -253,10 +253,14 @@ function DurationSlider({
   stops,
   value,
   onChange,
+  infiniteLocked = false,
 }: {
   stops: readonly number[];
   value: number;
   onChange: (v: number) => void;
+  // When true, the endless (∞) stop carries a premium lock. Selecting it is
+  // still allowed (previewable); the gate is at Begin, like beds and voices.
+  infiniteLocked?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const dragging = useRef(false);
@@ -332,9 +336,16 @@ function DurationSlider({
         {stops.map((m, i) => (
           <span
             key={m}
-            className={`${i === idx ? "on" : ""}${m === INFINITE ? " inf" : ""}`.trim()}
+            className={`${i === idx ? "on" : ""}${m === INFINITE ? " inf" : ""}${
+              m === INFINITE && infiniteLocked ? " locked" : ""
+            }`.trim()}
           >
             {m === INFINITE ? "∞" : m}
+            {m === INFINITE && infiniteLocked && (
+              <span className="inf-lock" aria-hidden>
+                <LockGlyph />
+              </span>
+            )}
           </span>
         ))}
       </div>
@@ -2347,6 +2358,7 @@ export default function Home() {
                 stops={DURATION_STOPS}
                 value={duration}
                 onChange={(v) => setDuration(v as DurationChoice)}
+                infiniteLocked={gate}
               />
             </div>
 
