@@ -61,15 +61,59 @@ interface PremiumPlugin {
   ): unknown;
 }
 
+// Capacitor's global. In Capacitor 4+ a native plugin is advertised through
+// `PluginHeaders` / `isPluginAvailable`, and `Capacitor.Plugins.Premium` only
+// exists AFTER `registerPlugin("Premium")` runs — the native bridge never fills
+// `Plugins` on its own. So we detect via the headers and obtain a callable proxy
+// via `registerPlugin`; probing `Plugins.Premium` directly would always be
+// undefined even with the native plugin installed and working.
+interface CapacitorGlobal {
+  registerPlugin?: (name: string, impl?: unknown) => unknown;
+  isPluginAvailable?: (name: string) => boolean;
+  PluginHeaders?: { name: string }[];
+}
+
+function capacitor(): CapacitorGlobal | undefined {
+  return (globalThis as { Capacitor?: CapacitorGlobal }).Capacitor;
+}
+
+// Is the native Premium plugin present on this platform? Uses the bridge's own
+// availability signal, not the Plugins proxy (which is empty until registered).
+function hasNativePremium(): boolean {
+  const cap = capacitor();
+  if (!cap) return false;
+  try {
+    if (typeof cap.isPluginAvailable === "function") {
+      return cap.isPluginAvailable("Premium");
+    }
+  } catch {
+    /* fall through to the header check */
+  }
+  return !!cap.PluginHeaders?.some((h) => h.name === "Premium");
+}
+
+// The registered proxy, once obtained. Cached so we don't re-register (Capacitor
+// warns on a second registerPlugin for the same name). Detection may run before
+// the native bridge is ready, so a null result is NOT cached — a later call
+// retries until the plugin appears.
+let premiumProxy: PremiumPlugin | null = null;
+
 function nativePlugin(): PremiumPlugin | null {
-  const cap = (globalThis as { Capacitor?: { Plugins?: Record<string, unknown> } })
-    .Capacitor;
-  const p = cap?.Plugins?.Premium as PremiumPlugin | undefined;
-  return p && typeof p.purchase === "function" ? p : null;
+  if (premiumProxy) return premiumProxy;
+  const cap = capacitor();
+  if (!cap || typeof cap.registerPlugin !== "function" || !hasNativePremium()) {
+    return null;
+  }
+  try {
+    premiumProxy = cap.registerPlugin("Premium") as PremiumPlugin;
+  } catch {
+    premiumProxy = null;
+  }
+  return premiumProxy;
 }
 
 export function isNativePurchaseAvailable(): boolean {
-  return nativePlugin() !== null || devGateForced();
+  return hasNativePremium() || devGateForced();
 }
 
 // Dev-only: ?devGate=1 forces the paywall "active" in a browser (no native
