@@ -61,16 +61,19 @@ interface PremiumPlugin {
   ): unknown;
 }
 
-// Capacitor's global. In Capacitor 4+ a native plugin is advertised through
-// `PluginHeaders` / `isPluginAvailable`, and `Capacitor.Plugins.Premium` only
-// exists AFTER `registerPlugin("Premium")` runs — the native bridge never fills
-// `Plugins` on its own. So we detect via the headers and obtain a callable proxy
-// via `registerPlugin`; probing `Plugins.Premium` directly would always be
-// undefined even with the native plugin installed and working.
+// Capacitor's global. On the native iOS shell, the app is a REMOTE page (the
+// hosted site) that does NOT bundle @capacitor/core — the only Capacitor runtime
+// present is the one the native WebView injects. That injected bridge exposes
+// `isPluginAvailable` and, once a plugin is registered natively, the callable
+// proxy directly on `Capacitor.Plugins.Premium` (via JSExport). It does NOT
+// define `registerPlugin` (that lives only in @capacitor/core). So we read the
+// proxy from `Plugins.Premium` and only fall back to `registerPlugin` for a
+// hypothetical future build that bundles core.
 interface CapacitorGlobal {
   registerPlugin?: (name: string, impl?: unknown) => unknown;
   isPluginAvailable?: (name: string) => boolean;
   PluginHeaders?: { name: string }[];
+  Plugins?: Record<string, unknown>;
 }
 
 function capacitor(): CapacitorGlobal | undefined {
@@ -78,7 +81,8 @@ function capacitor(): CapacitorGlobal | undefined {
 }
 
 // Is the native Premium plugin present on this platform? Uses the bridge's own
-// availability signal, not the Plugins proxy (which is empty until registered).
+// availability signal (which the injected bridge implements as "is Premium a key
+// on Capacitor.Plugins"), with a header/direct-proxy fallback.
 function hasNativePremium(): boolean {
   const cap = capacitor();
   if (!cap) return false;
@@ -87,27 +91,34 @@ function hasNativePremium(): boolean {
       return cap.isPluginAvailable("Premium");
     }
   } catch {
-    /* fall through to the header check */
+    /* fall through */
   }
+  if (cap.Plugins && "Premium" in cap.Plugins) return true;
   return !!cap.PluginHeaders?.some((h) => h.name === "Premium");
 }
 
-// The registered proxy, once obtained. Cached so we don't re-register (Capacitor
-// warns on a second registerPlugin for the same name). Detection may run before
-// the native bridge is ready, so a null result is NOT cached — a later call
-// retries until the plugin appears.
+// The callable plugin proxy, once obtained. Cached so we don't re-resolve.
+// Detection may run before the native bridge is ready, so a null result is NOT
+// cached — a later call retries until the plugin appears.
 let premiumProxy: PremiumPlugin | null = null;
 
 function nativePlugin(): PremiumPlugin | null {
   if (premiumProxy) return premiumProxy;
   const cap = capacitor();
-  if (!cap || typeof cap.registerPlugin !== "function" || !hasNativePremium()) {
-    return null;
+  if (!cap) return null;
+  // Preferred path on the native shell: the bridge-injected proxy.
+  const direct = cap.Plugins?.Premium as PremiumPlugin | undefined;
+  if (direct && typeof direct.purchase === "function") {
+    premiumProxy = direct;
+    return premiumProxy;
   }
-  try {
-    premiumProxy = cap.registerPlugin("Premium") as PremiumPlugin;
-  } catch {
-    premiumProxy = null;
+  // Fallback for a build that bundles @capacitor/core (has registerPlugin).
+  if (typeof cap.registerPlugin === "function" && hasNativePremium()) {
+    try {
+      premiumProxy = cap.registerPlugin("Premium") as PremiumPlugin;
+    } catch {
+      premiumProxy = null;
+    }
   }
   return premiumProxy;
 }
