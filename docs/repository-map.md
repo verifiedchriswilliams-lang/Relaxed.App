@@ -73,7 +73,8 @@ relaxed.app/
 | File | npm script | Purpose |
 |---|---|---|
 | `scripts/build-voice-cache.mjs` | `build:voices` | Pre-voice common lines → Blob + manifest |
-| `scripts/build-voice-previews.mjs` | `build:previews` | Build the four tray audition clips |
+| `scripts/build-voice-previews.mjs` | `build:previews` | Build the four free tray audition clips |
+| `scripts/build-premium-voice-previews.mjs` | — (local) | Build the 10 premium-voice audition clips (reads `lib/premiumVoices.ts`) |
 | `scripts/upload-blob.mjs` | — (CI/local) | Upload `public/**` media to Blob |
 | `scripts/finalize-beds.sh` | — (local) | One-pass: apply each bed's loop crossfade + transcode masters → catalog FLACs |
 | `scripts/build-sound-previews.sh` | — (local) | Cut a small ~6s tray-audition MP3 per bed → `public/sound-previews/` |
@@ -87,6 +88,9 @@ relaxed.app/
   for `@capacitor/assets`.
 - `native/www/index.html` — the offline fallback shown if the hosted site is
   unreachable.
+- `native/ios-plugin/` — the StoreKit 2 Capacitor plugin for the premium IAP
+  (Swift + `.m` + a `.storekit` test config + README); dragged into the Xcode
+  project on the Mac (the `ios/` project isn't in this repo).
 - `public/aurora.jpg` — the ElevenMind night-sky background (relaxed uses none).
 
 ## Where to make common changes

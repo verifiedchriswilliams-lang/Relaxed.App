@@ -7,6 +7,7 @@ import {
 } from "@/lib/sessions";
 import { cacheKey, cacheUrl, isCached } from "@/lib/voiceCache";
 import type { ContextId } from "@/lib/contexts";
+import { premiumVoice } from "@/lib/premiumVoices";
 import { enforceRateLimit } from "@/lib/rateLimit";
 
 // Node runtime so the ElevenLabs binary responses decode cleanly.
@@ -91,10 +92,13 @@ function resolveVoiceId(gender: Gender, accent: Accent): string {
   return row.def;
 }
 
-function voiceConfig(voice: Gender, accent: Accent): VoiceConfig | null {
+function voiceConfig(voice: string, accent: Accent): VoiceConfig | null {
   const key = cleanKey(process.env.ELEVENLABS_API_KEY);
   if (!key) return null;
-  const voiceId = resolveVoiceId(voice, accent);
+  // A premium voice id resolves straight to its ElevenLabs voiceId (no cache);
+  // otherwise use the free gender/accent table.
+  const pv = premiumVoice(voice);
+  const voiceId = pv ? pv.voiceId : resolveVoiceId(voice === "male" ? "male" : "female", accent);
   const clamp = (v: number, lo: number, hi: number) =>
     Math.min(hi, Math.max(lo, v));
   const speed = clamp(Number(process.env.ELEVENLABS_SPEED ?? 1.0) || 1.0, 0.7, 1.2);
@@ -157,7 +161,7 @@ export async function POST(req: NextRequest) {
     const name = (body.name || "").slice(0, 60);
     const contextId = (body.context || "meditation") as ContextId;
     const durationMin = Number(body.durationMin) || 5;
-    const voice: Gender = body.voice === "male" ? "male" : "female";
+    const voice = (body.voice || "female").toString();
     const accent: Accent = body.accent === "uk" ? "uk" : "us";
     const who = name.trim() || "friend";
 

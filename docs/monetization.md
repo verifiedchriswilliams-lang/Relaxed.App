@@ -125,6 +125,15 @@ existing per-line TTS path (like the custom flow), so Blob storage stays flat
 (pre-caching 10 voices would add ~430 MB and blow the 1 GB free tier). Cost is
 per-play ElevenLabs at runtime only. Each voice needs one small tray-preview clip.
 
+**Debut gating (no free leak before 1.3).** The whole "more voices" section only
+renders where `purchaseAvailable || entitled` — i.e. the native 1.3+ build, or a
+user who already owns the unlock. Because the merge to `main` has to land before
+1.3 review (so the paywall is live for the reviewer to test), this guard keeps the
+ten new voices hidden on the web and on the current 1.2.2 app: they debut as a
+paid feature with 1.3 rather than appearing free during the review window. The
+premium *beds* differ — they already shipped in the 24-bed catalog, so they stay
+visible-and-free under the same capability gate until 1.3 (see the paywall model).
+
 Voices (ElevenLabs library voice IDs = the slug at the end of each voice URL):
 
 | Name | Gender | Accent | Voice ID |
@@ -202,9 +211,11 @@ signal "premium unlocked" to the web layer (a Capacitor bridge, like haptics /
 notifications), and the web gates the beds on it. **On the plain web (a browser),
 there is no StoreKit, so there is no purchase path** — decide whether premium is
 simply **locked/hidden on the web** (native-only unlock) or later sold on the web
-too (e.g. Stripe + the audio "reader" carve-out). Default: **native-only unlock**
-to start; premium beds show a lock + buy prompt in the app, and are hidden on the
-web. Resolve before building.
+too (e.g. Stripe + the audio "reader" carve-out).
+**DECIDED 2026-09-23: native-only unlock.** Premium (beds, voices, ∞) is
+purchasable only in the iOS app via StoreKit; on the plain web those items show
+locked (previewable, not usable in a session), no web purchase for now. Web
+selling (Stripe) stays a later option.
 
 ## To-do before we charge (the paywall project)
 
@@ -212,13 +223,17 @@ web. Resolve before building.
    2026-09-17, awaiting approval.)*
 2. **Complete banking + tax forms + tax category** in App Store Connect. *(done —
    all Active.)*
-3. **Create the IAP product** in App Store Connect: one non-consumable, $4.99, e.g.
-   `app.relaxed.premium_soundscapes`, with review screenshot + description.
-4. **Build the StoreKit purchase + a Capacitor bridge** so the web layer can read
-   the unlock; include **Restore Purchases**; cache the entitlement on-device.
-5. **Wire the `tier` gate** in `lib/audio/soundscapes.ts` to the entitlement (data
-   is already there; nothing is gated today), plus the in-app lock + buy UI.
-6. **Resolve the web/native split** (above) before shipping.
+3. **Create the IAP product** in App Store Connect: one non-consumable, $4.99,
+   product ID **`app.relaxed.premium`** (matches the plugin), review screenshot +
+   description. *(pending — see native/ios-plugin/README.md.)*
+4. **StoreKit purchase + Capacitor bridge.** *(scaffolded on `iap-1.3`:*
+   *`lib/entitlement.ts` + `native/ios-plugin/` — Swift StoreKit 2 plugin with*
+   *getEntitlement / purchase / restore + a live updates listener. Remaining: add*
+   *the two files to the Xcode project and test, per the plugin README.)*
+5. **`tier` gate + lock/buy UI.** *(done on `iap-1.3`: lock states on premium beds*
+   *and voices, the gate at Begin covering beds + voices + infinite, and the unlock*
+   *sheet. Everything still previews free.)*
+6. **Web/native split.** *(decided: native-only unlock — see above.)*
 
 ## Content / marketing guardrails
 - Don't use child-pressuring purchase language ("buy now!", "upgrade now!") aimed

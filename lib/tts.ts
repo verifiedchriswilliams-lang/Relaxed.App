@@ -2,6 +2,8 @@
 // endpoint that powers the Custom session's streaming playback. Kept in step
 // with app/api/generate/route.ts and the build scripts.
 
+import { premiumVoice } from "./premiumVoices";
+
 export type Gender = "female" | "male";
 export type Accent = "us" | "uk";
 
@@ -46,12 +48,26 @@ export interface VoiceConfig {
 }
 
 export function voiceConfig(voice: Gender, accent: Accent): VoiceConfig | null {
+  return voiceConfigFor(voice, accent);
+}
+
+// Premium-aware voice resolution: a premium voice id maps straight to its
+// ElevenLabs voiceId; anything else falls back to the free gender/accent table.
+export function resolveVoiceIdFor(voice: string, accent: Accent): string {
+  const pv = premiumVoice(voice);
+  if (pv) return pv.voiceId;
+  const gender: Gender = voice === "male" ? "male" : "female";
+  return resolveVoiceId(gender, accent);
+}
+
+// Build a synth config for any voice selection (free gender or premium id).
+export function voiceConfigFor(voice: string, accent: Accent): VoiceConfig | null {
   const key = cleanKey(process.env.ELEVENLABS_API_KEY);
   if (!key) return null;
   const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
   return {
     key,
-    voiceId: resolveVoiceId(voice, accent),
+    voiceId: resolveVoiceIdFor(voice, accent),
     speed: clamp(Number(process.env.ELEVENLABS_SPEED ?? 1.0) || 1.0, 0.7, 1.2),
     stability: clamp(Number(process.env.ELEVENLABS_STABILITY ?? 0.85) || 0.85, 0, 1),
   };

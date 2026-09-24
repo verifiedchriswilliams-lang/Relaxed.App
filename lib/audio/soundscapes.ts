@@ -3,9 +3,9 @@
 // files. Measured loudness (rms/peak/trim) drives normalization in ./levels. Data
 // + pure lookups only, so this is safe to import anywhere (routes, tests, client).
 //
-// `tier` records the intended free/premium split (3 free + 5 premium per family).
-// It is DATA ONLY right now — every bed is unlocked and playable. The paywall is a
-// later project; it will read `tier` to gate the premium beds.
+// `tier` records the free/premium split (5 free + 3 premium per family = 15 free,
+// 9 premium). Until the 1.3 paywall ships this is DATA ONLY — every bed is unlocked
+// and playable; the gate will read `tier` to lock the premium beds behind the IAP.
 //
 // Loudness: rms/peak/trim below are MEASURED from the final FLAC masters
 // (volumedetect mean_volume + ebur128 true peak/LUFS via scripts/measure-beds.mjs).
@@ -27,33 +27,37 @@ export const SOUND_CATS: { id: SoundCat; label: string }[] = [
 // dull/low beds a touch higher. Values below are the measured set for the 24
 // FLAC masters (median perceived excess 2.3 dB; trims round to the nearest 0.5).
 export const SOUNDSCAPES: SoundDef[] = [
-  // Nature — ElevenLabs recordings (seamless loops). Free: Rain, Ocean, Birdsong.
+  // Order within each family IS the tray order: 5 free beds first (broad appeal,
+  // most-familiar left), then the 3 premium beds anchored on the right so the
+  // paywall lock sits at the deluxe end of the row. Tiers confirmed 2026-09-23.
+  //
+  // Nature — free: Rain, Ocean, Thunderstorm, Wind, Birdsong.
   { id: "rain", label: "Rain", cat: "nature", tier: "free", src: "/sounds/Rain.flac", rms: -49.0, peak: -22.5, trim: -2 },
   { id: "ocean", label: "Ocean Waves", cat: "nature", tier: "free", src: "/sounds/Ocean.flac", rms: -35.0, peak: -12.1, trim: -1.5 },
+  { id: "thunder", label: "Thunderstorm", cat: "nature", tier: "free", src: "/sounds/Thunderstorm.flac", rms: -40.9, peak: -11.3 },
+  { id: "wind", label: "Wind", cat: "nature", tier: "free", src: "/sounds/Wind.flac", rms: -47.7, peak: -30.3, trim: -0.5 },
   { id: "birdsong", label: "Birdsong", cat: "nature", tier: "free", src: "/sounds/Birdsong.flac", rms: -52.5, peak: -30.2, trim: -1.5 },
-  { id: "wind", label: "Wind", cat: "nature", tier: "premium", src: "/sounds/Wind.flac", rms: -47.7, peak: -30.3, trim: -0.5 },
-  { id: "thunder", label: "Thunderstorm", cat: "nature", tier: "premium", src: "/sounds/Thunderstorm.flac", rms: -40.9, peak: -11.3 },
-  { id: "windchimes", label: "Windchimes", cat: "nature", tier: "premium", src: "/sounds/Windchimes.flac", rms: -34.9, peak: -16.2, trim: -0.5 },
   { id: "brook", label: "Babbling Brook", cat: "nature", tier: "premium", src: "/sounds/BabblingBrook.flac", rms: -48.0, peak: -24.8, trim: -2 },
   { id: "campfire", label: "Campfire", cat: "nature", tier: "premium", src: "/sounds/Campfire.flac", rms: -51.6, peak: -10.9, trim: -1.5 },
-  // Music — ElevenMusic recordings. Free: Ambient, Piano, LoFi.
+  { id: "windchimes", label: "Windchimes", cat: "nature", tier: "premium", src: "/sounds/Windchimes.flac", rms: -34.9, peak: -16.2, trim: -0.5 },
+  // Music — free: Ambient, Piano, LoFi, Warm Strings, Harp.
   { id: "pad", label: "Ambient", cat: "music", tier: "free", src: "/sounds/Ambient.flac", rms: -18.9, peak: -11.3, trim: 1 },
   { id: "piano", label: "Piano", cat: "music", tier: "free", src: "/sounds/Piano.flac", rms: -37.5, peak: -15.5, trim: -1 },
   { id: "lofi", label: "LoFi", cat: "music", tier: "free", src: "/sounds/LoFi.flac", rms: -19.8, peak: -10.7, trim: 0.5 },
+  { id: "strings", label: "Warm Strings", cat: "music", tier: "free", src: "/sounds/WarmStrings.flac", rms: -19.7, peak: -11.3 },
+  { id: "harp", label: "Harp", cat: "music", tier: "free", src: "/sounds/Harp.flac", rms: -25.7, peak: -11.3, trim: -1 },
   { id: "bowls", label: "Singing Bowls", cat: "music", tier: "premium", src: "/sounds/SingingBowls.flac", rms: -17.7, peak: -10.8 },
-  { id: "harp", label: "Harp", cat: "music", tier: "premium", src: "/sounds/Harp.flac", rms: -25.7, peak: -11.3, trim: -1 },
-  { id: "strings", label: "Warm Strings", cat: "music", tier: "premium", src: "/sounds/WarmStrings.flac", rms: -19.7, peak: -11.3 },
   { id: "kalimba", label: "Kalimba", cat: "music", tier: "premium", src: "/sounds/Kalimba.flac", rms: -18.4, peak: -9.9 },
   { id: "flute", label: "Flute", cat: "music", tier: "premium", src: "/sounds/Flute.flac", rms: -20.5, peak: -11.2 },
-  // Frequencies — ElevenLabs recordings. Free: Brown Noise, 432 Hz, White Noise.
+  // Frequencies — free: White Noise, Brown Noise, 432 Hz, Binaural, Alpha.
+  { id: "whitenoise", label: "White Noise", cat: "frequencies", tier: "free", src: "/sounds/WhiteNoise.flac", rms: -22.5, peak: -11.1, trim: -0.5 },
   { id: "brown", label: "Brown Noise", cat: "frequencies", tier: "free", src: "/sounds/BrownNoise.flac", rms: -39.1, peak: -21.1 },
   { id: "pad432", label: "432 Hz", cat: "frequencies", tier: "free", src: "/sounds/432Hz.flac", rms: -16.2, peak: -1.8 },
-  { id: "whitenoise", label: "White Noise", cat: "frequencies", tier: "free", src: "/sounds/WhiteNoise.flac", rms: -22.5, peak: -11.1, trim: -0.5 },
-  { id: "binaural", label: "Binaural", cat: "frequencies", tier: "premium", src: "/sounds/Binaural.flac", rms: -26.5, peak: -12.0 },
-  { id: "delta", label: "Delta", cat: "frequencies", tier: "premium", src: "/sounds/Delta.flac", rms: -16.6, peak: -8.6, trim: 1.5 },
-  { id: "theta", label: "Theta", cat: "frequencies", tier: "premium", src: "/sounds/Theta.flac", rms: -19.7, peak: -11.3, trim: 2 },
+  { id: "binaural", label: "Binaural", cat: "frequencies", tier: "free", src: "/sounds/Binaural.flac", rms: -26.5, peak: -12.0 },
+  { id: "alpha", label: "Alpha", cat: "frequencies", tier: "free", src: "/sounds/Alpha.flac", rms: -18.8, peak: -11.3 },
   { id: "green", label: "Green Noise", cat: "frequencies", tier: "premium", src: "/sounds/GreenNoise.flac", rms: -15.9, peak: -8.4, trim: 0.5 },
-  { id: "alpha", label: "Alpha", cat: "frequencies", tier: "premium", src: "/sounds/Alpha.flac", rms: -18.8, peak: -11.3 },
+  { id: "theta", label: "Theta", cat: "frequencies", tier: "premium", src: "/sounds/Theta.flac", rms: -19.7, peak: -11.3, trim: 2 },
+  { id: "delta", label: "Delta", cat: "frequencies", tier: "premium", src: "/sounds/Delta.flac", rms: -16.6, peak: -8.6, trim: 1.5 },
 ];
 
 // The calm nature bed that sits underneath a first-time tray (Nature tab,
