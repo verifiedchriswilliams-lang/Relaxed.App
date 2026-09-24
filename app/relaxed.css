@@ -277,6 +277,15 @@
   border-color: var(--glass-strong);
   color: var(--rx-invert-fg);
 }
+/* Premium locked + auditioning chip. The rule above (.chip.on) inverts text to
+   dark for the Bone-filled selected chip, but a locked chip keeps a DARK
+   auditioning fill with a thick outline, so its text must stay Bone. Without
+   this higher-specificity rule the two tie on specificity and load order lets
+   .chip.on win, turning the locked chip's label black-on-black. */
+[data-brand="relaxed"] .chip.locked.on {
+  color: var(--ink-0);
+  border-color: var(--ink-0);
+}
 [data-brand="relaxed"] .flagbtn.on {
   border-color: var(--ink-0);
   box-shadow: 0 0 0 2px var(--ink-0);
