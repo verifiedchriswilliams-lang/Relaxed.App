@@ -18,7 +18,7 @@ build carried, not the review timeline.
 
 ## iOS — App Store releases
 
-### 1.2.2 — submitted 2026-09-23 (pending review)
+### 1.2.2 — released 2026-09-24
 The "24 sounds + infinite" marketing build. **Free, no IAP.** No native code
 changed; the features were already live on the web (24 seamless FLAC soundscapes,
 infinite ∞ sessions, instant previews, bespoke motifs). This build refreshes the
