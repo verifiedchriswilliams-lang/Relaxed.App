@@ -638,6 +638,14 @@ button {
   padding: 12px 24px calc(28px + env(safe-area-inset-bottom));
   box-shadow: 0 -24px 60px -24px rgba(0, 0, 0, 0.8);
   transition: transform 0.8s var(--ease-out);
+  /* Cap the height and scroll internally so tall content (e.g. the expanded
+     "more voices" list) never pushes the top of the tray — the intention field —
+     above the screen where it can't be reached. */
+  max-height: 88vh;
+  max-height: 88dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 .tray.open {
   transform: translateX(-50%) translateY(0);
@@ -757,12 +765,13 @@ button {
   align-items: center;
   gap: 8px;
   width: 100%;
+  min-height: 44px;
   background: none;
   border: 0;
-  padding: 8px 2px;
+  padding: 10px 4px;
   color: var(--ink-1);
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -783,7 +792,10 @@ button {
 .mv-toggle .mv-chev {
   margin-left: auto;
   color: var(--ink-2);
-  font-size: 11px;
+  transition: transform 0.25s var(--ease-ui);
+}
+.mv-toggle.open .mv-chev {
+  transform: rotate(180deg);
 }
 .mv-grp {
   margin-top: 12px;

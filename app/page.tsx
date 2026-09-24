@@ -537,6 +537,14 @@ export default function Home() {
     return onEntitlementChange(setEntitledState);
   }, []);
 
+  // Reveal the premium voices section whenever a premium voice is the current
+  // selection (restored as the saved default, or just picked) so the choice stays
+  // visible. The toggle can still collapse it afterward — open state is otherwise
+  // fully user-controlled.
+  useEffect(() => {
+    if (isPremiumVoice(voice)) setMoreVoicesOpen(true);
+  }, [voice]);
+
   // Tray auditions. Voice greetings are short cached clips per voice slot;
   // soundscape previews play a few seconds of the real bed, level-matched. Both
   // fail silently if the asset isn't there yet (e.g. clips not generated).
@@ -2216,12 +2224,17 @@ export default function Home() {
                   onChange={(e) =>
                     setCustomText(e.target.value.replace(/\s+/g, " ").slice(0, CUSTOM_MAX_CHARS))
                   }
-                  placeholder="what's on your mind? e.g. studying for a test"
+                  placeholder={
+                    voice === "none"
+                      ? "optional with no voice, e.g. studying for a test"
+                      : "what's on your mind? e.g. studying for a test"
+                  }
                   aria-label="What's on your mind"
                 />
                 <div className="custom-hint">
-                  A few words is perfect. We&apos;ll write a session just for
-                  this.
+                  {voice === "none"
+                    ? "With no voice it's a pure soundscape, so this is optional."
+                    : "A few words is perfect. We'll write a session just for this."}
                 </div>
               </div>
             )}
@@ -2300,8 +2313,8 @@ export default function Home() {
               <div className="morevoices">
                 <button
                   type="button"
-                  className={`mv-toggle ${moreVoicesOpen || isPremiumVoice(voice) ? "open" : ""}`}
-                  aria-expanded={moreVoicesOpen || isPremiumVoice(voice)}
+                  className={`mv-toggle ${moreVoicesOpen ? "open" : ""}`}
+                  aria-expanded={moreVoicesOpen}
                   onClick={() => setMoreVoicesOpen((o) => !o)}
                 >
                   {gate && (
@@ -2309,11 +2322,24 @@ export default function Home() {
                   )}
                   more voices
                   {gate && <span className="mv-tag">premium</span>}
-                  <span className="mv-chev" aria-hidden>
-                    {moreVoicesOpen || isPremiumVoice(voice) ? "▴" : "▾"}
-                  </span>
+                  <svg
+                    className="mv-chev"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M7 10 L12 15 L17 10"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </button>
-                {(moreVoicesOpen || isPremiumVoice(voice)) && (
+                {moreVoicesOpen && (
                   <div className="mv-body">
                     {[
                       { label: "women", list: PREMIUM_VOICES_FEMALE },
@@ -2439,7 +2465,10 @@ export default function Home() {
             <button
               className="begin"
               onClick={begin}
-              disabled={selected.custom && !customText.trim()}
+              // A custom session needs an intention only when a voice will speak
+              // it. With voice "none" the session is a pure soundscape (begin()
+              // skips generation and ignores the text), so no intention is needed.
+              disabled={selected.custom && voice !== "none" && !customText.trim()}
               style={
                 IS_RELAXED
                   ? undefined

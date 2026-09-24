@@ -102,6 +102,17 @@ stateDiagram-v2
 - **Previews:** tapping a voice plays a short cached greeting clip in that
   voice/accent; tapping a soundscape auditions a few seconds of that bed
   (level-matched, fades in/out). Auditions stop when the tray closes.
+- **More voices (premium):** beneath Her/Him/None a collapsible "more voices"
+  reveal lists the named premium voices (women / men). It is only shown where a
+  purchase is possible or the unlock is owned (see
+  [monetization.md](./monetization.md)); it auto-opens when a premium voice is the
+  current selection and is otherwise toggled by the caret. Premium voices preview
+  freely; the gate is at Begin.
+- **Intention is required only for a voiced custom session.** With voice None a
+  custom session is a pure soundscape (no script is written), so the intention
+  field is optional and Begin is enabled without it.
+- The tray scrolls internally (capped height) so a tall expanded state never
+  pushes the intention field off-screen.
 
 ### 3c. Generating (voiced presets only)
 
