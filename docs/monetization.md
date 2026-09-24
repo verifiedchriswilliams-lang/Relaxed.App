@@ -125,6 +125,15 @@ existing per-line TTS path (like the custom flow), so Blob storage stays flat
 (pre-caching 10 voices would add ~430 MB and blow the 1 GB free tier). Cost is
 per-play ElevenLabs at runtime only. Each voice needs one small tray-preview clip.
 
+**Debut gating (no free leak before 1.3).** The whole "more voices" section only
+renders where `purchaseAvailable || entitled` — i.e. the native 1.3+ build, or a
+user who already owns the unlock. Because the merge to `main` has to land before
+1.3 review (so the paywall is live for the reviewer to test), this guard keeps the
+ten new voices hidden on the web and on the current 1.2.2 app: they debut as a
+paid feature with 1.3 rather than appearing free during the review window. The
+premium *beds* differ — they already shipped in the 24-bed catalog, so they stay
+visible-and-free under the same capability gate until 1.3 (see the paywall model).
+
 Voices (ElevenLabs library voice IDs = the slug at the end of each voice URL):
 
 | Name | Gender | Accent | Voice ID |

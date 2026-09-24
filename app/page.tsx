@@ -2265,8 +2265,15 @@ export default function Home() {
               </div>
 
               {/* Premium voices: a quiet reveal beneath the free control. All are
-                  previewable; the paywall (a later step) locks USING them in a
-                  full session. Chips carry a lock; selecting one previews it. */}
+                  previewable; the paywall locks USING them in a full session.
+                  Chips carry a lock; selecting one previews it.
+
+                  Only rendered where a purchase is actually possible (the native
+                  1.3+ build) or the user is already entitled. On the web and on
+                  pre-1.3 native builds there is no way to buy, so the section
+                  stays hidden rather than leaking the premium voices for free
+                  before 1.3 ships. */}
+              {(purchaseAvailable || entitled) && (
               <div className="morevoices">
                 <button
                   type="button"
@@ -2317,6 +2324,7 @@ export default function Home() {
                   </div>
                 )}
               </div>
+              )}
 
               {/* Always rendered so the tray height stays fixed; when "None"
                   is selected it's simply an empty reserved line. */}
