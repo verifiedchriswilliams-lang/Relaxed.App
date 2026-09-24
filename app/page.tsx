@@ -1085,6 +1085,10 @@ export default function Home() {
       if (ok) {
         setPaywallOpen(false);
         haptic("success");
+        // The paywall is only reached by tapping Begin on a locked session, so a
+        // successful unlock flows straight into that session instead of dropping
+        // back to the tray. startSession bypasses the (now-stale) gate check.
+        await startSession();
       } else {
         setPaywallNote("Purchase didn't complete.");
       }
@@ -1106,7 +1110,15 @@ export default function Home() {
       setPaywallOpen(true);
       return;
     }
+    await startSession();
+  }
 
+  // Starts the chosen session immediately. Callers MUST gate first: begin() does,
+  // and handlePurchase calls this only after a successful unlock. It deliberately
+  // bypasses the paywall check so a just-completed purchase flows straight into
+  // the session the person was trying to start, rather than dropping back to the
+  // tray (the React `entitled` state may also not have updated yet in that tick).
+  async function startSession() {
     // Unlock the audio engine within this tap so mobile browsers will let the
     // voice + soundscape play once ready. Stop any tray audition first.
     engineRef.current.stopPreview();
