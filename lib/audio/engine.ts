@@ -1089,7 +1089,8 @@ export class AudioEngine {
   // inaudible. Only runs on the codec-broken runtime (Mac app).
   private startFileMedia(ctx: AudioContext, src: string, master: GainNode) {
     try {
-      const OVERLAP = 0.5; // seconds of crossfade at the seam
+      const OVERLAP = 0.22; // seconds of crossfade at the seam
+      const MARGIN = 0.15; // start early so the outgoing element never cuts mid-fade
       const mk = () => {
         const el = new Audio();
         el.crossOrigin = "anonymous"; // Blob sends ACAO:* so the node isn't muted
@@ -1109,34 +1110,49 @@ export class AudioEngine {
       let active = a;
       let standby = b;
       let fading = false;
+      // Equal-power (constant-energy) crossfade curves, so the overlap neither
+      // dips nor bumps. Kept short so the pad's end and start barely coexist.
+      const N = 48;
+      const fadeOut = new Float32Array(N);
+      const fadeIn = new Float32Array(N);
+      for (let i = 0; i < N; i++) {
+        const x = i / (N - 1);
+        fadeOut[i] = Math.cos((x * Math.PI) / 2);
+        fadeIn[i] = Math.sin((x * Math.PI) / 2);
+      }
+      // Standby is pre-seeked to 0 and ready, so the swap has no seek/play hitch.
+      try {
+        b.el.currentTime = 0;
+      } catch {
+        /* ignore */
+      }
       a.el.play().catch(() => {});
 
       const poll = setInterval(() => {
         if (this.ctx !== ctx) return; // stopped/superseded
         const el = active.el;
         const dur = el.duration;
-        if (!fading && isFinite(dur) && dur > 0 && el.currentTime >= dur - OVERLAP) {
+        if (!fading && isFinite(dur) && dur > 0 && el.currentTime >= dur - OVERLAP - MARGIN) {
           fading = true;
           const cur = standby;
           const prev = active;
-          try {
-            cur.el.currentTime = 0;
-          } catch {
-            /* ignore */
-          }
           cur.el.play().catch(() => {});
           const now = ctx.currentTime;
-          for (const [g, to] of [
-            [prev.gain, 0],
-            [cur.gain, 1],
-          ] as const) {
-            g.gain.cancelScheduledValues(now);
-            g.gain.setValueAtTime(g.gain.value, now);
-            g.gain.linearRampToValueAtTime(to, now + OVERLAP);
+          try {
+            prev.gain.gain.cancelScheduledValues(now);
+            prev.gain.gain.setValueCurveAtTime(fadeOut, now, OVERLAP);
+            cur.gain.gain.cancelScheduledValues(now);
+            cur.gain.gain.setValueCurveAtTime(fadeIn, now, OVERLAP);
+          } catch {
+            // Fallback if a curve overlaps existing automation.
+            prev.gain.gain.setValueAtTime(0, now + OVERLAP);
+            cur.gain.gain.setValueAtTime(1, now + OVERLAP);
           }
           this.trackTimer(OVERLAP * 1000 + 120, () => {
             try {
               prev.el.pause();
+              prev.el.currentTime = 0; // pre-seek for its next turn (no hitch)
+              prev.gain.gain.setValueAtTime(0, ctx.currentTime);
             } catch {
               /* ignore */
             }
@@ -1145,7 +1161,7 @@ export class AudioEngine {
             fading = false;
           });
         }
-      }, 100);
+      }, 40);
       this.mediaIntervals.add(poll);
     } catch {
       /* carry on quietly */
