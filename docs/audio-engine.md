@@ -216,7 +216,7 @@ playing, so pausing freezes the orb mid-breath and resumes in phase; a single
 | Empty custom body | Degrades to sounds-only; emits `custom_no_body`. |
 | Screen locks (web) | A wake lock is requested; true background/locked playback needs the native app. |
 | Screen locks (iOS app) | Background audio keeps playing (Info.plist `audio` mode). |
-| `decodeAudioData` can't run codecs (Mac Catalyst / "iPad app on Mac") | A one-time probe detects it (`ensureDecodeOk`); the bed and voice then play through `<audio>` elements piped into the same graph via `MediaElementAudioSourceNode` (native decoders, which work there), so only the synthesized bell would otherwise be audible. iOS/web/Safari are unaffected (probe passes) and keep the gapless `AudioBufferSourceNode` path. The only cost on the Mac app is a faintly non-gapless bed loop. |
+| `decodeAudioData` can't run codecs (Mac Catalyst / "iPad app on Mac") | A one-time probe detects it (`ensureDecodeOk`; otherwise only the synthesized bell would be audible). The **bed** is decoded in JS via a dynamically-imported WASM FLAC decoder (`@wasm-audio-decoders/flac`, off-thread) into an `AudioBuffer` and looped with `loop = true` — sample-accurate and gapless, identical to iOS (with a two-element `<audio>` crossfade as a safety net if the JS decode fails). **Voice** and **previews** play through `<audio>` elements piped into the same graph via `MediaElementAudioSourceNode`. iOS/web/Safari are unaffected (probe passes, decoder never loaded) and keep the native `AudioBufferSourceNode` path. |
 
 ## 9. The Meditation Engine (Phase 1)
 

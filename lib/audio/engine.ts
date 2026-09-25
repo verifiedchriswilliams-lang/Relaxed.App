@@ -125,6 +125,39 @@ export class AudioEngine {
     }
   }
 
+  // Decode a FLAC bed to an AudioBuffer in JS (WASM, off the main thread), for
+  // runtimes where the native decodeAudioData can't (Mac app). Lets us loop the
+  // bed sample-accurately (loop=true) exactly like iOS, with no crossfade seam.
+  // The decoder is dynamically imported so iOS/web never load it. Returns null on
+  // any failure so the caller can fall back to the <audio> crossfade.
+  private async decodeFlacToBuffer(ctx: AudioContext, src: string): Promise<AudioBuffer | null> {
+    try {
+      const bytes = new Uint8Array(await (await fetch(src)).arrayBuffer());
+      const { FLACDecoderWebWorker } = await import("@wasm-audio-decoders/flac");
+      const decoder = new FLACDecoderWebWorker();
+      await decoder.ready;
+      let decoded;
+      try {
+        decoded = await decoder.decodeFile(bytes);
+      } finally {
+        try {
+          await decoder.free();
+        } catch {
+          /* ignore */
+        }
+      }
+      const { channelData, samplesDecoded, sampleRate } = decoded;
+      if (!channelData?.length || !samplesDecoded || this.ctx !== ctx) return null;
+      const buf = ctx.createBuffer(channelData.length, samplesDecoded, sampleRate);
+      for (let ch = 0; ch < channelData.length; ch++) {
+        buf.getChannelData(ch).set(channelData[ch].subarray(0, samplesDecoded));
+      }
+      return buf;
+    } catch {
+      return null;
+    }
+  }
+
   private ensureCtx(): AudioContext {
     if (!this.ctx) {
       const Ctx =
@@ -1057,12 +1090,24 @@ export class AudioEngine {
   // itself should be a seamless ~60s loop. Async; if it fails, the session (and
   // breathing visual) continue in silence.
   private async startFile(ctx: AudioContext, src: string, master: GainNode) {
-    // On a runtime where decodeAudioData can't run codecs (Mac Catalyst), loop
-    // the bed through an <audio> element instead. iOS/web keep the gapless
-    // AudioBufferSourceNode path below.
+    // On a runtime where decodeAudioData can't run codecs (Mac Catalyst), decode
+    // the FLAC ourselves in JS (WASM, off-thread) so we can loop the exact bed
+    // sample-accurately with loop=true — identical to iOS, no crossfade. If that
+    // fails we fall back to the <audio> crossfade so the bed is never silent.
+    // iOS/web keep the gapless AudioBufferSourceNode path below.
     if (!(await this.ensureDecodeOk(ctx))) {
+      const buf = await this.decodeFlacToBuffer(ctx, src);
       if (this.ambientMaster !== master || this.ctx !== ctx) return;
-      this.startFileMedia(ctx, src, master);
+      if (buf) {
+        const s = ctx.createBufferSource();
+        s.buffer = buf;
+        s.loop = true;
+        s.connect(master);
+        s.start();
+        this.ambientNodes.push(s);
+      } else {
+        this.startFileMedia(ctx, src, master);
+      }
       return;
     }
     try {
