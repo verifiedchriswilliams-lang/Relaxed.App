@@ -68,6 +68,7 @@ export class AudioEngine {
   private bedMediaEls: HTMLAudioElement[] = [];
   private voiceMediaEls: HTMLAudioElement[] = [];
   private mediaTimers = new Set<ReturnType<typeof setTimeout>>();
+  private mediaIntervals = new Set<ReturnType<typeof setInterval>>();
   private voiceCancel: (() => void) | null = null;
   private previewMediaEl: HTMLAudioElement | null = null;
 
@@ -805,6 +806,8 @@ export class AudioEngine {
     this.ambientNodes = [];
     // Media-element beds (fallback path) are disconnected via their node above
     // but keep playing until paused.
+    this.mediaIntervals.forEach((iv) => clearInterval(iv));
+    this.mediaIntervals.clear();
     this.bedMediaEls.forEach((el) => {
       try {
         el.pause();
@@ -1077,22 +1080,73 @@ export class AudioEngine {
     }
   }
 
-  // Bed fallback: loop the file through an <audio> element (native decoder) piped
-  // into the ambient master, so gain/ducking still apply. The only cost is that
-  // an <audio> loop isn't perfectly gapless (a faint seam every few minutes),
-  // acceptable for an ambient bed and only on the Mac app.
+  // Bed fallback: seamless loop through TWO <audio> elements (native decoder)
+  // that crossfade at the loop seam, piped into the ambient master so gain/ducking
+  // still apply. A plain <audio loop> gaps at the restart; here, as the playing
+  // element nears its end we start the other from 0 and equal-power-ish crossfade
+  // over a short overlap, hiding the media element's imprecise loop timing. The
+  // beds are already mastered as seamless loops, so the brief overlap is
+  // inaudible. Only runs on the codec-broken runtime (Mac app).
   private startFileMedia(ctx: AudioContext, src: string, master: GainNode) {
     try {
-      const el = new Audio();
-      el.crossOrigin = "anonymous"; // Blob sends ACAO:* so the node isn't muted
-      el.loop = true;
-      el.preload = "auto";
-      el.src = src;
-      const node = ctx.createMediaElementSource(el);
-      node.connect(master);
-      this.ambientNodes.push(node);
-      this.bedMediaEls.push(el);
-      el.play().catch(() => {});
+      const OVERLAP = 0.5; // seconds of crossfade at the seam
+      const mk = () => {
+        const el = new Audio();
+        el.crossOrigin = "anonymous"; // Blob sends ACAO:* so the node isn't muted
+        el.preload = "auto";
+        el.src = src;
+        const gain = ctx.createGain();
+        const node = ctx.createMediaElementSource(el);
+        node.connect(gain).connect(master);
+        this.ambientNodes.push(node, gain);
+        this.bedMediaEls.push(el);
+        return { el, gain };
+      };
+      const a = mk();
+      const b = mk();
+      a.gain.gain.value = 1;
+      b.gain.gain.value = 0;
+      let active = a;
+      let standby = b;
+      let fading = false;
+      a.el.play().catch(() => {});
+
+      const poll = setInterval(() => {
+        if (this.ctx !== ctx) return; // stopped/superseded
+        const el = active.el;
+        const dur = el.duration;
+        if (!fading && isFinite(dur) && dur > 0 && el.currentTime >= dur - OVERLAP) {
+          fading = true;
+          const cur = standby;
+          const prev = active;
+          try {
+            cur.el.currentTime = 0;
+          } catch {
+            /* ignore */
+          }
+          cur.el.play().catch(() => {});
+          const now = ctx.currentTime;
+          for (const [g, to] of [
+            [prev.gain, 0],
+            [cur.gain, 1],
+          ] as const) {
+            g.gain.cancelScheduledValues(now);
+            g.gain.setValueAtTime(g.gain.value, now);
+            g.gain.linearRampToValueAtTime(to, now + OVERLAP);
+          }
+          this.trackTimer(OVERLAP * 1000 + 120, () => {
+            try {
+              prev.el.pause();
+            } catch {
+              /* ignore */
+            }
+            active = cur;
+            standby = prev;
+            fading = false;
+          });
+        }
+      }, 100);
+      this.mediaIntervals.add(poll);
     } catch {
       /* carry on quietly */
     }
