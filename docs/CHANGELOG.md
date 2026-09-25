@@ -101,6 +101,20 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-25 — Loudness re-level across the full voice roster
+- **All 14 guide voices are now normalized on one measured basis.** The 10 premium
+  voices previously bypassed normalization and played at raw gain — some as
+  whispers, some far too loud. They're now measured (RMS + true peak + integrated
+  LUFS over representative session lines) and leveled with the four free voices so
+  every guide lands at equal perceived loudness under the soundscape.
+- **Tray auditions match too:** premium voice previews are level-matched per clip
+  instead of a flat gain, and the free-voice preview gains were re-measured.
+- Two very quiet source clips (willow, mira) are peak-limited, so they sit a few dB
+  under the rest even after make-up gain; a future re-master of those two clips
+  will close the gap.
+- Tooling: `scripts/measure-voices.mjs` measures the whole roster and prints the
+  ready-to-paste tables.
+
 ### 2026-09-23 — Infinite sessions (∞)
 - **A new ∞ stop past 60 on the duration slider** starts an endless session: the
   seamless bed loops until the person taps End, and the player clock counts up

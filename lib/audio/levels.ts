@@ -13,56 +13,73 @@ export const VOICE_TARGET = -24; // where all voices land
 export const BED_UNDER_VOICE = -33; // beds sit ~9 dB below the voice (~10% louder than -34)
 export const BED_SOLO = -19; // louder for a no-voice, sounds-only session (~10% up)
 export const PEAK_CEIL = -1.5; // never let a peak go above this
-// Measured over 28 lines per voice. `trim` is a small perceptual adjustment on
-// top of RMS matching, because equal RMS is not equal loudness:
-//  - A compressed / dense voice sounds louder than its RMS suggests, so we aim
-//    it a little lower (negative trim). female-uk has the lowest crest factor,
-//    so she reads loudest at equal RMS and needs the most trim.
-//  - A lower-pitched voice carries more low-frequency energy, which the ear
-//    hears as quieter at the same measured level (equal-loudness contours), so
-//    the male voices sound softer than the women even when matched by RMS. We
-//    give them a positive trim to aim a couple dB hotter — capped by the peak
-//    ceiling in normGain, so no clipping.
+// Measured on ONE basis for all 14 voices (scripts/measure-voices.mjs, 2026-09-25):
+// the same 10 representative session lines synthesized per voice at the session
+// TTS settings, then ffmpeg RMS (volumedetect) + true peak + integrated LUFS. `trim`
+// is the LUFS-vs-RMS perceptual correction relative to the roster median (median
+// perceived excess 0.3 dB), because equal RMS is not equal loudness: a dense voice
+// (mira) reads louder than its RMS and gets a negative trim; an airy/peaky one sits
+// higher. After normalization every voice lands at ≈ VOICE_TARGET + median excess,
+// so free and premium sit at equal *perceived* loudness — except a couple whose low
+// RMS + limited peak headroom keep them peak-limited a few dB under (see below).
 export const VOICE_STATS: Record<
   string,
   { rms: number; peak: number; trim?: number }
 > = {
-  "female-us": { rms: -18.5, peak: -1.6 },
-  "male-us": { rms: -25.1, peak: -5.1, trim: 2.5 },
-  "female-uk": { rms: -14.8, peak: -1.3, trim: -3.5 },
-  "male-uk": { rms: -24.5, peak: -4.3, trim: 2.5 },
+  "female-us": { rms: -19.1, peak: -2.5 },
+  "male-us": { rms: -24.9, peak: -3.7 },
+  "female-uk": { rms: -15.0, peak: -1.4 },
+  "male-uk": { rms: -24.2, peak: -4.1, trim: 1 },
 };
 // Premium voices are single named personas (baked accent), so they key by id, not
-// <voice>-<accent>. Same measured model as VOICE_STATS (rms/peak in dBFS + optional
-// perceptual trim), on the SAME loudness basis so they sit level with the free
-// voices in a session. Measured over the representative session lines by
-// scripts/measure-voices.mjs. A voice absent here falls back to raw gain (1.0),
-// so premium voices only carry a measured entry — never a guess.
+// <voice>-<accent>. Same measured model + same basis as VOICE_STATS, so they sit
+// level with the free voices in a session. A voice absent here falls back to raw
+// gain (1.0) — premium voices only carry a measured entry, never a guess.
+//   NOTE: willow (rms -43.8) and mira (dense, high crest) are peak-limited by the
+//   -1.5 dBFS ceiling, so they land ~4-6 dB under the group and stay the quietest
+//   even after +14 dB / +2.6 dB of make-up gain. The real fix is re-mastering those
+//   two source clips hotter; the numbers below are the best normGain can reach.
 export const PREMIUM_VOICE_STATS: Partial<
   Record<PremiumVoiceId, { rms: number; peak: number; trim?: number }>
 > = {
-  // Filled from `node scripts/measure-voices.mjs` (pass 1). Until measured, these
-  // stay empty and the voice plays at unity gain.
+  willow: { rms: -43.8, peak: -16.1, trim: 1 },
+  natasha: { rms: -35.1, peak: -15.4, trim: -0.5 },
+  mira: { rms: -35.2, peak: -4.1, trim: -4 },
+  almee: { rms: -29.4, peak: -2.9, trim: -0.5 },
+  alisa: { rms: -20.3, peak: -1.5, trim: 0.5 },
+  kai: { rms: -32.7, peak: -11.2 },
+  drew: { rms: -27.1, peak: -11.2, trim: 1 },
+  brad: { rms: -19.0, peak: -3.2, trim: 1 },
+  solomon: { rms: -21.6, peak: -2.2 },
+  gavin: { rms: -27.3, peak: -5.1 },
 };
 // Tray-audition gains for the voice PREVIEW clips (previewVoice). These are
-// separate recordings from the session voice and were played at a flat gain, so
-// the male clips read far quieter than the female ones. Measured by LUFS
-// (scripts/measure-beds.mjs) and matched to a common audition loudness, capped
-// so peaks stay under -1 dBFS. male-uk is peak-limited so it lands ~2 dB shy of
-// the rest, but that's far closer than the ~12 dB raw gap.
+// separate short recordings from the session voice, so they carry their own
+// measured gains: matched to a common audition loudness (-18 LUFS) and capped so
+// peaks stay under -1 dBFS (scripts/measure-voices.mjs, pass 2). male-uk is
+// peak-limited so it lands a touch shy, but far closer than the raw gap.
 export const PREVIEW_GAIN: Record<string, number> = {
-  "female-us": 1.19,
-  "female-uk": 0.65,
-  "male-us": 1.95,
-  "male-uk": 2.04,
+  "female-us": 1.26,
+  "female-uk": 0.6,
+  "male-us": 1.5,
+  "male-uk": 2.09,
 };
 // The same audition-loudness matching for the PREMIUM voice preview clips
-// (/voice-previews/<id>.mp3), keyed by voice id. Measured by LUFS and capped under
-// -1 dBFS, exactly like PREVIEW_GAIN (scripts/measure-voices.mjs, pass 2). A voice
-// absent here auditions at PREMIUM_PREVIEW_FALLBACK.
+// (/voice-previews/<id>.mp3), keyed by voice id (scripts/measure-voices.mjs,
+// pass 2). willow/natasha are very quiet clips, so they carry large make-up gains
+// (still peak-capped under -1 dBFS). A voice absent here auditions at the fallback.
 export const PREMIUM_PREVIEW_FALLBACK = 0.85;
 export const PREMIUM_PREVIEW_GAIN: Partial<Record<PremiumVoiceId, number>> = {
-  // Filled from `node scripts/measure-voices.mjs` (pass 2).
+  willow: 14.13,
+  natasha: 8.22,
+  mira: 3.09,
+  almee: 1.66,
+  alisa: 0.75,
+  kai: 4.52,
+  drew: 3.24,
+  brad: 1.32,
+  solomon: 1.46,
+  gavin: 2.21,
 };
 // Linear gain to move a signal (rms/peak dBFS) toward a target loudness, capped
 // so the peak stays under the ceiling.
