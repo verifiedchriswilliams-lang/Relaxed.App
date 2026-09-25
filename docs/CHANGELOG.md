@@ -101,6 +101,13 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-25 — Gentler voice ducking (no more bed pumping)
+- **The bed no longer swells and drops under every spoken line.** The duck went
+  from ~5 dB (recovering to full in any 2s+ pause) to a gentle ~2 dB dip that only
+  breathes back up in the longer pauses. On steady, broadband beds (white / green /
+  brown noise) the old depth was audible as a distracting swell-and-drop; the voice
+  already sits ~9 dB over the bed, so a light touch is all that's needed for clarity.
+
 ### 2026-09-25 — Loudness re-level across the full voice roster
 - **All 14 guide voices are now normalized on one measured basis.** The 10 premium
   voices previously bypassed normalization and played at raw gain — some as

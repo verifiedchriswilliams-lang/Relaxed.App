@@ -24,9 +24,9 @@ export class AudioEngine {
   ctx: AudioContext | null = null;
   ambientMaster: GainNode | null = null;
   // A gain node downstream of the master that the bed passes through, used only
-  // for voice ducking: it dips the whole bed a few dB while the guide speaks and
-  // swells it back up in the long meditative pauses. Kept separate from the
-  // master so it never fights the master's fade-in bloom or the closing fade.
+  // for voice ducking: it eases the whole bed down ~2 dB while the guide speaks
+  // and back up only in the longer pauses (kept gentle so steady beds don't pump).
+  // Separate from the master so it never fights the fade-in bloom or closing fade.
   private ambientDuck: GainNode | null = null;
   // The bed level the duck envelope is holding just before the next attack, so
   // each line's ramp starts from a known anchor (avoids clicks / long ramps).
@@ -119,7 +119,9 @@ export class AudioEngine {
     try {
       g.cancelScheduledValues(now);
       g.setValueAtTime(g.value, now);
-      g.linearRampToValueAtTime(down ? 0.55 : 1, now + (down ? 0.25 : 0.6));
+      // Match duckForLine: a gentle ~2 dB dip, not a deep duck, so the bed doesn't
+      // pump between lines on steady/broadband beds.
+      g.linearRampToValueAtTime(down ? 0.8 : 1, now + (down ? 0.35 : 0.6));
     } catch {
       /* ignore */
     }
@@ -756,9 +758,13 @@ export class AudioEngine {
   private duckForLine(startAt: number, dur: number, pauseAfter: number) {
     const duck = this.ambientDuck;
     if (!duck) return;
-    const DUCK = 0.55; // bed sits ~5 dB down under the voice
-    const ATTACK = 0.3; // how quickly it dips as a line begins
-    const UNDUCK_MIN = 2; // only recover in pauses at least this long
+    // A gentle dip, not a duck: the voice already sits ~9 dB over the bed, so the
+    // dip is only for a little extra clarity. Kept shallow (~2 dB) and recovered
+    // only in the longer pauses, so steady beds (white/green/brown noise) don't
+    // audibly swell and pump between lines.
+    const DUCK = 0.8; // bed sits ~2 dB down under the voice
+    const ATTACK = 0.4; // how quickly it eases down as a line begins
+    const UNDUCK_MIN = 3.5; // only breathe back up in the longer pauses
     const g = duck.gain;
     // Never anchor in the past: when synthesis lags, startAt is ~now, so clamp
     // the attack to now (the dip just happens a touch quicker) instead of

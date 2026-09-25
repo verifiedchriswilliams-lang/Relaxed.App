@@ -134,10 +134,12 @@ ambient bed (file loop or synth) ──► ambientMaster ──► ambientDuck �
   [risks-tech-debt.md](./risks-tech-debt.md).
 - **Bloom** (`bloomMaster`): the bed comes in sparse (0 → 82% of level over 3s)
   then fills to full over 30s, so a session opens quietly and settles.
-- **Ducking** (`duckForLine`): the bed dips to ~55% (~5 dB) under each spoken
-  line with a 0.3s attack and swells back to full during pauses ≥2s; ramps are
-  clamped to "now" so a lagging TTS fetch never schedules in the past (a bug that
-  was fixed during hardening).
+- **Ducking** (`duckForLine`): a gentle dip, not a deep duck — the bed eases to
+  ~80% (~2 dB) under each spoken line with a 0.4s attack and only breathes back to
+  full during the longer pauses (≥3.5s). It's kept shallow because the voice
+  already sits ~9 dB over the bed, so steady/broadband beds (white/green/brown
+  noise) don't audibly swell and pump between lines. Ramps are clamped to "now" so
+  a lagging TTS fetch never schedules in the past.
 - **Bells** (`playBell`): synthesized singing-bowl tones (fundamental + inharmonic
   partials, exponential decay). A 396 Hz cue opens; a 264 Hz tone (a fifth below)
   closes.
@@ -167,13 +169,16 @@ with per-source perceptual trims measured offline.
   `PEAK_CEIL −1.5`.
 - `normGain(rms, peak, target) = 10^(min(target−rms, PEAK_CEIL−peak)/20)` — an
   RMS match, capped so true peaks stay under the ceiling.
-- **Per-voice** stats + trims: the four free voices key by `<voice>-<accent>` in
-  `VOICE_STATS` (the male voices are lifted ~+2.5 dB and one UK voice trimmed
-  −3.5 dB, so Her/Him sit at equal perceived loudness); the ten **premium** voices
-  key by id in `PREMIUM_VOICE_STATS`, measured on the *same* basis so a premium
-  guide sits level with a free one. `voiceStats(voice, accent)` picks the right
-  table. A voice with no measured entry plays at unity gain (never a guess), so an
-  unmeasured premium voice is neutral rather than a whisper-or-blast.
+- **Per-voice** stats + trims: all 14 voices are measured on **one basis**
+  (`scripts/measure-voices.mjs` — the same 10 session lines per voice, RMS + true
+  peak + integrated LUFS). The four free voices key by `<voice>-<accent>` in
+  `VOICE_STATS`; the ten **premium** voices key by id in `PREMIUM_VOICE_STATS`.
+  `trim` is the LUFS-vs-RMS correction relative to the roster median, so after
+  normalization every guide lands at equal perceived loudness. `voiceStats(voice,
+  accent)` picks the right table; a voice with no measured entry plays at unity
+  gain (never a guess). Two very quiet, peaky clips (willow, mira) are peak-limited
+  by the ceiling and sit a few dB under the pack until their sources are
+  re-mastered.
 - **Per-bed** trims (`SOUNDSCAPES[].trim`): all 24 soundscapes are measured by
   **LUFS (ITU-R BS.1770, via ffmpeg `ebur128`)** and trimmed to equal perceived
   loudness — e.g. the ocean bed was calmed, dull/low beds lifted.
