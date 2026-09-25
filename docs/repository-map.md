@@ -79,6 +79,7 @@ relaxed.app/
 | `scripts/finalize-beds.sh` | — (local) | One-pass: apply each bed's loop crossfade + transcode masters → catalog FLACs |
 | `scripts/build-sound-previews.sh` | — (local) | Cut a small ~6s tray-audition MP3 per bed → `public/sound-previews/` |
 | `scripts/measure-beds.mjs` | — (local) | Measure RMS/true-peak/LUFS → recommend rms/peak/trim |
+| `scripts/measure-voices.mjs` | — (local) | Measure all 14 guide voices (session lines) + preview clips → `VOICE_STATS`/`PREMIUM_VOICE_STATS`/preview gains |
 
 ## `public/`, `assets/`, `native/`
 

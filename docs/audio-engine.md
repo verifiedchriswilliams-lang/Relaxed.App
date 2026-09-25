@@ -167,8 +167,13 @@ with per-source perceptual trims measured offline.
   `PEAK_CEIL −1.5`.
 - `normGain(rms, peak, target) = 10^(min(target−rms, PEAK_CEIL−peak)/20)` — an
   RMS match, capped so true peaks stay under the ceiling.
-- **Per-voice** stats + trims (`VOICE_STATS`): the male voices are lifted ~+2.5 dB
-  and one UK voice trimmed −3.5 dB, so Her/Him sit at equal perceived loudness.
+- **Per-voice** stats + trims: the four free voices key by `<voice>-<accent>` in
+  `VOICE_STATS` (the male voices are lifted ~+2.5 dB and one UK voice trimmed
+  −3.5 dB, so Her/Him sit at equal perceived loudness); the ten **premium** voices
+  key by id in `PREMIUM_VOICE_STATS`, measured on the *same* basis so a premium
+  guide sits level with a free one. `voiceStats(voice, accent)` picks the right
+  table. A voice with no measured entry plays at unity gain (never a guess), so an
+  unmeasured premium voice is neutral rather than a whisper-or-blast.
 - **Per-bed** trims (`SOUNDSCAPES[].trim`): all 24 soundscapes are measured by
   **LUFS (ITU-R BS.1770, via ffmpeg `ebur128`)** and trimmed to equal perceived
   loudness — e.g. the ocean bed was calmed, dull/low beds lifted.
@@ -176,10 +181,12 @@ with per-source perceptual trims measured offline.
   for every playback path from these tables, so loudness can't drift between the
   session, the sounds-only path, and previews.
 - **Previews** are a separate unnormalized surface: tray voice-audition clips use
-  `PREVIEW_GAIN` (measured per clip, target −18 LUFS, capped under −1 dBFS);
-  soundscape auditions play 6s of the real bed at `BED_SOLO + trim`.
-- The offline measurement tool is `scripts/measure-beds.mjs` (see
-  [operations-runbook.md](./operations-runbook.md#rebalance-audio-loudness)).
+  `PREVIEW_GAIN` (free) and `PREMIUM_PREVIEW_GAIN` (premium, keyed by id, falling
+  back to `PREMIUM_PREVIEW_FALLBACK`) — measured per clip, target −18 LUFS, capped
+  under −1 dBFS; soundscape auditions play 6s of the real bed at `BED_SOLO + trim`.
+- The offline measurement tools are `scripts/measure-beds.mjs` (beds) and
+  `scripts/measure-voices.mjs` (free + premium voices, and preview gains) — see
+  [operations-runbook.md](./operations-runbook.md#rebalance-audio-loudness).
 
 ## 6. Soundscapes
 

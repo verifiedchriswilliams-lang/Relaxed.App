@@ -71,7 +71,14 @@ import {
   catOf,
   soundDef,
 } from "@/lib/audio/soundscapes";
-import { PREVIEW_GAIN, normGain, bedAndVoice, BED_SOLO } from "@/lib/audio/levels";
+import {
+  PREVIEW_GAIN,
+  PREMIUM_PREVIEW_GAIN,
+  PREMIUM_PREVIEW_FALLBACK,
+  normGain,
+  bedAndVoice,
+  BED_SOLO,
+} from "@/lib/audio/levels";
 import { AudioEngine } from "@/lib/audio/engine";
 import { timeAgo, rotatingGreeting, mmss, transcriptLines } from "@/lib/format";
 import { breathAt } from "@/lib/breath";
@@ -556,7 +563,9 @@ export default function Home() {
     // Premium voices audition from their own clip (/voice-previews/<id>.mp3), no
     // accent slot; free voices use the <gender>-<accent> clip.
     if (isPremiumVoice(v)) {
-      engineRef.current.preview(asset(`/voice-previews/${v}.mp3`), { gain: 0.85 });
+      engineRef.current.preview(asset(`/voice-previews/${v}.mp3`), {
+        gain: PREMIUM_PREVIEW_GAIN[v] ?? PREMIUM_PREVIEW_FALLBACK,
+      });
       return;
     }
     engineRef.current.preview(asset(`/voice-previews/${v}-${a}.mp3`), {

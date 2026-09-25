@@ -149,16 +149,27 @@ To re-measure and re-level beds or voice previews (requires a real `ffmpeg` with
 the `ebur128` + `volumedetect` filters — the Homebrew/apt build, not a stripped one):
 
 ```bash
+# Beds:
 NEXT_PUBLIC_BLOB_BASE_URL="https://<store>.public.blob.vercel-storage.com" \
   node scripts/measure-beds.mjs
 # or point at a local folder:
 node scripts/measure-beds.mjs --dir public/sounds
+
+# Voices (free + premium) + preview gains — synthesizes a fixed set of session
+# lines per voice, so it needs ELEVENLABS_API_KEY (in .env.local). Add the Blob
+# base so it can also measure the tray audition clips:
+NEXT_PUBLIC_BLOB_BASE_URL="https://<store>.public.blob.vercel-storage.com" \
+  node scripts/measure-voices.mjs
+node scripts/measure-voices.mjs --previews-only   # pass 2 only, no key/cost
 ```
 
-It measures RMS + true peak + LUFS per file and prints ready-to-paste `rms`/`peak`/
-`trim` for `SOUNDSCAPES` in `lib/audio/soundscapes.ts` (and per-preview gains for
-`PREVIEW_GAIN`). Paste the numbers back into the code. The tool writes nothing
-itself. Background:
+`measure-beds.mjs` measures RMS + true peak + LUFS per bed and prints ready-to-paste
+`rms`/`peak`/`trim` for `SOUNDSCAPES` in `lib/audio/soundscapes.ts`.
+`measure-voices.mjs` measures all fourteen guide voices on one basis and prints the
+`VOICE_STATS` (free) + `PREMIUM_VOICE_STATS` (premium) rows for
+`lib/audio/levels.ts`, plus level-matched audition gains for `PREVIEW_GAIN` and
+`PREMIUM_PREVIEW_GAIN`. Paste the numbers back into the code — the tools write
+nothing themselves. Background:
 [audio-engine.md](./audio-engine.md#5-loudness-normalization-the-it-just-sounds-right-work).
 
 ## Add a soundscape

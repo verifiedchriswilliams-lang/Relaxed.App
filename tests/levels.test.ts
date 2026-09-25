@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import {
   normGain,
   bedAndVoice,
+  voiceStats,
+  VOICE_STATS,
+  PREMIUM_VOICE_STATS,
   VOICE_TARGET,
   PEAK_CEIL,
   BED_SOLO,
@@ -69,5 +72,35 @@ describe("bedAndVoice (selection -> concrete gains + bed)", () => {
 
   it("exposes the solo target as louder than nothing", () => {
     expect(BED_SOLO).toBeGreaterThan(-30);
+  });
+});
+
+describe("voiceStats (premium-aware loudness lookup)", () => {
+  it("keys free voices by <voice>-<accent>", () => {
+    expect(voiceStats("female", "us")).toBe(VOICE_STATS["female-us"]);
+    expect(voiceStats("male", "uk")).toBe(VOICE_STATS["male-uk"]);
+  });
+
+  it("keys premium voices by id and ignores the (baked) accent", () => {
+    // A premium voice resolves to its own entry regardless of the accent state,
+    // since its accent is baked into the persona.
+    expect(voiceStats("willow", "us")).toBe(PREMIUM_VOICE_STATS.willow);
+    expect(voiceStats("willow", "us")).toBe(voiceStats("willow", "uk"));
+  });
+
+  it("normalizes a measured premium voice and leaves an unmeasured one at unity", () => {
+    for (const id of ["willow", "kai"] as const) {
+      const g = bedAndVoice(id, "us", "rain").voiceGain;
+      if (PREMIUM_VOICE_STATS[id]) {
+        const vs = PREMIUM_VOICE_STATS[id]!;
+        expect(g).toBeCloseTo(
+          normGain(vs.rms, vs.peak, VOICE_TARGET + (vs.trim ?? 0)),
+          6
+        );
+      } else {
+        // Unmeasured premium voice: unity gain, never a guess.
+        expect(g).toBe(1);
+      }
+    }
   });
 });
