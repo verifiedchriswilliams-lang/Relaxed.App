@@ -11,9 +11,11 @@
 - **Paid Applications Agreement (Schedule 2):** ✅ Active (signed 2026-09-16).
 - **Bank account:** ✅ Active (Bank of America, USD).
 - **U.S. tax form (W-9):** ✅ Active (submitted 2026-09-16).
-- **Small Business Program (SBP):** ⏳ enrollment **submitted 2026-09-17**, awaiting
-  Apple's approval email (approved within ~15 days of fiscal month-end). Grants the
-  15% commission rate.
+- **Small Business Program (SBP):** ✅ **approved 2026-09-25** (welcome email from
+  Apple Developer Relations; enrollment submitted 2026-09-17). The commission rate
+  on paid apps and in-app purchases is now **15%**. Eligibility ends if proceeds
+  pass **$1M** in the calendar year, and an app transfer pools proceeds across all
+  accounts that initiate/accept it.
 - **In-app purchases:** none yet. The app is free; the soundscape `tier` field
   (`free`/`premium`) is data only and everything is unlocked.
 - **Schedule 3 (Custom App Distribution / enterprise via Volume Content):** not
@@ -160,8 +162,8 @@ Unlock copy grows to cover all three (see unlock-bar copy below):
   account). **Restore Purchases** is required (Apple), and StoreKit tracks the
   purchase against the Apple ID so it restores on the user's other devices.
 - **Price:** $4.99 in the US; Apple auto-generates localized prices per storefront
-  from the chosen price point. At 15% (once SBP is approved) that nets ≈ $4.24
-  before tax.
+  from the chosen price point. At the SBP 15% rate (approved 2026-09-25) that nets
+  ≈ $4.24 before tax.
 - **Entitlement:** cached on-device (fits the no-accounts model); the source of
   truth is the StoreKit transaction, re-checked on launch.
 
@@ -219,8 +221,8 @@ selling (Stripe) stays a later option.
 
 ## To-do before we charge (the paywall project)
 
-1. **Enroll in the App Store Small Business Program** (→ 15%). *(submitted
-   2026-09-17, awaiting approval.)*
+1. **Enroll in the App Store Small Business Program** (→ 15%). *(done — approved
+   2026-09-25.)*
 2. **Complete banking + tax forms + tax category** in App Store Connect. *(done —
    all Active.)*
 3. **Create the IAP product** in App Store Connect: one non-consumable, $4.99,
