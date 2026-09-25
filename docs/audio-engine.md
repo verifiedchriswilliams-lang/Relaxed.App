@@ -134,12 +134,13 @@ ambient bed (file loop or synth) ──► ambientMaster ──► ambientDuck �
   [risks-tech-debt.md](./risks-tech-debt.md).
 - **Bloom** (`bloomMaster`): the bed comes in sparse (0 → 82% of level over 3s)
   then fills to full over 30s, so a session opens quietly and settles.
-- **Ducking** (`duckForLine`): a gentle dip, not a deep duck — the bed eases to
-  ~80% (~2 dB) under each spoken line with a 0.4s attack and only breathes back to
-  full during the longer pauses (≥3.5s). It's kept shallow because the voice
-  already sits ~9 dB over the bed, so steady/broadband beds (white/green/brown
-  noise) don't audibly swell and pump between lines. Ramps are clamped to "now" so
-  a lagging TTS fetch never schedules in the past.
+- **Ducking** (`duckForLine`): a barely-perceptible dip, not a duck — the bed
+  eases to ~90% (~1 dB) under each spoken line with a slow 0.5s attack and only
+  breathes back to full during the longer pauses (≥3.5s). It's kept this shallow
+  because the voice already sits ~9 dB over the bed, so the bed reads as a steady
+  floor with no audible swell or pump between lines, even on flat broadband beds
+  (white/green/brown noise). Ramps are clamped to "now" so a lagging TTS fetch
+  never schedules in the past.
 - **Bells** (`playBell`): synthesized singing-bowl tones (fundamental + inharmonic
   partials, exponential decay). A 396 Hz cue opens; a 264 Hz tone (a fifth below)
   closes.
