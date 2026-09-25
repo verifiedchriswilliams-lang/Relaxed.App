@@ -216,6 +216,7 @@ playing, so pausing freezes the orb mid-breath and resumes in phase; a single
 | Empty custom body | Degrades to sounds-only; emits `custom_no_body`. |
 | Screen locks (web) | A wake lock is requested; true background/locked playback needs the native app. |
 | Screen locks (iOS app) | Background audio keeps playing (Info.plist `audio` mode). |
+| `decodeAudioData` can't run codecs (Mac Catalyst / "iPad app on Mac") | A one-time probe detects it (`ensureDecodeOk`); the bed and voice then play through `<audio>` elements piped into the same graph via `MediaElementAudioSourceNode` (native decoders, which work there), so only the synthesized bell would otherwise be audible. iOS/web/Safari are unaffected (probe passes) and keep the gapless `AudioBufferSourceNode` path. The only cost on the Mac app is a faintly non-gapless bed loop. |
 
 ## 9. The Meditation Engine (Phase 1)
 

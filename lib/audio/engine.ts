@@ -9,6 +9,7 @@
 
 import type { Soundscape } from "./types";
 import type { AudioProfile } from "@/lib/engine";
+import { asset } from "@/lib/assets";
 
 // Constant, exact playback speed for voiced segments (Web Audio is clock-locked).
 const VOICE_RATE = 1.0;
@@ -53,6 +54,76 @@ export class AudioEngine {
   private previewToken = 0;
   private previewCache = new Map<string, AudioBuffer>();
 
+  // --- Codec-decode fallback (Mac Catalyst / "iPad app on Mac") -------------
+  // In the "Designed for iPad on Mac" WKWebView, Web Audio's decodeAudioData
+  // cannot run the codec decoders (MP3/AAC/FLAC) — it returns null — even though
+  // the same WebKit in Safari decodes fine and oscillators still play. iOS and
+  // the web are unaffected. We probe once; when decode is broken we play the bed
+  // and voice through <audio> elements (HTMLMediaElement uses AVFoundation's
+  // decoders, which DO work there) piped into the same graph via
+  // MediaElementAudioSourceNode. `decodeOk` gates every fallback branch, so on
+  // iOS/web (probe passes) none of this code runs.
+  private decodeOk: boolean | null = null;
+  private decodeProbe: Promise<boolean> | null = null;
+  private bedMediaEls: HTMLAudioElement[] = [];
+  private voiceMediaEls: HTMLAudioElement[] = [];
+  private mediaTimers = new Set<ReturnType<typeof setTimeout>>();
+  private voiceCancel: (() => void) | null = null;
+  private previewMediaEl: HTMLAudioElement | null = null;
+
+  // Probe whether decodeAudioData can decode a real codec-compressed file. Runs
+  // once, cached. Uses an actual shipped MP3 (never a hand-built one) so a false
+  // negative is impossible on a platform that can decode: if the fetch fails we
+  // assume decode works (the safe default) and keep the normal path.
+  private async ensureDecodeOk(ctx: AudioContext): Promise<boolean> {
+    if (this.decodeOk !== null) return this.decodeOk;
+    if (!this.decodeProbe) {
+      this.decodeProbe = (async () => {
+        let arr: ArrayBuffer;
+        try {
+          arr = await (await fetch(asset("/sound-previews/Rain.mp3"))).arrayBuffer();
+        } catch {
+          // Network/probe failure is ambiguous, so assume decode works and keep
+          // the normal (buffer) path — never push a healthy platform to fallback.
+          return true;
+        }
+        try {
+          await this.decode(ctx, arr.slice(0));
+          return true; // codec decode works (iOS / web / Safari)
+        } catch {
+          return false; // fetched fine but decode failed = broken codec (Mac app)
+        }
+      })();
+    }
+    this.decodeOk = await this.decodeProbe;
+    return this.decodeOk;
+  }
+
+  private trackTimer(ms: number, fn: () => void): void {
+    const t = setTimeout(() => {
+      this.mediaTimers.delete(t);
+      fn();
+    }, ms);
+    this.mediaTimers.add(t);
+  }
+  private wait(ms: number): Promise<void> {
+    return new Promise((resolve) => this.trackTimer(ms, resolve));
+  }
+  // Simple bed duck for the media-voice path (the buffer path uses duckForLine).
+  private duckMedia(down: boolean): void {
+    const duck = this.ambientDuck;
+    if (!duck || !this.ctx) return;
+    const now = this.ctx.currentTime;
+    const g = duck.gain;
+    try {
+      g.cancelScheduledValues(now);
+      g.setValueAtTime(g.value, now);
+      g.linearRampToValueAtTime(down ? 0.55 : 1, now + (down ? 0.25 : 0.6));
+    } catch {
+      /* ignore */
+    }
+  }
+
   private ensureCtx(): AudioContext {
     if (!this.ctx) {
       const Ctx =
@@ -83,6 +154,9 @@ export class AudioEngine {
     this.setPlaybackCategory();
     const ctx = this.ensureCtx();
     ctx.resume().catch(() => {});
+    // Warm the decode-capability probe now (fire-and-forget) so it's resolved
+    // before the first preview/session needs it — no first-tap latency.
+    void this.ensureDecodeOk(ctx);
     try {
       const b = ctx.createBuffer(1, 1, 22050);
       const s = ctx.createBufferSource();
@@ -130,6 +204,11 @@ export class AudioEngine {
     if (!segments?.length) return;
     const ctx = this.ensureCtx();
     await ctx.resume().catch(() => {});
+
+    if (!(await this.ensureDecodeOk(ctx))) {
+      if (this.ctx === ctx) await this.playSegmentsMedia(ctx, segments);
+      return;
+    }
 
     const decoded = await Promise.all(
       segments.map(async (s) => {
@@ -186,6 +265,128 @@ export class AudioEngine {
     if (lastSrc) lastSrc.onended = () => this.onVoiceEnded?.();
   }
 
+  // Voice fallback: play each segment through an <audio> element (native decoder)
+  // in sequence, piped into the same voiceBus, holding each pause on a timer.
+  // playStartTime/lineStarts are kept in real time so activeLineIndex() (and thus
+  // the transcript karaoke) still tracks. Only runs where decodeAudioData is broken.
+  private async playSegmentsMedia(
+    ctx: AudioContext,
+    segments: { audio: string | null; pauseAfter: number }[]
+  ) {
+    const voiceBus = this.makeVoiceBus(ctx);
+    this.playStartTime = ctx.currentTime;
+    this.lineStarts = [];
+    let cancelled = false;
+    this.voiceCancel = () => {
+      cancelled = true;
+    };
+    const stopped = () => cancelled || this.ctx !== ctx;
+    for (let i = 0; i < segments.length; i++) {
+      if (stopped()) return;
+      this.lineStarts.push(Math.max(0, ctx.currentTime - this.playStartTime));
+      const seg = segments[i];
+      if (seg.audio) {
+        await this.playClipMedia(ctx, voiceBus, seg.audio, seg.pauseAfter, stopped);
+      } else {
+        await this.wait(seg.pauseAfter * 1000);
+      }
+    }
+    if (!stopped()) this.onVoiceEnded?.();
+  }
+
+  // Play one voice clip via <audio> -> voiceBus, ducking the bed for it, then
+  // hold the trailing pause. Resolves when the clip and its pause are done.
+  private playClipMedia(
+    ctx: AudioContext,
+    voiceBus: GainNode,
+    audioSrc: string,
+    pauseAfter: number,
+    stopped: () => boolean
+  ): Promise<void> {
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        this.duckMedia(false);
+        if (stopped()) return resolve();
+        this.wait(pauseAfter * 1000).then(resolve);
+      };
+      try {
+        const el = new Audio();
+        if (/^https?:/i.test(audioSrc)) el.crossOrigin = "anonymous";
+        el.src = audioSrc;
+        const node = ctx.createMediaElementSource(el);
+        node.connect(voiceBus);
+        this.ambientNodes.push(node);
+        this.voiceMediaEls.push(el);
+        this.duckMedia(true);
+        el.onended = finish;
+        el.onerror = finish;
+        el.play().catch(finish);
+      } catch {
+        finish();
+      }
+    });
+  }
+
+  // Streaming (Custom) voice fallback: same media path, but each line's audio
+  // arrives as an ArrayBuffer we wrap in a blob URL. Mirrors playCustomStream's
+  // arrival-then-body phases without the buffer decode/schedule.
+  private async playCustomStreamMedia(
+    ctx: AudioContext,
+    arrival: { text: string; pauseAfter: number }[],
+    bodyPromise: Promise<{ text: string; pauseAfter: number }[]>,
+    fetchAudio: (text: string) => Promise<ArrayBuffer | null>,
+    onBody?: (body: { text: string; pauseAfter: number }[]) => void
+  ) {
+    const voiceBus = this.makeVoiceBus(ctx);
+    this.playStartTime = ctx.currentTime;
+    this.lineStarts = [];
+    let cancelled = false;
+    this.voiceCancel = () => {
+      cancelled = true;
+    };
+    const stopped = () => cancelled || this.ctx !== ctx;
+    const playList = async (segs: { text: string; pauseAfter: number }[]) => {
+      for (let i = 0; i < segs.length; i++) {
+        if (stopped()) return;
+        this.lineStarts.push(Math.max(0, ctx.currentTime - this.playStartTime));
+        let url: string | null = null;
+        try {
+          const arr = await fetchAudio(segs[i].text);
+          if (arr) url = URL.createObjectURL(new Blob([arr], { type: "audio/mpeg" }));
+        } catch {
+          url = null;
+        }
+        if (stopped()) {
+          if (url) URL.revokeObjectURL(url);
+          return;
+        }
+        if (url) {
+          await this.playClipMedia(ctx, voiceBus, url, segs[i].pauseAfter, stopped);
+          URL.revokeObjectURL(url);
+        } else {
+          await this.wait(segs[i].pauseAfter * 1000);
+        }
+      }
+    };
+    if (arrival.length) await playList(arrival);
+    if (stopped()) return;
+    let body: { text: string; pauseAfter: number }[] = [];
+    try {
+      body = await bodyPromise;
+    } catch {
+      body = [];
+    }
+    if (stopped()) return;
+    onBody?.(body);
+    if (body.length) {
+      await playList(body);
+      if (!stopped()) this.onVoiceEnded?.();
+    }
+  }
+
   // Instant-start Custom: the personalized body isn't written yet when the user
   // taps Begin, so we open with a short, fixed arrival (spoken through the same
   // TTS path) the moment playback starts, then stream the body lines in behind
@@ -201,6 +402,9 @@ export class AudioEngine {
   ) {
     const ctx = this.ensureCtx();
     await ctx.resume().catch(() => {});
+    if (!(await this.ensureDecodeOk(ctx))) {
+      return this.playCustomStreamMedia(ctx, arrival, bodyPromise, fetchAudio, onBody);
+    }
     const voiceBus = this.makeVoiceBus(ctx);
     this.lineStarts = [];
     const state: StreamState = {
@@ -599,6 +803,17 @@ export class AudioEngine {
       }
     });
     this.ambientNodes = [];
+    // Media-element beds (fallback path) are disconnected via their node above
+    // but keep playing until paused.
+    this.bedMediaEls.forEach((el) => {
+      try {
+        el.pause();
+        el.src = "";
+      } catch {
+        /* ignore */
+      }
+    });
+    this.bedMediaEls = [];
     this.ambientMaster = null;
     this.ambientScene = null;
     this.ambientDuck = null;
@@ -623,6 +838,10 @@ export class AudioEngine {
     const ctx = this.ensureCtx();
     await ctx.resume().catch(() => {});
     const token = ++this.previewToken;
+    if (!(await this.ensureDecodeOk(ctx))) {
+      this.previewMedia(ctx, src, opts, token);
+      return;
+    }
     // Prefer a small dedicated preview clip (near-instant to fetch + decode); if
     // it's missing, fall back to the full bed so the audition is never silent.
     // Full beds are long lossless files, so the fallback path is slower — that's
@@ -676,8 +895,73 @@ export class AudioEngine {
     this.previewGain = gain;
   }
 
+  // Preview fallback: audition a clip via an <audio> element (native decoder),
+  // gained and length-capped like the buffer path. Only for the codec-broken
+  // runtime (Mac app); iOS/web use the buffer path above.
+  private previewMedia(
+    ctx: AudioContext,
+    src: string,
+    opts:
+      | { seconds?: number; gain?: number; offset?: number; fadeIn?: number; fallback?: string }
+      | undefined,
+    token: number
+  ) {
+    try {
+      const el = new Audio();
+      if (/^https?:/i.test(src)) el.crossOrigin = "anonymous";
+      el.src = src;
+      const gain = ctx.createGain();
+      gain.gain.value = opts?.gain ?? 0.6;
+      const node = ctx.createMediaElementSource(el);
+      node.connect(gain).connect(ctx.destination);
+      const offset = Math.max(opts?.offset ?? 0, 0);
+      if (offset > 0) {
+        el.addEventListener("loadedmetadata", () => {
+          try {
+            if (isFinite(el.duration)) el.currentTime = Math.min(offset, Math.max(0, el.duration - 1));
+          } catch {
+            /* ignore */
+          }
+        });
+      }
+      const teardown = () => {
+        if (this.previewMediaEl !== el) return;
+        this.previewMediaEl = null;
+        try {
+          el.pause();
+          node.disconnect();
+          gain.disconnect();
+        } catch {
+          /* already gone */
+        }
+      };
+      // Superseded by a newer tap while we were probing/awaiting.
+      if (token !== this.previewToken) {
+        this.previewMediaEl = el;
+        teardown();
+        return;
+      }
+      this.previewMediaEl = el;
+      el.onended = teardown;
+      el.play().catch(() => {});
+      if (opts?.seconds) this.trackTimer(opts.seconds * 1000, teardown);
+    } catch {
+      /* quiet */
+    }
+  }
+
   stopPreview() {
     this.previewToken++; // supersede any decode still in flight
+    if (this.previewMediaEl) {
+      try {
+        this.previewMediaEl.pause();
+        this.previewMediaEl.onended = null;
+        this.previewMediaEl.src = "";
+      } catch {
+        /* ignore */
+      }
+      this.previewMediaEl = null;
+    }
     const s = this.previewSource;
     const g = this.previewGain;
     this.previewSource = null;
@@ -722,6 +1006,22 @@ export class AudioEngine {
     });
     this.voiceSegs = [];
     this.lineStarts = [];
+    // Cancel any in-flight media-voice sequence and tear down its elements/timers.
+    this.voiceCancel?.();
+    this.voiceCancel = null;
+    this.mediaTimers.forEach((t) => clearTimeout(t));
+    this.mediaTimers.clear();
+    this.voiceMediaEls.forEach((el) => {
+      try {
+        el.pause();
+        el.onended = null;
+        el.onerror = null;
+        el.src = "";
+      } catch {
+        /* ignore */
+      }
+    });
+    this.voiceMediaEls = [];
     this.stopAmbient();
     this.stopPreview();
     // Decoded buffers are bound to this context; drop them so a fresh context
@@ -754,6 +1054,14 @@ export class AudioEngine {
   // itself should be a seamless ~60s loop. Async; if it fails, the session (and
   // breathing visual) continue in silence.
   private async startFile(ctx: AudioContext, src: string, master: GainNode) {
+    // On a runtime where decodeAudioData can't run codecs (Mac Catalyst), loop
+    // the bed through an <audio> element instead. iOS/web keep the gapless
+    // AudioBufferSourceNode path below.
+    if (!(await this.ensureDecodeOk(ctx))) {
+      if (this.ambientMaster !== master || this.ctx !== ctx) return;
+      this.startFileMedia(ctx, src, master);
+      return;
+    }
     try {
       const arr = await (await fetch(src)).arrayBuffer();
       const buf = await this.decode(ctx, arr);
@@ -766,6 +1074,27 @@ export class AudioEngine {
       this.ambientNodes.push(s);
     } catch {
       /* file missing/undecodable; carry on quietly */
+    }
+  }
+
+  // Bed fallback: loop the file through an <audio> element (native decoder) piped
+  // into the ambient master, so gain/ducking still apply. The only cost is that
+  // an <audio> loop isn't perfectly gapless (a faint seam every few minutes),
+  // acceptable for an ambient bed and only on the Mac app.
+  private startFileMedia(ctx: AudioContext, src: string, master: GainNode) {
+    try {
+      const el = new Audio();
+      el.crossOrigin = "anonymous"; // Blob sends ACAO:* so the node isn't muted
+      el.loop = true;
+      el.preload = "auto";
+      el.src = src;
+      const node = ctx.createMediaElementSource(el);
+      node.connect(master);
+      this.ambientNodes.push(node);
+      this.bedMediaEls.push(el);
+      el.play().catch(() => {});
+    } catch {
+      /* carry on quietly */
     }
   }
 
