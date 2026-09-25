@@ -38,15 +38,21 @@ flowchart LR
   `cleartext: false`.
 - `backgroundColor: #121110` (Ink) app-wide and iOS, so the status-bar and
   home-indicator regions are painted by the native Ink ground.
-- **Safe-area insets are handled web-side.** The layout draws edge to edge
-  (`viewport-fit=cover` in `app/layout.tsx`) and the chrome clears the status bar /
-  Dynamic Island and the home indicator via CSS `env(safe-area-inset-*)` padding
-  (`.topbar`, `.player-top`, the tray/history bottoms in `app/globals.css`). This
-  is the operative mechanism because the relaxed brand is scroll-locked, so
-  `ios.contentInset: "always"` (a scroll-view inset) has no effect on the fixed
-  layout, content would otherwise pin under the island. Because the shell loads the
-  hosted page, these fixes reach installed builds on deploy, no App Store build
-  needed.
+- **Safe-area insets are handled web-side, and the native config must not fight
+  them.** The layout draws edge to edge (`viewport-fit=cover` in `app/layout.tsx`)
+  and the chrome clears the status bar / Dynamic Island and the home indicator via
+  CSS `env(safe-area-inset-*)` padding (`.topbar`, `.player-top`, the tray/history
+  bottoms in `app/globals.css`) — exactly as the hosted site renders in mobile
+  Safari. For this to be correct the shell must be edge-to-edge too, so
+  **`ios.contentInset` must be `"never"`.** With `"always"` the WKWebView scroll
+  view *also* insets the content by the safe area (it shifts the content origin
+  even though the brand is scroll-locked), so the page's `env()` insets stack on
+  top of it and the whole layout is pushed down — the player header floats far
+  below the Dynamic Island. This was a latent bug: `contentInset: "always"`
+  predated the edge-to-edge CSS and only surfaced once a fresh `ios/` build picked
+  the config up. The CSS insets reach installed builds on deploy, but the
+  `contentInset` value is native config — it needs `cap sync` + a rebuild to take
+  effect.
 - **SplashScreen:** `launchShowDuration 1500`, `launchFadeOutDuration 700`, Ink
   background, no spinner — a calm cross-fade into the hosted page over an unchanging
   Ink ground.

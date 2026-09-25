@@ -20,9 +20,14 @@ const config: CapacitorConfig = {
   },
   backgroundColor: "#121110",
   ios: {
-    // Inset the web content within the safe areas so the Ink status-bar and
-    // home-indicator regions are painted by the native background, not overlapped.
-    contentInset: "always",
+    // Draw the web content edge-to-edge (behind the status bar / home indicator)
+    // and let the PAGE own the safe-area insets via `env(safe-area-inset-*)` in
+    // the CSS — the same way the hosted site renders in mobile Safari. This MUST
+    // stay "never": with "always" the native scroll view also insets by the safe
+    // area, so the page's env() insets stack on top and everything is pushed down
+    // (the player header floats far below the Dynamic Island). The Ink page
+    // background fills the inset regions, so nothing shows through.
+    contentInset: "never",
     backgroundColor: "#121110",
   },
   plugins: {

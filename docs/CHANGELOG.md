@@ -31,6 +31,13 @@ and purchase-into-session were verified in the StoreKit test environment.
 Submitted with the IAP in one review submission (required for a first IAP).
 Version 1.3, build 8; set to auto-release after approval.
 
+- **Follow-up fix (native, not in build 8):** the iOS shell is switched to
+  edge-to-edge (`ios.contentInset: "never"` in `capacitor.config.ts`) to correct a
+  safe-area double-inset — with `"always"` the WKWebView and the page's CSS both
+  inset by the safe area, pushing the player header far below the Dynamic Island.
+  The web already renders correctly (Safari is edge-to-edge); this is native config,
+  so it needs `cap sync` + a rebuild to take effect. Ships in the next iOS build.
+
 ### 1.2.2 — released 2026-09-24
 The "24 sounds + infinite" marketing build. **Free, no IAP.** No native code
 changed; the features were already live on the web (24 seamless FLAC soundscapes,
