@@ -20,14 +20,16 @@ const config: CapacitorConfig = {
   },
   backgroundColor: "#121110",
   ios: {
-    // Draw the web content edge-to-edge (behind the status bar / home indicator)
-    // and let the PAGE own the safe-area insets via `env(safe-area-inset-*)` in
-    // the CSS — the same way the hosted site renders in mobile Safari. This MUST
-    // stay "never": with "always" the native scroll view also insets by the safe
-    // area, so the page's env() insets stack on top and everything is pushed down
-    // (the player header floats far below the Dynamic Island). The Ink page
-    // background fills the inset regions, so nothing shows through.
-    contentInset: "never",
+    // The native WKWebView insets the web content by the safe area (status bar /
+    // Dynamic Island / home indicator), and the Ink page background fills those
+    // regions. IMPORTANT: because the native side does the inset, the PAGE must not
+    // add its own env(safe-area-inset-*) padding on top, or the two stack and
+    // everything is pushed down (the player header floats far below the island).
+    // The web handles this: inside the iOS shell it zeroes its --sat/--sab tokens
+    // (see app/globals.css + the detection in app/layout.tsx), so the inset is
+    // applied exactly once. On the hosted site in mobile Safari there is no native
+    // inset, so the page owns it via env(). Keep this in sync with that override.
+    contentInset: "always",
     backgroundColor: "#121110",
   },
   plugins: {

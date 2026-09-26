@@ -66,6 +66,20 @@ export default function RootLayout({
       data-brand={BRAND.id}
       className={`${manrope.className} ${figtree.variable}`}
     >
+      <head>
+        {/* Flag the iOS native shell before first paint. In the Capacitor iOS app
+            the WKWebView already insets content by the safe area
+            (ios.contentInset:"always"), so globals.css zeroes the page's own
+            --sat/--sab there to avoid a double inset (see capacitor.config.ts).
+            On the web this is a no-op. Runs synchronously in <head> so the layout
+            is correct on the first frame — no flash. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var C=window.Capacitor;var p=C&&(C.getPlatform?C.getPlatform():C.platform);if(p==='ios')document.documentElement.setAttribute('data-native-ios','')}catch(e){}",
+          }}
+        />
+      </head>
       <body>
         {children}
         <Analytics />

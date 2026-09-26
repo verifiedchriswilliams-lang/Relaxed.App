@@ -38,21 +38,23 @@ flowchart LR
   `cleartext: false`.
 - `backgroundColor: #121110` (Ink) app-wide and iOS, so the status-bar and
   home-indicator regions are painted by the native Ink ground.
-- **Safe-area insets are handled web-side, and the native config must not fight
-  them.** The layout draws edge to edge (`viewport-fit=cover` in `app/layout.tsx`)
-  and the chrome clears the status bar / Dynamic Island and the home indicator via
-  CSS `env(safe-area-inset-*)` padding (`.topbar`, `.player-top`, the tray/history
-  bottoms in `app/globals.css`) — exactly as the hosted site renders in mobile
-  Safari. For this to be correct the shell must be edge-to-edge too, so
-  **`ios.contentInset` must be `"never"`.** With `"always"` the WKWebView scroll
-  view *also* insets the content by the safe area (it shifts the content origin
-  even though the brand is scroll-locked), so the page's `env()` insets stack on
-  top of it and the whole layout is pushed down — the player header floats far
-  below the Dynamic Island. This was a latent bug: `contentInset: "always"`
-  predated the edge-to-edge CSS and only surfaced once a fresh `ios/` build picked
-  the config up. The CSS insets reach installed builds on deploy, but the
-  `contentInset` value is native config — it needs `cap sync` + a rebuild to take
-  effect.
+- **Safe-area insets have exactly one owner per runtime.** In the iOS shell the
+  native WKWebView insets the content by the safe area (`ios.contentInset: "always"`
+  in `capacitor.config.ts`) and the Ink page background fills the status-bar /
+  Dynamic Island / home-indicator regions. On the hosted site in mobile Safari
+  there is no native inset, so the *page* owns it: `viewport-fit=cover` makes the
+  `env(safe-area-inset-*)` values real and the chrome clears the notch via CSS
+  padding (`.topbar`, `.player-top`, the tray/history bottoms).
+  - **The two must never both apply, or they double up** and the whole layout is
+    pushed down (the player header floats far below the island). So the CSS reads
+    its insets from `--sat`/`--sab` tokens, which default to `env(...)` but are
+    **zeroed inside the iOS shell** (`html[data-native-ios]` in `app/globals.css`).
+    The `data-native-ios` flag is set synchronously before first paint by a tiny
+    inline script in `app/layout.tsx` that checks `Capacitor.getPlatform() === "ios"`.
+  - This was a latent double-inset bug (both sides insetting). The fix lives
+    **entirely web-side**, so it reaches every installed build the moment it
+    deploys — no native rebuild. Keep `contentInset: "always"` and the token
+    override in sync: if one ever changes, the other must too.
 - **SplashScreen:** `launchShowDuration 1500`, `launchFadeOutDuration 700`, Ink
   background, no spinner — a calm cross-fade into the hosted page over an unchanging
   Ink ground.

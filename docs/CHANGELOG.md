@@ -31,13 +31,6 @@ and purchase-into-session were verified in the StoreKit test environment.
 Submitted with the IAP in one review submission (required for a first IAP).
 Version 1.3, build 8; set to auto-release after approval.
 
-- **Follow-up fix (native, not in build 8):** the iOS shell is switched to
-  edge-to-edge (`ios.contentInset: "never"` in `capacitor.config.ts`) to correct a
-  safe-area double-inset — with `"always"` the WKWebView and the page's CSS both
-  inset by the safe area, pushing the player header far below the Dynamic Island.
-  The web already renders correctly (Safari is edge-to-edge); this is native config,
-  so it needs `cap sync` + a rebuild to take effect. Ships in the next iOS build.
-
 ### 1.2.2 — released 2026-09-24
 The "24 sounds + infinite" marketing build. **Free, no IAP.** No native code
 changed; the features were already live on the web (24 seamless FLAC soundscapes,
@@ -107,6 +100,17 @@ The native bridge and player hardening.
 ---
 
 ## Web — continuous (Vercel)
+
+### 2026-09-26 — Fix: player header pushed below the Dynamic Island (iOS app)
+- **Fixed a safe-area double-inset in the iOS app**: the native WKWebView insets
+  content by the safe area (`ios.contentInset:"always"`) *and* the page was adding
+  its own `env(safe-area-inset-*)` padding on top, so the player header (and all
+  chrome) floated far below the Dynamic Island. The website was always correct.
+- The page now zeroes its own insets inside the iOS shell (a `--sat`/`--sab` token
+  override under `html[data-native-ios]`, flagged before paint in `layout.tsx`), so
+  the inset is applied exactly once by the native side. **Web-only fix — it reaches
+  every installed build (including anyone already on the App Store) on deploy, no
+  rebuild needed**, so the in-review 1.3 build (build 8) is corrected too.
 
 ### 2026-09-25 — Barely-perceptible voice ducking (no more bed pumping)
 - **The bed no longer swells and drops under every spoken line.** The duck went

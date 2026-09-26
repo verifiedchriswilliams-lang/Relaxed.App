@@ -28,6 +28,22 @@
 
   --gutter: 22px;
   --maxw: 460px;
+
+  /* Safe-area insets, as tokens so the source of truth can switch per runtime.
+     On the web (and in mobile Safari) the page owns the insets, so these resolve
+     to the real env() values and the chrome clears the notch / home indicator. */
+  --sat: env(safe-area-inset-top);
+  --sab: env(safe-area-inset-bottom);
+}
+
+/* Inside the iOS native shell the WKWebView is configured with
+   ios.contentInset:"always", so the NATIVE side already insets the web content by
+   the safe area. Zero the page's own insets there so they don't stack on top of
+   the native one (which pushed the player header far below the Dynamic Island).
+   The flag is set synchronously before paint by the inline script in layout.tsx. */
+html[data-native-ios] {
+  --sat: 0px;
+  --sab: 0px;
 }
 
 * {
@@ -163,7 +179,7 @@ button {
   justify-content: space-between;
   /* Clear the status bar / Dynamic Island in the native shell. On the web the
      inset resolves to 0, so the spacing is unchanged. */
-  padding: calc(26px + env(safe-area-inset-top)) 2px 0;
+  padding: calc(26px + var(--sat)) 2px 0;
 }
 .wm {
   display: inline-flex;
@@ -433,7 +449,7 @@ button {
   color: var(--ink-2);
   /* Clear the home indicator so the links (Reminder / Contact / Privacy) never
      tuck under it on a notched device. */
-  padding: 0 0 calc(26px + env(safe-area-inset-bottom));
+  padding: 0 0 calc(26px + var(--sab));
   max-width: 34ch;
   margin: 0 auto;
 }
@@ -491,7 +507,7 @@ button {
   align-items: flex-end;
   justify-content: center;
   background: rgba(4, 5, 12, 0.55);
-  padding: 0 14px calc(18px + env(safe-area-inset-bottom));
+  padding: 0 14px calc(18px + var(--sab));
   animation: rm-fade 0.28s var(--ease-ui, ease) both;
 }
 .rm-sheet {
@@ -500,7 +516,7 @@ button {
   background: var(--night-0);
   border: 1px solid var(--glass-line, rgba(255, 255, 255, 0.1));
   border-radius: 20px;
-  padding: 22px 20px calc(18px + env(safe-area-inset-bottom));
+  padding: 22px 20px calc(18px + var(--sab));
   box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.7);
   color: var(--ink-0);
   animation: rm-rise 0.34s var(--ease-ui, ease) both;
@@ -635,7 +651,7 @@ button {
   backdrop-filter: blur(30px) saturate(1.5);
   border-top: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 28px 28px 0 0;
-  padding: 12px 24px calc(28px + env(safe-area-inset-bottom));
+  padding: 12px 24px calc(28px + var(--sab));
   box-shadow: 0 -24px 60px -24px rgba(0, 0, 0, 0.8);
   transition: transform 0.8s var(--ease-out);
   /* Cap the height and scroll internally so tall content (e.g. the expanded
@@ -1030,7 +1046,7 @@ button {
   backdrop-filter: blur(30px) saturate(1.5);
   border-top: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 28px 28px 0 0;
-  padding: 12px 24px calc(26px + env(safe-area-inset-bottom));
+  padding: 12px 24px calc(26px + var(--sab));
   box-shadow: 0 -24px 60px -24px rgba(0, 0, 0, 0.8);
   animation: pw-rise 0.42s var(--ease-out);
 }
@@ -1589,7 +1605,7 @@ button {
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: calc(28px + env(safe-area-inset-bottom));
+  padding-bottom: calc(28px + var(--sab));
 }
 .hh {
   display: flex;
@@ -1836,7 +1852,7 @@ button {
   align-items: center;
   justify-content: space-between;
   /* Clear the status bar / Dynamic Island in the native shell (see .topbar). */
-  padding: calc(26px + env(safe-area-inset-top)) 2px 0;
+  padding: calc(26px + var(--sat)) 2px 0;
   font-size: 13px;
   color: var(--ink-1);
 }
