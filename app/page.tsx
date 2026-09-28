@@ -1091,6 +1091,10 @@ export default function Home() {
   // the entitlement flips (via the bridge → onEntitlementChange) and the sheet
   // closes; the pending session isn't auto-started (they tap Begin again).
   async function handlePurchase() {
+    // Prime the audio engine inside this tap (a user gesture) before the native
+    // purchase sheet takes over, so the AudioContext is already warm when the
+    // session auto-starts after a successful unlock.
+    engineRef.current.unlock();
     setPaywallNote("");
     if (!isNativePurchaseAvailable()) {
       setPaywallNote("Premium unlocks in the relaxed app on your iPhone.");
@@ -1140,6 +1144,10 @@ export default function Home() {
     // voice + soundscape play once ready. Stop any tray audition first.
     engineRef.current.stopPreview();
     engineRef.current.unlock();
+    // If we arrived here straight from a purchase (no user gesture in this stack)
+    // and the context was suspended by the purchase sheet / a Settings excursion,
+    // recover it now or on the next foreground/touch so the session isn't silent.
+    engineRef.current.ensureRunning();
 
     setError(null);
     setPlayOrigin("setup"); // Begin comes from the home/tray; End returns home.

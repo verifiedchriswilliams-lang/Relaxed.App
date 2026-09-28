@@ -824,6 +824,34 @@ export class AudioEngine {
     this.ctx?.resume().catch(() => {});
   }
 
+  // Whether a one-shot recovery listener is already armed (so we attach at most one).
+  private recoverArmed = false;
+  // Resume the context now, and if it can't resume in this call stack, recover on
+  // the next chance. This matters after a native StoreKit purchase: the purchase
+  // sheet (or the Settings excursion to enter a sandbox password) can background
+  // the app and suspend the AudioContext, and the code that starts the session then
+  // runs with no user gesture, so a plain resume() is blocked and the session plays
+  // silently. Here we also arm a self-removing listener that resumes on the next
+  // foreground or touch, so audio recovers without the person having to guess.
+  ensureRunning() {
+    const ctx = this.ctx;
+    if (!ctx) return;
+    ctx.resume().catch(() => {});
+    if (this.recoverArmed) return;
+    this.recoverArmed = true;
+    const recover = () => {
+      ctx.resume().catch(() => {});
+      // Once running, disarm and detach; capture-phase so it sees the first touch.
+      if (ctx.state === "running") {
+        this.recoverArmed = false;
+        document.removeEventListener("pointerdown", recover, true);
+        document.removeEventListener("visibilitychange", recover, true);
+      }
+    };
+    document.addEventListener("pointerdown", recover, true);
+    document.addEventListener("visibilitychange", recover, true);
+  }
+
   fadeOutAmbient(seconds = 6) {
     if (this.ctx && this.ambientMaster) {
       const now = this.ctx.currentTime;

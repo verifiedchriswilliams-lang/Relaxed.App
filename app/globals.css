@@ -29,21 +29,14 @@
   --gutter: 22px;
   --maxw: 460px;
 
-  /* Safe-area insets, as tokens so the source of truth can switch per runtime.
-     On the web (and in mobile Safari) the page owns the insets, so these resolve
-     to the real env() values and the chrome clears the notch / home indicator. */
+  /* Safe-area insets, as tokens. The PAGE owns the insets everywhere — mobile
+     Safari and the native iOS shell alike — drawing edge-to-edge
+     (viewport-fit=cover) and clearing the notch / Dynamic Island / home indicator
+     via these env() values. The shell is edge-to-edge too (ios.contentInset
+     "never"), so there's exactly one inset (this one). Do NOT also inset natively
+     or the two stack and push everything down. */
   --sat: env(safe-area-inset-top);
   --sab: env(safe-area-inset-bottom);
-}
-
-/* Inside the iOS native shell the WKWebView is configured with
-   ios.contentInset:"always", so the NATIVE side already insets the web content by
-   the safe area. Zero the page's own insets there so they don't stack on top of
-   the native one (which pushed the player header far below the Dynamic Island).
-   The flag is set synchronously before paint by the inline script in layout.tsx. */
-html[data-native-ios] {
-  --sat: 0px;
-  --sab: 0px;
 }
 
 * {

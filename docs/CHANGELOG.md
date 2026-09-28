@@ -101,16 +101,24 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
-### 2026-09-26 — Fix: player header pushed below the Dynamic Island (iOS app)
-- **Fixed a safe-area double-inset in the iOS app**: the native WKWebView insets
-  content by the safe area (`ios.contentInset:"always"`) *and* the page was adding
-  its own `env(safe-area-inset-*)` padding on top, so the player header (and all
-  chrome) floated far below the Dynamic Island. The website was always correct.
-- The page now zeroes its own insets inside the iOS shell (a `--sat`/`--sab` token
-  override under `html[data-native-ios]`, flagged before paint in `layout.tsx`), so
-  the inset is applied exactly once by the native side. **Web-only fix — it reaches
-  every installed build (including anyone already on the App Store) on deploy, no
-  rebuild needed**, so the in-review 1.3 build (build 8) is corrected too.
+### 2026-09-28 — Fix: audio didn't start after an interrupted purchase
+- **After completing the $4.99 unlock, the session could start silently** (no voice,
+  no soundscape) — then play normally on the next attempt. Cause: a purchase that
+  backgrounds the app (e.g. a Face ID / Settings password prompt) suspends the
+  AudioContext, and the session then auto-starts with no user gesture to resume it.
+- The engine now primes on the purchase tap and **self-heals**: `ensureRunning()`
+  resumes the context and, if it can't in that moment, recovers on the next
+  foreground or touch. Web-only fix; reaches the in-review build on deploy.
+
+### 2026-09-28 — Fix: player chrome overlapped the status bar (newer iOS build)
+- **Corrected the safe-area handling.** The 1.3 build draws edge-to-edge (newer
+  Capacitor), and the page had been *skipping* its own inset inside the shell — so
+  with no inset from either side the player header rode up under the clock/battery.
+- The page now owns the safe-area inset **everywhere** (`env(safe-area-inset-*)` via
+  the `--sat`/`--sab` tokens), matching mobile Safari, and the shell is set
+  edge-to-edge (`ios.contentInset:"never"`). Supersedes the 09-26 approach, which
+  assumed the shell always inset natively (older builds did; the current one does
+  not). Web-only; reaches the in-review build on deploy.
 
 ### 2026-09-25 — Barely-perceptible voice ducking (no more bed pumping)
 - **The bed no longer swells and drops under every spoken line.** The duck went
