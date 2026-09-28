@@ -2359,12 +2359,52 @@ export default function Home() {
                 {moreVoicesOpen && (
                   <div className="mv-body">
                     {[
-                      { label: "women", list: PREMIUM_VOICES_FEMALE },
-                      { label: "men", list: PREMIUM_VOICES_MALE },
+                      {
+                        label: "women",
+                        free: [
+                          { voice: "female" as const, accent: "us" as const },
+                          { voice: "female" as const, accent: "uk" as const },
+                        ],
+                        list: PREMIUM_VOICES_FEMALE,
+                      },
+                      {
+                        label: "men",
+                        free: [
+                          { voice: "male" as const, accent: "us" as const },
+                          { voice: "male" as const, accent: "uk" as const },
+                        ],
+                        list: PREMIUM_VOICES_MALE,
+                      },
                     ].map((grp) => (
                       <div className="mv-grp" key={grp.label}>
                         <div className="mv-grpl">{grp.label}</div>
                         <div className="mv-chips">
+                          {/* The free voices lead each row, named and WITHOUT a
+                              lock, so it's clear two of each are already usable —
+                              the reveal isn't an all-locked wall. Selecting one
+                              sets the matching voice + accent (mirrors the her/him
+                              + flag control above). */}
+                          {grp.free.map((fv) => {
+                            const g = (
+                              GUIDES as Record<string, { name: string; blurb: string }>
+                            )[`${fv.voice}-${fv.accent}`];
+                            const on = voice === fv.voice && accent === fv.accent;
+                            return (
+                              <button
+                                key={`${fv.voice}-${fv.accent}`}
+                                type="button"
+                                className={`mv-chip ${on ? "on" : ""}`}
+                                onClick={() => {
+                                  setVoicePicked(true);
+                                  setVoice(fv.voice);
+                                  setAccent(fv.accent);
+                                  previewVoice(fv.voice, fv.accent);
+                                }}
+                              >
+                                {g?.name ?? (fv.voice === "female" ? "Her" : "Him")}
+                              </button>
+                            );
+                          })}
                           {grp.list.map((pv) => (
                             <button
                               key={pv.id}

@@ -103,10 +103,15 @@ stateDiagram-v2
   voice/accent; tapping a soundscape auditions a few seconds of that bed
   (level-matched, fades in/out). Auditions stop when the tray closes.
 - **More voices (premium):** beneath Her/Him/None a collapsible "more voices"
-  reveal lists the named premium voices (women / men). It is only shown where a
-  purchase is possible or the unlock is owned (see
+  reveal lists all the named voices, women / men. Each row leads with the **two
+  free voices** for that gender (Charlie/Mila, Tyler/Hunter) — named and **without
+  a lock**, so the reveal reads as "two of each are yours, more are premium" rather
+  than an all-locked wall — followed by the five premium personas, which carry a
+  lock until the unlock is owned. Selecting a free chip sets the matching
+  voice + accent (mirrors the Her/Him + flag control). The section is only shown
+  where a purchase is possible or the unlock is owned (see
   [monetization.md](./monetization.md)); it auto-opens when a premium voice is the
-  current selection and is otherwise toggled by the caret. Premium voices preview
+  current selection and is otherwise toggled by the caret. Every voice previews
   freely; the gate is at Begin.
 - **Intention is required only for a voiced custom session.** With voice None a
   custom session is a pure soundscape (no script is written), so the intention

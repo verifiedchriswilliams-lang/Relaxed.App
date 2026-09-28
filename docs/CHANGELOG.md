@@ -101,6 +101,13 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-28 — "more voices" shows the free voices too (not an all-locked wall)
+- **The expanded "more voices" list now includes the two free voices per gender**
+  (Charlie/Mila, Tyler/Hunter), named and without a lock, ahead of the five premium
+  personas — so it reads as "two of each are already yours" instead of looking like
+  every voice is locked. Selecting a free chip sets the matching voice + accent.
+  Locked (premium) chips still carry the lock until the unlock is owned.
+
 ### 2026-09-28 — Fix: the soundscape punched in instead of fading up
 - **The bed no longer slams in a couple seconds after the voice.** The gentle
   fade-in ("bloom") was scheduled when the session opened, but the bed is fetched
