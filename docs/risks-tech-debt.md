@@ -74,6 +74,18 @@
 
 ## Product / scaling
 
+- 🟠 **Instant-start arrival ignores the intention.** To start a custom session
+  instantly, the app speaks a fixed, generic *seated-meditation* arrival ("settle
+  in, find a position you can hold, let your eyes close…") while Claude writes the
+  body. For active intentions — a walk, a drive, a workout — that is actively
+  wrong and undercuts the core promise of being responsive to what the person
+  asked for. Fix: pick a posture/activity-aware arrival (seated / moving /
+  eyes-open) from the intention, or use a posture-neutral one, keeping the instant
+  start. Tracked in [roadmap.md](./roadmap.md). *Not a review blocker.*
+- 🟢 **Voices feel templated.** Premium voices all preview with the same line and
+  read the same script style, so they feel like clones rather than distinct
+  guides. Give each its own preview line and, longer term, a per-persona script
+  style. Tracked in [roadmap.md](./roadmap.md).
 - 🟠 **No accounts, no cross-device continuity.** All state is `localStorage` on
   one device; clearing site data or switching devices loses history and prefs.
   This is a deliberate Phase 2 tradeoff, not an accident, but it caps retention

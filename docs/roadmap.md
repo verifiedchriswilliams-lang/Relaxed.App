@@ -134,6 +134,22 @@ Real "make the moment better" work — but hardest to *show* in a five-minute de
 and much of it is half-built, so weave it into the releases above rather than
 spending a headline on it:
 
+- **Intention-aware arrival (fixes a real gap).** The instant-start arrival is a
+  fixed, generic seated-meditation script ("settle in, find a position you can
+  hold, let your eyes close…") played while Claude writes the body. That directly
+  contradicts the product's whole promise for *active* intentions — "a 15-minute
+  walk", "a drive through the countryside", "something for my workout" — where
+  telling the person to sit and close their eyes is wrong. Make the arrival
+  responsive: detect posture/activity from the intention and choose a matching
+  arrival (seated / moving / eyes-open), or use a posture-neutral arrival, while
+  keeping the instant start. See
+  [risks-tech-debt.md](./risks-tech-debt.md). *Effort: S/M.*
+- **Distinct voice personalities.** Every premium voice previews with the same
+  templated line ("I'm {name}. Whenever you're ready, we'll begin."), which makes
+  them feel like clones. Give each voice its **own** preview line, and — the bigger
+  bet — cater the *script style* to each persona so the voice + words feel like one
+  human, not a narrator reading a shared script. *Effort: S for the lines, M+ for
+  per-voice script styles.*
 - **Smarter generation arc** — make the intent→emotional-state→session-arc model a
   felt product capability, not just an engine envelope. The structured arc and
   scene envelopes already exist (`lib/sessions.ts`, `setSession`); the work is

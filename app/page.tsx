@@ -1576,7 +1576,7 @@ export default function Home() {
               : [
                   <>Crafting your journey</>,
                   IS_RELAXED ? (
-                    <>Scoring your soundtrack</>
+                    <>Scoring your soundscape</>
                   ) : (
                     <>
                       Scoring your soundscape with <b>ElevenMusic</b>
