@@ -133,7 +133,11 @@ ambient bed (file loop or synth) ──► ambientMaster ──► ambientDuck �
   that synthesis path is effectively legacy/unused today. See
   [risks-tech-debt.md](./risks-tech-debt.md).
 - **Bloom** (`bloomMaster`): the bed comes in sparse (0 → 82% of level over 3s)
-  then fills to full over 30s, so a session opens quietly and settles.
+  then fills to full over 30s, so a session opens quietly and settles. The bloom is
+  started the instant the bed source actually begins (inside `startFile`), not when
+  `startAmbient` is called — the bed is fetched + decoded asynchronously, so if the
+  fade were scheduled up front it would be spent on silence and the bed would punch
+  in at full level a couple seconds in.
 - **Ducking** (`duckForLine`): a barely-perceptible dip, not a duck — the bed
   eases to ~90% (~1 dB) under each spoken line with a slow 0.5s attack and only
   breathes back to full during the longer pauses (≥3.5s). It's kept this shallow

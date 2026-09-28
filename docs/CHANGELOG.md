@@ -101,6 +101,13 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-28 — Fix: the soundscape punched in instead of fading up
+- **The bed no longer slams in a couple seconds after the voice.** The gentle
+  fade-in ("bloom") was scheduled when the session opened, but the bed is fetched
+  and decoded asynchronously and only starts a moment later — so the fade was
+  already spent and the bed started at near-full level. The bloom now begins the
+  instant the bed actually starts, so it eases up smoothly to its level as intended.
+
 ### 2026-09-28 — Fix: audio didn't start after an interrupted purchase
 - **After completing the $4.99 unlock, the session could start silently** (no voice,
   no soundscape) — then play normally on the next attempt. Cause: a purchase that

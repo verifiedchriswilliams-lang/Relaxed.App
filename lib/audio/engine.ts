@@ -616,10 +616,12 @@ export class AudioEngine {
     this.ambientDuck = duck;
     this.ambientNodes.push(scene, duck);
 
-    // A hosted looping bed (ElevenLabs nature/music track).
+    // A hosted looping bed (ElevenLabs nature/music track). The bloom fade-in is
+    // started INSIDE startFile, the moment the (async-fetched, async-decoded)
+    // source actually begins — not here, or the fade would be spent on silence
+    // during the fetch and the bed would punch in at full level a couple seconds in.
     if (src) {
-      this.startFile(ctx, src, master);
-      this.bloomMaster(master, ctx, level ?? 0.4);
+      this.startFile(ctx, src, master, level ?? 0.4);
       return;
     }
 
@@ -1125,12 +1127,13 @@ export class AudioEngine {
   // Load a looping audio file (an ElevenLabs bed) into the ambient bus. The file
   // itself should be a seamless ~60s loop. Async; if it fails, the session (and
   // breathing visual) continue in silence.
-  private async startFile(ctx: AudioContext, src: string, master: GainNode) {
+  private async startFile(ctx: AudioContext, src: string, master: GainNode, level: number) {
     // On a runtime where decodeAudioData can't run codecs (Mac Catalyst), decode
     // the FLAC ourselves in JS (WASM, off-thread) so we can loop the exact bed
     // sample-accurately with loop=true — identical to iOS, no crossfade. If that
     // fails we fall back to the <audio> crossfade so the bed is never silent.
-    // iOS/web keep the gapless AudioBufferSourceNode path below.
+    // iOS/web keep the gapless AudioBufferSourceNode path below. Each path blooms
+    // the master from the instant its source starts, so the fade-in is real audio.
     if (!(await this.ensureDecodeOk(ctx))) {
       const buf = await this.decodeFlacToBuffer(ctx, src);
       if (this.ambientMaster !== master || this.ctx !== ctx) return;
@@ -1141,8 +1144,9 @@ export class AudioEngine {
         s.connect(master);
         s.start();
         this.ambientNodes.push(s);
+        this.bloomMaster(master, ctx, level);
       } else {
-        this.startFileMedia(ctx, src, master);
+        this.startFileMedia(ctx, src, master, level);
       }
       return;
     }
@@ -1156,6 +1160,7 @@ export class AudioEngine {
       s.connect(master);
       s.start();
       this.ambientNodes.push(s);
+      this.bloomMaster(master, ctx, level);
     } catch {
       /* file missing/undecodable; carry on quietly */
     }
@@ -1168,7 +1173,7 @@ export class AudioEngine {
   // over a short overlap, hiding the media element's imprecise loop timing. The
   // beds are already mastered as seamless loops, so the brief overlap is
   // inaudible. Only runs on the codec-broken runtime (Mac app).
-  private startFileMedia(ctx: AudioContext, src: string, master: GainNode) {
+  private startFileMedia(ctx: AudioContext, src: string, master: GainNode, level: number) {
     try {
       const OVERLAP = 0.22; // seconds of crossfade at the seam
       const MARGIN = 0.15; // start early so the outgoing element never cuts mid-fade
@@ -1207,6 +1212,17 @@ export class AudioEngine {
       } catch {
         /* ignore */
       }
+      // Bloom the master when the bed truly begins (the <audio> loads async), so
+      // the fade-in isn't spent on silence and the bed doesn't punch in.
+      a.el.addEventListener(
+        "playing",
+        () => {
+          if (this.ambientMaster === master && this.ctx === ctx) {
+            this.bloomMaster(master, ctx, level);
+          }
+        },
+        { once: true }
+      );
       a.el.play().catch(() => {});
 
       const poll = setInterval(() => {
