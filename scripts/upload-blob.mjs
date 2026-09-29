@@ -29,6 +29,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, "..");
 const PUBLIC = path.join(ROOT, "public");
 
+// Load .env.local / .env like the build scripts, so BLOB_READ_WRITE_TOKEN (and
+// friends) are picked up without prefixing them on the command line.
+for (const f of [".env.local", ".env"]) {
+  const p = path.join(ROOT, f);
+  if (!fs.existsSync(p)) continue;
+  for (const line of fs.readFileSync(p, "utf8").split("\n")) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/i);
+    if (m && !(m[1] in process.env)) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
+  }
+}
+
 const TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
 if (!TOKEN) {
   console.error(
