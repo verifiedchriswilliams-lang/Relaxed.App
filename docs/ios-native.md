@@ -124,7 +124,20 @@ fill metadata → Submit. Full detail, including App Store Connect fields and th
 Guideline 4.2 "minimum functionality" review-notes guidance, is in
 [ios-build.md](./ios-build.md).
 
-## 7. Known native gotchas
+## 7. Apple Watch companion (native, not a wrapper)
+
+The one part of the product that leaves the web stack. `native/watch/` holds a
+**native watchOS SwiftUI** app — watchOS can't reuse the Capacitor/Web-Audio app,
+so it's a genuine SwiftUI build. **V1 is standalone:** a haptic breathing pacer
+(1/3/5/10 min, up/down wrist taps on the same 6s/2.5s/6s cadence as the phone —
+mirrored from `lib/breath.ts`), a mindfulness `WKExtendedRuntimeSession` to keep
+it alive, and **Mindful Minutes written to Apple Health**. No on-watch AI voice
+(that's a v2 AVAudioEngine rebuild) and no WatchConnectivity phone-control (v1.1).
+It's added as a watch target in the Xcode project on the Mac (the `ios/` project
+isn't committed) — full setup in [`native/watch/README.md`](../native/watch/README.md).
+This is also the strongest App Store *featuring* hook (native watchOS + HealthKit).
+
+## 8. Known native gotchas
 
 - **Launch-screen cache:** iOS aggressively caches the launch image; to verify a
   new splash, delete the app, restart the phone, and reinstall.

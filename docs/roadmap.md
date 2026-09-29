@@ -84,16 +84,17 @@ then the big native lift.
    Watch's scope. (Home-screen streak/intention widgets are explicitly *not* in
    scope — see "Explicitly not building".)
 
-3. **1.6 — Apple Watch companion (flagship native).** *Effort: L. The single
-   strongest portfolio move: it ends the "it's a Capacitor wrapper" conversation.*
-   A genuinely native **SwiftUI** app that does three things exceptionally well:
-   pick a **1 / 3 / 5 / 10-minute** session, **haptic breathing guidance**, and
-   write **Mindful Minutes to HealthKit**. Optionally hand a phone-generated
-   session to the wrist (WatchConnectivity). **Scope discipline:** do *not* port
-   relaxed.app to the Watch; the Watch version is *more* minimal than the phone.
-   Standalone on-watch AI playback (an AVAudioEngine rebuild) is explicitly v2.
-   watchOS can't reuse the Capacitor/Web-Audio app, so this is a net-new Swift
-   build — the point is precisely that it demonstrates native depth.
+3. **1.6 — Apple Watch companion (flagship native). 🔨 V1 source landed
+   2026-09-29; integrating in Xcode.** *Effort: L. The single strongest portfolio
+   move: it ends the "it's a Capacitor wrapper" conversation.* A genuinely native
+   **SwiftUI** app that does three things exceptionally well: pick a
+   **1 / 3 / 5 / 10-minute** session, **haptic breathing guidance** (up/down wrist
+   taps on the phone's exact cadence), and write **Mindful Minutes to HealthKit**,
+   with a mindfulness extended-runtime session. Source is in `native/watch/` (see
+   its README). **Scope discipline held:** V1 is *standalone* — no phone-session
+   handoff (WatchConnectivity is v1.1) and no on-watch AI voice (an AVAudioEngine
+   rebuild = v2). watchOS can't reuse the Capacitor/Web-Audio app, so this is a
+   net-new Swift build — precisely the point: it demonstrates native depth.
 
 **Android — strong parallel consideration.** *Effort: M. Business breadth over
 portfolio depth — slot it by appetite.* The web app already runs under Capacitor,
