@@ -112,7 +112,8 @@ stateDiagram-v2
   where a purchase is possible or the unlock is owned (see
   [monetization.md](./monetization.md)); it auto-opens when a premium voice is the
   current selection and is otherwise toggled by the caret. Every voice previews
-  freely; the gate is at Begin.
+  freely (each premium persona speaks its **own** audition line, so the reveal
+  feels like meeting distinct guides, not clones); the gate is at Begin.
 - **Intention is required only for a voiced custom session.** With voice None a
   custom session is a pure soundscape (no script is written), so the intention
   field is optional and Begin is enabled without it.
@@ -177,7 +178,10 @@ fully reachable. All history is on-device (`localStorage`); see
 3. For "In your words," the **Meditation Engine** gives Claude a structured arc
    (settle → body → visualization → reflection → close) with per-scene targets;
    Claude fills each scene, and it starts instantly with a spoken arrival while
-   the body streams in.
+   the body streams in. The arrival — and the body — are **posture-aware**
+   (`lib/arrival.ts`): a phrase about a walk, a workout, or a drive is never met
+   with "sit down and close your eyes"; the session grounds in the movement (or,
+   for driving, keeps the eyes on the road) instead.
 4. Everything plays over the chosen bed with ducking, a bloom-in, soft bells, and
    a **scene-based audio envelope**: for sleep the voice thins out toward the end
    while the bed continues; other sessions soften gently at the close.

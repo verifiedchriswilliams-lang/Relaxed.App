@@ -50,6 +50,8 @@ relaxed.app/
 | `lib/audio/levels.ts` | Loudness math (`normGain`) + bed/voice selection (`bedAndVoice`), level targets, `VOICE_STATS`, `PREVIEW_GAIN` | [audio-engine](./audio-engine.md#5-loudness-normalization-the-it-just-sounds-right-work) |
 | `lib/audio/types.ts` | Shared audio types (`Soundscape`, `SoundCat`, `SoundDef`, `Accent`) | — |
 | `lib/breath.ts` | The 14.5s breath clock (`breathAt`, `easeInOut`, `BREATH_*`) shared by orb + cue | [audio-engine](./audio-engine.md) |
+| `lib/arrival.ts` | Posture-aware instant-start arrival: `detectPosture`, `arrivalLines`, `postureDirective` (still / moving / driving), shared by the client arrival + the custom-script route | [product-spec](./product-spec.md) |
+| `lib/premiumVoices.ts` | The 10 premium voice personas (`PREMIUM_VOICES`, ids, per-voice `preview` line, `isPremiumVoice`) | [product-spec](./product-spec.md), [monetization](./monetization.md) |
 | `lib/format.ts` | Pure formatters: `timeAgo`, `mmss`, `greetingFor`, `transcriptLines` | — |
 | `lib/rateLimit.ts` | Per-IP fixed-window rate limiter for the paid routes (`enforceRateLimit`) | [security](./security.md) |
 | `lib/sessions.ts` | Preset session assembler (`assembleSession`, pacing/fit, transcript, cache line enumeration) | [audio-engine](./audio-engine.md) |

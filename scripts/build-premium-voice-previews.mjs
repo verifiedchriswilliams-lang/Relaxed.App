@@ -40,21 +40,24 @@ const FORMAT = process.env.ELEVENLABS_OUTPUT_FORMAT || "mp3_44100_128";
 const SPEED = Number(process.env.ELEVENLABS_SPEED ?? 1.0) || 1.0;
 const STABILITY = Number(process.env.ELEVENLABS_STABILITY ?? 0.85) || 0.85;
 
-// Parse the premium roster out of lib/premiumVoices.ts (single source of truth).
+// Parse the premium roster out of lib/premiumVoices.ts (single source of truth),
+// including each voice's own `preview` audition line.
 const src = fs.readFileSync(path.join(ROOT, "lib", "premiumVoices.ts"), "utf8");
-const RE = /id:\s*"([^"]+)",\s*name:\s*"([^"]+)",\s*gender:\s*"[^"]+",\s*accent:\s*"[^"]+",\s*voiceId:\s*"([^"]+)"/g;
+const RE = /id:\s*"([^"]+)",\s*name:\s*"([^"]+)",\s*gender:\s*"[^"]+",\s*accent:\s*"[^"]+",\s*voiceId:\s*"([^"]+)",\s*blurb:\s*"[^"]*",\s*preview:\s*"([^"]*)"/g;
 const ROSTER = [];
-for (let m; (m = RE.exec(src)); ) ROSTER.push({ id: m[1], name: m[2], voiceId: m[3] });
+for (let m; (m = RE.exec(src)); ) ROSTER.push({ id: m[1], name: m[2], voiceId: m[3], preview: m[4] });
 if (ROSTER.length !== 10) {
   console.error(`Expected 10 premium voices, parsed ${ROSTER.length}. Check lib/premiumVoices.ts.`);
   process.exit(1);
 }
 
-// Each voice introduces itself by name (matches the tray label), so auditioning
-// feels like meeting a guide. Override all with VOICE_PREVIEW_TEXT.
-const previewText = (name) =>
-  process.env.VOICE_PREVIEW_TEXT?.replace(/\{name\}/g, name) ||
-  `I'm ${name}. Whenever you're ready, we'll begin.`;
+// Each voice speaks its OWN audition line from lib/premiumVoices.ts, so the tray
+// feels like meeting distinct guides rather than clones. VOICE_PREVIEW_TEXT still
+// overrides all of them (with {name} substituted) for a one-off batch.
+const previewText = (v) =>
+  process.env.VOICE_PREVIEW_TEXT?.replace(/\{name\}/g, v.name) ||
+  v.preview ||
+  `I'm ${v.name}. Whenever you're ready, we'll begin.`;
 
 const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
 let blobPut = null;
@@ -90,7 +93,7 @@ async function synth(voiceId, text) {
 let made = 0, failed = 0;
 for (const v of list) {
   try {
-    const buf = await synth(v.voiceId, previewText(v.name));
+    const buf = await synth(v.voiceId, previewText(v));
     fs.writeFileSync(path.join(OUT_DIR, `${v.id}.mp3`), buf);
     if (blobPut) {
       await blobPut(`voice-previews/${v.id}.mp3`, buf, {

@@ -74,18 +74,16 @@
 
 ## Product / scaling
 
-- 🟠 **Instant-start arrival ignores the intention.** To start a custom session
-  instantly, the app speaks a fixed, generic *seated-meditation* arrival ("settle
-  in, find a position you can hold, let your eyes close…") while Claude writes the
-  body. For active intentions — a walk, a drive, a workout — that is actively
-  wrong and undercuts the core promise of being responsive to what the person
-  asked for. Fix: pick a posture/activity-aware arrival (seated / moving /
-  eyes-open) from the intention, or use a posture-neutral one, keeping the instant
-  start. Tracked in [roadmap.md](./roadmap.md). *Not a review blocker.*
-- 🟢 **Voices feel templated.** Premium voices all preview with the same line and
-  read the same script style, so they feel like clones rather than distinct
-  guides. Give each its own preview line and, longer term, a per-persona script
-  style. Tracked in [roadmap.md](./roadmap.md).
+- 🟢 **Instant-start arrival is now posture-aware (was a real gap).** The custom
+  arrival used to always speak a seated "settle in, close your eyes" open, which
+  was wrong for a walk / drive / workout. Now `lib/arrival.ts` reads a coarse
+  posture from the phrase (still / moving / driving) and adapts both the spoken
+  arrival and a directive to the body writer. Remaining nuance: detection is
+  keyword-based, so an unusual phrasing may fall back to the seated default.
+- 🟢 **Premium voices still share a script style.** Each premium voice now has its
+  **own** preview audition line (they no longer all say "I'm {name}…"). The larger
+  bet — catering the generated *script* to each persona so voice + words feel like
+  one guide — is still open. Tracked in [roadmap.md](./roadmap.md).
 - 🟠 **No accounts, no cross-device continuity.** All state is `localStorage` on
   one device; clearing site data or switching devices loses history and prefs.
   This is a deliberate Phase 2 tradeoff, not an accident, but it caps retention

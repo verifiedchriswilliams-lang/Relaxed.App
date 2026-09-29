@@ -134,22 +134,16 @@ Real "make the moment better" work — but hardest to *show* in a five-minute de
 and much of it is half-built, so weave it into the releases above rather than
 spending a headline on it:
 
-- **Intention-aware arrival (fixes a real gap).** The instant-start arrival is a
-  fixed, generic seated-meditation script ("settle in, find a position you can
-  hold, let your eyes close…") played while Claude writes the body. That directly
-  contradicts the product's whole promise for *active* intentions — "a 15-minute
-  walk", "a drive through the countryside", "something for my workout" — where
-  telling the person to sit and close their eyes is wrong. Make the arrival
-  responsive: detect posture/activity from the intention and choose a matching
-  arrival (seated / moving / eyes-open), or use a posture-neutral arrival, while
-  keeping the instant start. See
-  [risks-tech-debt.md](./risks-tech-debt.md). *Effort: S/M.*
-- **Distinct voice personalities.** Every premium voice previews with the same
-  templated line ("I'm {name}. Whenever you're ready, we'll begin."), which makes
-  them feel like clones. Give each voice its **own** preview line, and — the bigger
-  bet — cater the *script style* to each persona so the voice + words feel like one
-  human, not a narrator reading a shared script. *Effort: S for the lines, M+ for
-  per-voice script styles.*
+- ✅ **Intention-aware arrival (shipped 2026-09-29).** The instant-start arrival
+  and the body writer are now posture-aware (`lib/arrival.ts`): a walk / drive /
+  workout is no longer met with "sit down and close your eyes." Remaining: the
+  detection is keyword-based, so an odd phrasing falls back to the seated default —
+  a smarter (or model-assisted) read could sharpen it later.
+- **Per-persona script styles (voice personalities, part 2).** Each premium voice
+  now has its **own** preview line (shipped 2026-09-29), so the reveal no longer
+  feels like clones. The bigger bet is still open: cater the generated *script
+  style* to each persona so the voice + words read as one guide, not a narrator
+  reading a shared script. *Effort: M+.*
 - **Smarter generation arc** — make the intent→emotional-state→session-arc model a
   felt product capability, not just an engine envelope. The structured arc and
   scene envelopes already exist (`lib/sessions.ts`, `setSession`); the work is

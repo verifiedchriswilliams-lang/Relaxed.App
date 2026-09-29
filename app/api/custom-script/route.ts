@@ -3,6 +3,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { getDurationBand, SCRIPT_SYSTEM_PROMPT } from "@/lib/contexts";
 import { blueprintFor, type Blueprint, type SceneKey } from "@/lib/engine";
 import { enforceRateLimit } from "@/lib/rateLimit";
+import { detectPosture, postureDirective } from "@/lib/arrival";
 
 // Writes a fully bespoke meditation for a short phrase the user typed, live via
 // Claude, on the Meditation Engine (Phase 1). The app hands Claude a structured
@@ -128,10 +129,15 @@ function buildPrompt(
   const opening = arrivalText
     ? `IMPORTANT — the session has ALREADY BEGUN. The person was just greeted and guided to settle with these exact spoken lines: "${arrivalText}". Continue seamlessly. Do NOT greet them again, do NOT re-introduce yourself, and do NOT repeat the settling-in or the first breath. Your very first line (the start of [scene:settle]) goes straight on from there.`
     : `Open by gently acknowledging what they named, then move through the arc below.`;
+  // If the phrase implies they are moving (a walk, a workout) or driving, the
+  // whole session must honor that — never "sit down and close your eyes". Empty
+  // for the seated default, so the cached system prompt's assumptions still hold.
+  const posture = postureDirective(detectPosture(phrase));
   return [
     `Name: ${name}`,
     `Session type: Custom, written live for what this person is carrying right now.`,
     `What they typed (a short phrase): "${phrase}"`,
+    ...(posture ? ["", posture] : []),
     ``,
     opening,
     ``,

@@ -79,6 +79,7 @@ import {
   bedAndVoice,
   BED_SOLO,
 } from "@/lib/audio/levels";
+import { arrivalLines, detectPosture } from "@/lib/arrival";
 import { AudioEngine } from "@/lib/audio/engine";
 import { timeAgo, rotatingGreeting, mmss, transcriptLines } from "@/lib/format";
 import { breathAt } from "@/lib/breath";
@@ -1244,15 +1245,10 @@ export default function Home() {
   // body lines in behind the arrival (see AudioEngine.playCustomStream). If the
   // voice is set to None it's a pure soundscape, so this path doesn't apply.
   function customArrival(): { text: string; pauseAfter: number }[] {
-    const who = name.trim();
-    return [
-      { text: who ? `Let's begin, ${who}.` : "Let's begin.", pauseAfter: 2.4 },
-      {
-        text: "Settle into a position you can rest in, and when you feel ready, let your eyes close.",
-        pauseAfter: 3.2,
-      },
-      { text: "Take a slow breath in. And gently let it go.", pauseAfter: 4 },
-    ];
+    // Posture-aware: a walk / drive / workout must not be met with "sit down and
+    // close your eyes." The body writer gets the same read (from the phrase) so
+    // the whole session honors the activity. See lib/arrival.ts.
+    return arrivalLines(name, detectPosture(customText));
   }
 
   function beginCustom() {

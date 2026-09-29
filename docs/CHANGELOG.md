@@ -101,6 +101,19 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-29 — Custom sessions honor how you're moving (walk / drive / workout)
+- **The session no longer tells a walker or a driver to "sit down and close your
+  eyes."** A custom intention that mentions moving (a walk, a run, a workout) or
+  driving is now detected (`lib/arrival.ts`), and both the instant-start arrival
+  and the body Claude writes adapt: grounding in the movement, or for driving,
+  keeping the eyes on the road. Seated intentions are unchanged.
+
+### 2026-09-29 — Each premium voice has its own audition line
+- **The premium voices no longer all say the same thing.** Each of the ten
+  personas now previews with its **own** line, so auditioning feels like meeting
+  distinct guides rather than clones. (Regenerate the clips after editing the lines
+  with `scripts/build-premium-voice-previews.mjs`.)
+
 ### 2026-09-28 — "more voices" shows the free voices too (not an all-locked wall)
 - **The expanded "more voices" list now includes the two free voices per gender**
   (Charlie/Mila, Tyler/Hunter), named and without a lock, ahead of the five premium
