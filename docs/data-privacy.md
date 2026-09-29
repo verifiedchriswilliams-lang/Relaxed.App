@@ -58,10 +58,22 @@ included:
 | `session_abandon` | context, duration, elapsedSec |
 | `session_replay` | context, duration |
 | `feedback` | mood (enum), context, custom (bool) |
+| `custom_body_ok` | context, duration, lines (count) |
 | `custom_no_body` | context, duration |
+| `reminder_set` | on (bool) |
+| `paywall_shown` | lockBed / lockVoice / lockInfinite (bools), soundscape, voice, duration |
+| `purchase_start` | — |
+| `purchase_success` | — |
+| `purchase_fail` | reason (incomplete / error) |
+| `restore_success` | — |
+| `restore_none` | — |
 
 `mood` is one of a fixed set ("much calmer" / "a little calmer" / "about the
-same"), not free text. Plus Vercel's cookieless auto-pageviews.
+same"), not free text. The monetization events (`paywall_shown` →
+`purchase_start` → `purchase_success`/`purchase_fail`, plus `restore_*`) form the
+conversion funnel; they carry only the *shape* of the selection (which locked
+item, which soundscape/voice), never the name or the typed phrase, and no
+purchase amount or receipt. Plus Vercel's cookieless auto-pageviews.
 
 ## 5. Retention & deletion
 

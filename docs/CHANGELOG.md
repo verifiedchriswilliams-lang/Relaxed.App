@@ -101,6 +101,17 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-29 — Conversion funnel telemetry (anonymous, shape-only)
+- **Added the monetization + generation funnel** on top of the existing session
+  events: `paywall_shown` (with which locked item drove it) → `purchase_start` →
+  `purchase_success` / `purchase_fail`, plus `restore_success` / `restore_none`
+  and `custom_body_ok` / `custom_no_body`. This turns "N visitors" into "here's
+  what people actually do": paywall-to-purchase conversion, what sells (bed vs
+  voice vs infinite), and custom-generation success rate.
+- Still no accounts, no identifiers, no free text — events carry only the shape of
+  the action, never the name, the typed phrase, or any purchase amount. See
+  [data-privacy.md](./data-privacy.md).
+
 ### 2026-09-29 — Custom sessions honor how you're moving (walk / drive / workout)
 - **The session no longer tells a walker or a driver to "sit down and close your
   eyes."** A custom intention that mentions moving (a walk, a run, a workout) or

@@ -1102,9 +1102,11 @@ export default function Home() {
       return;
     }
     setPaywallBusy(true);
+    ev("purchase_start");
     try {
       const ok = await purchasePremium();
       if (ok) {
+        ev("purchase_success");
         setPaywallOpen(false);
         haptic("success");
         // The paywall is only reached by tapping Begin on a locked session, so a
@@ -1112,9 +1114,11 @@ export default function Home() {
         // back to the tray. startSession bypasses the (now-stale) gate check.
         await startSession();
       } else {
+        ev("purchase_fail", { reason: "incomplete" });
         setPaywallNote("Purchase didn't complete.");
       }
     } catch {
+      ev("purchase_fail", { reason: "error" });
       setPaywallNote("Something went wrong. Please try again.");
     } finally {
       setPaywallBusy(false);
@@ -1129,6 +1133,16 @@ export default function Home() {
       engineRef.current.stopPreview();
       haptic("light");
       setPaywallNote("");
+      // Funnel: what drove the paywall (which locked item), shape only. Compare
+      // against purchase_success to see conversion, and by lock to see what sells.
+      ev("paywall_shown", {
+        lockBed: bedLocked(soundscape),
+        lockVoice: voiceLocked(voice),
+        lockInfinite: infiniteLocked,
+        soundscape,
+        voice,
+        duration,
+      });
       setPaywallOpen(true);
       return;
     }
@@ -1331,6 +1345,8 @@ export default function Home() {
 
     eng.playCustomStream(arrival, bodyPromise, fetchAudio, (body) => {
       if (body.length) {
+        // Funnel: the bespoke body was written and is playing (vs custom_no_body).
+        ev("custom_body_ok", { context, duration, lines: body.length });
         setScript(
           [...arrival.map((a) => a.text), ...body.map((s) => s.text)].join("\n")
         );
@@ -2570,6 +2586,7 @@ export default function Home() {
               onClick={async () => {
                 setPaywallNote("");
                 const ok = await restorePurchase();
+                ev(ok ? "restore_success" : "restore_none");
                 if (ok) setPaywallOpen(false);
                 else if (!isNativePurchaseAvailable())
                   setPaywallNote("Premium unlocks in the relaxed app on your iPhone.");

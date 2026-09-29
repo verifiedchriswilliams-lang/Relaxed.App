@@ -118,12 +118,12 @@ product charges money:
 - **Durable, cross-instance rate limiting** — the current limiter is per-instance
   and in-memory (`lib/rateLimit.ts`); back it with a shared store. See
   [risks-tech-debt.md](./risks-tech-debt.md).
-- **Privacy-conscious product telemetry** — extend the existing `ev()` hook
-  (`lib/analytics.ts`) into a small funnel: paywall exposure → purchase,
-  time-to-first-audio, TTS/generation failures, completion, abandons. Instrument
-  *behavior* without accounts or storing anyone's intentions — that restraint is
-  itself the product-leadership story. Keep it within the
-  [privacy model](./data-privacy.md).
+- **Privacy-conscious product telemetry** — ✅ the conversion + generation funnel
+  shipped (2026-09-29): `paywall_shown → purchase_start → purchase_success/fail`,
+  `restore_*`, and `custom_body_ok`/`custom_no_body` on top of the existing
+  session events, all shape-only (see [data-privacy.md](./data-privacy.md)).
+  Remaining nice-to-have: **time-to-first-audio** (timing from Begin to first
+  sound) and a server-side view of TTS/route failures.
 - **Foundation** — self-host fonts, security headers/CSP, dependency scanning +
   ESLint, `AudioEngine`/UI test coverage (only pure logic is tested today), and
   remove the dead procedural-audio code.
