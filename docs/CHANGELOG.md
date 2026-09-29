@@ -101,6 +101,21 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-09-29 — Fix: player header pushed down again (align web to the shipped build)
+- **Re-fixed the safe-area double-inset.** The App Store build (1.3) is compiled
+  with `ios.contentInset: "always"` (the native shell insets the web content), but
+  the web had been flipped to assume an edge-to-edge shell and was adding its own
+  `env()` inset on top → the header dropped down. The page now zeroes its own inset
+  inside the iOS shell again (`html[data-native-ios]`), so the inset is applied
+  exactly once. The `contentInset` value and this override are documented as needing
+  to move together with any new binary, to stop this recurring.
+
+### 2026-09-29 — Sharper unlock copy
+- The paywall now reads **"unlock premium"**, lists **"+9 soundscapes  +10 voices
+  +infinite sessions"** (framed as what you're adding), and the subline is
+  **"pay once. yours forever, no subscription."** — ownership-forward and
+  objection-killing, replacing the softer "one time… previews are always free."
+
 ### 2026-09-29 — Conversion funnel telemetry (anonymous, shape-only)
 - **Added the monetization + generation funnel** on top of the existing session
   events: `paywall_shown` (with which locked item drove it) → `purchase_start` →

@@ -198,10 +198,12 @@ inline on the chips; the only added element is one unlock bar below the carousel
 
 ### Unlock bar copy (must not read as a subscription)
 One calm bar under the carousel. It must make the one-time nature unmistakable
-(Apple guidelines + user trust). Chosen copy:
-- Title: **"unlock 9 sounds, 10 voices, and infinite"** (or the shorter "unlock all
-  premium" with the "9 sounds · 10 voices · infinite" line beneath, as mocked)
-- Sub: **"one time, not a subscription. previews are always free."**
+(Apple guidelines + user trust). Shipped copy:
+- Title: **"unlock premium"**
+- Value: **"+9 soundscapes  +10 voices  +infinite sessions"** (plus-framed as what
+  the unlock adds, no dot separators)
+- Sub: **"pay once. yours forever, no subscription."** (ownership + kills the
+  recurring-charge objection; the old "previews are always free" line was dropped)
 - Button: **"$4.99 once"**
 
 No renewal/subscription language anywhere. (House rule: no em dashes in this copy.)

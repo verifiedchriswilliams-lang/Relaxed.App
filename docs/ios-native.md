@@ -38,21 +38,24 @@ flowchart LR
   `cleartext: false`.
 - `backgroundColor: #121110` (Ink) app-wide and iOS, so the status-bar and
   home-indicator regions are painted by the native Ink ground.
-- **The page owns the safe-area insets, everywhere.** The app draws edge-to-edge
-  (`viewport-fit=cover` in `app/layout.tsx`, and `ios.contentInset: "never"` in
-  `capacitor.config.ts` so the native shell does not inset either) and the chrome
-  clears the status bar / Dynamic Island / home indicator via CSS
-  `env(safe-area-inset-*)` padding, read through the `--sat`/`--sab` tokens in
-  `app/globals.css` (`.topbar`, `.player-top`, the tray/history bottoms). This is
-  exactly how the hosted site renders in mobile Safari, so the app and the web
-  match. The Ink page background fills the inset regions.
-  - **The native shell must never *also* inset**, or the two stack and the layout
-    is pushed down (the player header floats below the island). Recent Capacitor
-    iOS draws edge-to-edge by default, so `contentInset: "never"` matches the
-    shell's own behavior; older builds honored `"always"` and did inset, which is
-    why an early build double-inset until the page stopped adding a second inset.
-  - Because the inset is pure CSS, it reaches every installed build on deploy — no
-    native rebuild.
+- **Exactly one owner of the safe-area inset, and in the app it is the NATIVE
+  shell.** `ios.contentInset: "always"` makes the WKWebView inset the web content
+  by the safe area, and the Ink background fills the status-bar / Dynamic Island /
+  home-indicator regions. On the hosted site in mobile Safari there is no native
+  inset, so the *page* owns it: `viewport-fit=cover` makes `env(safe-area-inset-*)`
+  real and the chrome clears the notch via the `--sat`/`--sab` tokens in
+  `app/globals.css` (`.topbar`, `.player-top`, the tray/history bottoms).
+  - **The two must never both apply, or they stack** and the player header is
+    pushed down. So the page zeroes its `--sat`/`--sab` inside the iOS shell
+    (`html[data-native-ios]`), set before first paint by a tiny script in
+    `app/layout.tsx` that checks `Capacitor.getPlatform() === "ios"`. Result: the
+    inset is applied exactly once (natively) in the app, once (via env) on the web.
+  - **Keep `contentInset`, this override, and the shipped binaries in lockstep.**
+    The App Store build is compiled with the `contentInset` value, so flipping it
+    silently double-insets (or overlaps) every already-installed build until it
+    updates. This bit us: the web was flipped to assume an edge-to-edge shell while
+    the shipped build still inset natively, which double-inset the header. Don't
+    change `contentInset` without shipping a matching binary at the same time.
 - **SplashScreen:** `launchShowDuration 1500`, `launchFadeOutDuration 700`, Ink
   background, no spinner — a calm cross-fade into the hosted page over an unchanging
   Ink ground.

@@ -2595,12 +2595,12 @@ export default function Home() {
             >
               ×
             </button>
-            <div className="pw-title">unlock all premium</div>
+            <div className="pw-title">unlock premium</div>
             <div className="pw-value">
-              9 soundscapes · 10 voices · infinite sessions
+              +9 soundscapes  +10 voices  +infinite sessions
             </div>
             <div className="pw-sub">
-              one time, not a subscription. previews are always free.
+              pay once. yours forever, no subscription.
             </div>
             <button className="pw-buy" disabled={paywallBusy} onClick={handlePurchase}>
               {paywallBusy ? "…" : "$4.99 once"}

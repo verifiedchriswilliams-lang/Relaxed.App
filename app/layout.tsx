@@ -66,6 +66,19 @@ export default function RootLayout({
       data-brand={BRAND.id}
       className={`${manrope.className} ${figtree.variable}`}
     >
+      <head>
+        {/* Flag the iOS native shell before first paint, so globals.css can zero
+            the page's safe-area insets there. The Capacitor iOS WKWebView already
+            insets the content (ios.contentInset "always"); without this the page
+            would add a SECOND inset and the player header drops down. No-op on the
+            web. Runs synchronously in <head>, so the first frame is already right. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var C=window.Capacitor;var p=C&&(C.getPlatform?C.getPlatform():C.platform);if(p==='ios')document.documentElement.setAttribute('data-native-ios','')}catch(e){}",
+          }}
+        />
+      </head>
       <body>
         {children}
         <Analytics />

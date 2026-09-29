@@ -19,16 +19,21 @@ const config: CapacitorConfig = {
     cleartext: false,
   },
   backgroundColor: "#121110",
-  // Draw edge-to-edge and let the PAGE own the safe-area insets via
-  // `env(safe-area-inset-*)` (see app/globals.css --sat/--sab) — the same way the
-  // hosted site renders in mobile Safari. Keep this "never": with "always" the
-  // native scroll view would ALSO inset by the safe area, stacking on the page's
-  // env() insets and pushing everything down. The Ink page background fills the
-  // status-bar / home-indicator regions, so nothing shows through. (Note: recent
-  // Capacitor iOS draws edge-to-edge regardless of this value, so "never" also
-  // matches what the current shell already does.)
+  // SINGLE OWNER OF THE SAFE-AREA INSET, and it is the NATIVE shell here.
+  // `contentInset: "always"` makes the WKWebView inset the web content by the safe
+  // area (status bar / Dynamic Island / home indicator), and the Ink background
+  // fills those regions. Because the native side owns it, the PAGE must NOT also
+  // add its own `env(safe-area-inset-*)` inset in the app, or the two stack and the
+  // player header is pushed down. The page handles that: inside the iOS shell it
+  // zeroes its --sat/--sab tokens (app/globals.css `html[data-native-ios]`, set
+  // before paint by app/layout.tsx). On the hosted site in mobile Safari there is
+  // no native inset, so the page owns it via env().
+  //   Keep this in sync with that override AND with the SHIPPED binaries: the App
+  //   Store build is compiled with this value, so flipping it silently double-insets
+  //   (or overlaps) every already-installed build until it updates. Do not change
+  //   it without shipping a matching binary at the same time.
   ios: {
-    contentInset: "never",
+    contentInset: "always",
     backgroundColor: "#121110",
   },
   plugins: {
