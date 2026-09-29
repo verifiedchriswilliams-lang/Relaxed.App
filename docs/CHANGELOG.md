@@ -101,14 +101,14 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
-### 2026-09-29 — Fix: player header pushed down again (align web to the shipped build)
-- **Re-fixed the safe-area double-inset.** The App Store build (1.3) is compiled
-  with `ios.contentInset: "always"` (the native shell insets the web content), but
-  the web had been flipped to assume an edge-to-edge shell and was adding its own
-  `env()` inset on top → the header dropped down. The page now zeroes its own inset
-  inside the iOS shell again (`html[data-native-ios]`), so the inset is applied
-  exactly once. The `contentInset` value and this override are documented as needing
-  to move together with any new binary, to stop this recurring.
+### 2026-09-29 — Fix: safe-area header, settled with the `max()` pattern
+- **The top chrome now uses `max(26px, safe-area-inset)` instead of
+  `26px + safe-area-inset`.** The shipped build draws edge-to-edge, so the page
+  owns the inset; adding a 26px design gap *on top of* the island inset floated the
+  header down, and zeroing the inset made it overlap the status bar. `max()` clears
+  the island by exactly the safe area (no stacked gap, no overlap) and doesn't
+  depend on the native shell's behavior — so this stops recurring. Applies to the
+  wordmark bar and the player header alike.
 
 ### 2026-09-29 — Sharper unlock copy
 - The paywall now reads **"unlock premium"**, lists **"+9 soundscapes  +10 voices

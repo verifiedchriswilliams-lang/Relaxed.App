@@ -19,21 +19,14 @@ const config: CapacitorConfig = {
     cleartext: false,
   },
   backgroundColor: "#121110",
-  // SINGLE OWNER OF THE SAFE-AREA INSET, and it is the NATIVE shell here.
-  // `contentInset: "always"` makes the WKWebView inset the web content by the safe
-  // area (status bar / Dynamic Island / home indicator), and the Ink background
-  // fills those regions. Because the native side owns it, the PAGE must NOT also
-  // add its own `env(safe-area-inset-*)` inset in the app, or the two stack and the
-  // player header is pushed down. The page handles that: inside the iOS shell it
-  // zeroes its --sat/--sab tokens (app/globals.css `html[data-native-ios]`, set
-  // before paint by app/layout.tsx). On the hosted site in mobile Safari there is
-  // no native inset, so the page owns it via env().
-  //   Keep this in sync with that override AND with the SHIPPED binaries: the App
-  //   Store build is compiled with this value, so flipping it silently double-insets
-  //   (or overlaps) every already-installed build until it updates. Do not change
-  //   it without shipping a matching binary at the same time.
+  // The shell draws EDGE-TO-EDGE and the PAGE owns the safe-area insets via env()
+  // — the same way the hosted site renders in mobile Safari. The chrome uses the
+  // `max(base, inset)` pattern in app/globals.css, which clears the notch / island
+  // exactly and can neither overlap the status bar nor float the header down, so it
+  // does not depend on this value. `contentInset: "never"` keeps the shell
+  // edge-to-edge to match; the Ink background fills the inset regions.
   ios: {
-    contentInset: "always",
+    contentInset: "never",
     backgroundColor: "#121110",
   },
   plugins: {

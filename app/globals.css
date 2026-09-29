@@ -29,21 +29,15 @@
   --gutter: 22px;
   --maxw: 460px;
 
-  /* Safe-area insets, as tokens. On the web (mobile Safari) the PAGE owns the
-     insets, so these are the real env() values and the chrome clears the notch /
-     Dynamic Island / home indicator. */
+  /* Safe-area insets. The app (and mobile Safari) draw edge-to-edge, so the PAGE
+     owns the insets via env(). The chrome uses the `max(base, inset)` pattern (see
+     .topbar / .player-top), NOT `base + inset`: on a notch/Dynamic Island device
+     the inset already clears the bar, so we take the larger of the two rather than
+     stacking a second design gap on top (which read as "too low"); on a device
+     with no inset the base still applies. This can neither overlap the status bar
+     nor float the header down, and doesn't depend on the native shell's behavior. */
   --sat: env(safe-area-inset-top);
   --sab: env(safe-area-inset-bottom);
-}
-
-/* Inside the iOS native shell the WKWebView already insets the web content by the
-   safe area (ios.contentInset "always", see capacitor.config.ts). Zero the page's
-   own insets there so they don't STACK on the native one and push the player
-   header down. The flag is set before first paint by the inline script in
-   layout.tsx. (This must track the contentInset value AND the shipped binary.) */
-html[data-native-ios] {
-  --sat: 0px;
-  --sab: 0px;
 }
 
 * {
@@ -179,7 +173,7 @@ button {
   justify-content: space-between;
   /* Clear the status bar / Dynamic Island in the native shell. On the web the
      inset resolves to 0, so the spacing is unchanged. */
-  padding: calc(26px + var(--sat)) 2px 0;
+  padding: max(26px, var(--sat)) 2px 0;
 }
 .wm {
   display: inline-flex;
@@ -1852,7 +1846,7 @@ button {
   align-items: center;
   justify-content: space-between;
   /* Clear the status bar / Dynamic Island in the native shell (see .topbar). */
-  padding: calc(26px + var(--sat)) 2px 0;
+  padding: max(26px, var(--sat)) 2px 0;
   font-size: 13px;
   color: var(--ink-1);
 }

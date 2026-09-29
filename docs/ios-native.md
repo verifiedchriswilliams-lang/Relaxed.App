@@ -38,24 +38,22 @@ flowchart LR
   `cleartext: false`.
 - `backgroundColor: #121110` (Ink) app-wide and iOS, so the status-bar and
   home-indicator regions are painted by the native Ink ground.
-- **Exactly one owner of the safe-area inset, and in the app it is the NATIVE
-  shell.** `ios.contentInset: "always"` makes the WKWebView inset the web content
-  by the safe area, and the Ink background fills the status-bar / Dynamic Island /
-  home-indicator regions. On the hosted site in mobile Safari there is no native
-  inset, so the *page* owns it: `viewport-fit=cover` makes `env(safe-area-inset-*)`
-  real and the chrome clears the notch via the `--sat`/`--sab` tokens in
-  `app/globals.css` (`.topbar`, `.player-top`, the tray/history bottoms).
-  - **The two must never both apply, or they stack** and the player header is
-    pushed down. So the page zeroes its `--sat`/`--sab` inside the iOS shell
-    (`html[data-native-ios]`), set before first paint by a tiny script in
-    `app/layout.tsx` that checks `Capacitor.getPlatform() === "ios"`. Result: the
-    inset is applied exactly once (natively) in the app, once (via env) on the web.
-  - **Keep `contentInset`, this override, and the shipped binaries in lockstep.**
-    The App Store build is compiled with the `contentInset` value, so flipping it
-    silently double-insets (or overlaps) every already-installed build until it
-    updates. This bit us: the web was flipped to assume an edge-to-edge shell while
-    the shipped build still inset natively, which double-inset the header. Don't
-    change `contentInset` without shipping a matching binary at the same time.
+- **The page owns the safe-area insets, with the `max()` pattern.** The shell
+  draws edge-to-edge (`viewport-fit=cover`; `ios.contentInset: "never"`) and the
+  chrome clears the notch / Dynamic Island / home indicator via
+  `env(safe-area-inset-*)` (the `--sat`/`--sab` tokens in `app/globals.css`,
+  `.topbar` / `.player-top` / the tray-history bottoms). The Ink background fills
+  the inset regions.
+  - **Use `max(base, inset)`, never `base + inset`.** The top chrome is
+    `padding-top: max(26px, var(--sat))`. On a notch/island device the inset (~59)
+    already clears the bar, so `max` takes it and adds **no** extra design gap —
+    which is what "`base + inset`" did, stacking 26px on top of the island and
+    floating the header down ("too low"). On a device with no inset, the 26px base
+    still applies. This can neither overlap the status bar (inset ≥ base clears it)
+    nor float the header down, and — key — it doesn't depend on whether the native
+    shell insets or not, so it can't be knocked out of sync by a shipped binary.
+  - History: this bounced between "too low" (`base + inset` on an edge-to-edge
+    build) and "overlap" (zeroing the inset). `max()` resolves both.
 - **SplashScreen:** `launchShowDuration 1500`, `launchFadeOutDuration 700`, Ink
   background, no spinner — a calm cross-fade into the hosted page over an unchanging
   Ink ground.
