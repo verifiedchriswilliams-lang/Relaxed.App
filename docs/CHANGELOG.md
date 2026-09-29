@@ -108,6 +108,10 @@ The native bridge and player hardening.
   and `custom_body_ok` / `custom_no_body`. This turns "N visitors" into "here's
   what people actually do": paywall-to-purchase conversion, what sells (bed vs
   voice vs infinite), and custom-generation success rate.
+- **`time_to_first_audio`**: ms from the Begin tap to the guide first becoming
+  audible, so the perceived start-up latency is measurable per session kind.
+- **Every event now carries `platform`** (ios / android / web), so app traffic can
+  be separated from web in the same Vercel analytics — no identifiers.
 - Still no accounts, no identifiers, no free text — events carry only the shape of
   the action, never the name, the typed phrase, or any purchase amount. See
   [data-privacy.md](./data-privacy.md).

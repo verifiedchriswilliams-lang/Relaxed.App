@@ -494,6 +494,12 @@ export default function Home() {
   const breathClockRef = useRef(0);
   const breathTsRef = useRef<number | null>(null);
   const reduceMotionRef = useRef(false);
+  // Time-to-first-audio: when Begin was tapped, whether we've reported yet, and
+  // the session kind — so the karaoke loop can emit the delta the first time the
+  // guide becomes audible. Voiced sessions only (sounds-only never goes active).
+  const beginAtRef = useRef<number | null>(null);
+  const ttfaSentRef = useRef(false);
+  const ttfaKindRef = useRef<string>("");
   // Lock-screen (MediaSession) controls call into the latest play/pause via this
   // ref, so the handlers we register once never go stale.
   const mediaActionRef = useRef({ play: () => {}, pause: () => {}, stop: () => {} });
@@ -770,6 +776,18 @@ export default function Home() {
     const tick = () => {
       const idx = engineRef.current.activeLineIndex();
       setActiveLine((prev) => (prev === idx ? prev : idx));
+
+      // Time to first audio: the first frame the guide is audible (a line goes
+      // active). One-shot per session; reported in ms from the Begin tap.
+      if (idx >= 0 && !ttfaSentRef.current && beginAtRef.current != null) {
+        ttfaSentRef.current = true;
+        const nowMs =
+          typeof performance !== "undefined" ? performance.now() : Date.now();
+        ev("time_to_first_audio", {
+          ms: Math.round(nowMs - beginAtRef.current),
+          kind: ttfaKindRef.current,
+        });
+      }
 
       const now =
         typeof performance !== "undefined" ? performance.now() : Date.now();
@@ -1175,6 +1193,12 @@ export default function Home() {
 
     const kind = voice === "none" ? "sounds" : selected.custom ? "custom" : "preset";
     ev("session_start", { kind, context, duration, voice, accent, soundscape });
+    // Start the time-to-first-audio clock at Begin; the karaoke loop reports the
+    // delta once the guide is first audible (skipped for sounds-only sessions).
+    beginAtRef.current =
+      typeof performance !== "undefined" ? performance.now() : Date.now();
+    ttfaSentRef.current = false;
+    ttfaKindRef.current = kind;
 
     // No-voice: a pure soundscape session. Skip generation and the voice
     // entirely; go straight to the player with the soundscape + breathing visual.

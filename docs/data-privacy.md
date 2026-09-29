@@ -54,6 +54,7 @@ included:
 | Event | Properties |
 |---|---|
 | `session_start` | kind (sounds/custom/preset), context, duration, voice, accent, soundscape |
+| `time_to_first_audio` | ms (Begin → guide first audible), kind |
 | `session_complete` | kind, context, duration |
 | `session_abandon` | context, duration, elapsedSec |
 | `session_replay` | context, duration |
@@ -68,6 +69,9 @@ included:
 | `restore_success` | — |
 | `restore_none` | — |
 
+Every event also carries `brand` and `platform` (ios / android / web), so app
+traffic (the WKWebView shells load the same hosted page, so their events land in
+the same Vercel analytics) can be told apart from web without any identifier.
 `mood` is one of a fixed set ("much calmer" / "a little calmer" / "about the
 same"), not free text. The monetization events (`paywall_shown` →
 `purchase_start` → `purchase_success`/`purchase_fail`, plus `restore_*`) form the

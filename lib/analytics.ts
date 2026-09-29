@@ -9,9 +9,23 @@ import { BRAND } from "./brand";
 // dev-mode analytics runtime is a silent no-op.
 type Props = Record<string, string | number | boolean>;
 
+// Which runtime the event fired from. The iOS/Mac apps load the same hosted page
+// in a WKWebView, so their events land in the same Vercel analytics as the web;
+// tagging the platform lets them be told apart (app vs web) after the fact.
+function platform(): string {
+  try {
+    const cap = (globalThis as { Capacitor?: { getPlatform?: () => string } })
+      .Capacitor;
+    const p = cap?.getPlatform?.();
+    return p === "ios" || p === "android" ? p : "web";
+  } catch {
+    return "web";
+  }
+}
+
 export function ev(name: string, props?: Props): void {
   try {
-    track(name, { brand: BRAND.id, ...(props ?? {}) });
+    track(name, { brand: BRAND.id, platform: platform(), ...(props ?? {}) });
   } catch {
     /* analytics is best-effort; never let it affect the session */
   }
