@@ -51,52 +51,65 @@ struct Orb: View {
     var pb: Double
     var label: String
 
-    // A gentle swell: the light does more of the breathing than the size does,
-    // which keeps a bright bed under the numeral at every point in the breath.
-    private var scale: Double { 0.72 + 0.28 * pb }
-    private var glow: Double { 0.82 + 0.18 * pb }
+    // A clear swell so the breath is visible, and the light brightens as it fills.
+    private var scale: Double { 0.58 + 0.47 * pb }   // ~0.58 .. 1.05
+    private var glow: Double { 0.75 + 0.25 * pb }
 
     var body: some View {
         ZStack {
-            // Warm outer halo.
+            // Wide ambient scatter. Each glow gets its own oversized frame so the
+            // gradient has room to fall off and bleeds past the orb into the dark,
+            // instead of being clipped to a hard disc.
             Circle()
                 .fill(RadialGradient(
-                    colors: [Theme.warm.opacity(0.14 * glow), .clear],
-                    center: .center, startRadius: 4, endRadius: 64))
-                .scaleEffect(1.18 * scale)
-                .blur(radius: 10)
+                    colors: [Theme.bone.opacity(0.08 * glow), .clear],
+                    center: .center, startRadius: 14, endRadius: 88))
+                .frame(width: 176, height: 176)
+                .blur(radius: 18)
+                .scaleEffect(scale)
 
-            // The main bloom: edgeless light emerging from the Ink.
+            // Warm halo.
+            Circle()
+                .fill(RadialGradient(
+                    colors: [Theme.warm.opacity(0.20 * glow), .clear],
+                    center: .center, startRadius: 8, endRadius: 75))
+                .frame(width: 150, height: 150)
+                .blur(radius: 12)
+                .scaleEffect(scale)
+
+            // The main bloom: edgeless light rising out of the Ink, soft to the edge.
             Circle()
                 .fill(RadialGradient(
                     stops: [
                         .init(color: Theme.bone.opacity(0.92 * glow), location: 0.0),
-                        .init(color: Theme.bone.opacity(0.55 * glow), location: 0.24),
-                        .init(color: Theme.bone.opacity(0.20 * glow), location: 0.48),
-                        .init(color: Theme.bone.opacity(0.05 * glow), location: 0.70),
-                        .init(color: .clear, location: 0.84),
+                        .init(color: Theme.bone.opacity(0.55 * glow), location: 0.26),
+                        .init(color: Theme.bone.opacity(0.22 * glow), location: 0.50),
+                        .init(color: Theme.bone.opacity(0.07 * glow), location: 0.72),
+                        .init(color: .clear, location: 0.90),
                     ],
-                    center: .center, startRadius: 0, endRadius: 54))
+                    center: .center, startRadius: 0, endRadius: 74))
+                .frame(width: 150, height: 150)
+                .blur(radius: 2)
                 .scaleEffect(scale)
 
-            // Inner bright breath, sitting a touch high.
+            // Inner bright breath, a touch high.
             Circle()
                 .fill(RadialGradient(
-                    colors: [Color.white.opacity(0.5), .clear],
+                    colors: [Color.white.opacity(0.35), .clear],
+                    center: .center, startRadius: 2, endRadius: 30))
+                .frame(width: 68, height: 68)
+                .offset(y: -3)
+                .blur(radius: 6)
+                .scaleEffect(scale)
+
+            // A steady, soft bed so the numeral stays legible at the exhale trough.
+            // This layer does not scale.
+            Circle()
+                .fill(RadialGradient(
+                    colors: [Theme.bone.opacity(0.5), .clear],
                     center: .center, startRadius: 2, endRadius: 34))
-                .frame(width: 78, height: 78)
-                .offset(y: -4)
-                .scaleEffect(scale)
-                .blur(radius: 6)
-
-            // A steady bed of light so the numeral stays legible through the whole
-            // breath. This layer does not scale.
-            Circle()
-                .fill(RadialGradient(
-                    colors: [Theme.bone.opacity(0.82), .clear],
-                    center: .center, startRadius: 2, endRadius: 44))
-                .frame(width: 76, height: 76)
-                .blur(radius: 6)
+                .frame(width: 62, height: 62)
+                .blur(radius: 8)
 
             // The clock: fixed size, legible, quiet.
             Text(label)
@@ -105,7 +118,7 @@ struct Orb: View {
                 .tracking(0.4)
                 .foregroundStyle(Theme.lumenInk)
         }
-        .frame(width: 108, height: 108)
+        .frame(width: 120, height: 120)
     }
 }
 
