@@ -45,7 +45,8 @@ export interface WatchState {
   active: boolean; // is a phone session on the player right now
   playing: boolean; // playing vs paused
   title: string; // session label ("Your session" or the preset name)
-  soundscape: string; // soundscape label
+  soundscape: string; // soundscape label (human-readable, for the name line)
+  motif: string; // soundscape id (e.g. "rain") → picks the watch line-art motif
   remaining: number; // whole seconds left
   total: number; // whole seconds in the session
 }
@@ -56,7 +57,7 @@ export interface WatchState {
 let lastSent = "";
 
 function keyOf(s: WatchState): string {
-  return `${s.active ? 1 : 0}|${s.playing ? 1 : 0}|${s.title}|${s.soundscape}|${s.remaining}|${s.total}`;
+  return `${s.active ? 1 : 0}|${s.playing ? 1 : 0}|${s.title}|${s.soundscape}|${s.motif}|${s.remaining}|${s.total}`;
 }
 
 // Push the current playback state to the watch. Safe no-op without the plugin.
@@ -85,6 +86,7 @@ export function clearWatchState(): void {
       playing: false,
       title: "",
       soundscape: "",
+      motif: "",
       remaining: 0,
       total: 0,
     });

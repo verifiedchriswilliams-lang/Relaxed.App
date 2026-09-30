@@ -773,10 +773,11 @@ export default function Home() {
       playing,
       title: selected.custom ? "Your session" : selected.label,
       soundscape: soundLabel,
+      motif: soundscape,
       remaining: Math.max(0, totalSecs - elapsed),
       total: totalSecs,
     });
-  }, [screen, playing, elapsed, totalSecs, selected.custom, selected.label, soundLabel]);
+  }, [screen, playing, elapsed, totalSecs, selected.custom, selected.label, soundLabel, soundscape]);
 
   // Route the wrist's play/pause/stop to the same handlers the lock screen uses,
   // so watch, lock screen, and in-app controls stay in lockstep. Registered once;

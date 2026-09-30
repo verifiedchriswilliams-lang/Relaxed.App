@@ -145,8 +145,13 @@ WatchConnectivity (no entitlement needed). The web side (`lib/watchRemote.ts`) i
 guarded no-op until a native build includes the `WatchBridge` plugin
 (`native/ios-plugin/WatchBridgePlugin.*`); the watch side is `PhoneLink.swift` +
 `RemoteView`. The phone still composes and plays every session; starting a new one
-from the wrist is not in 1.4.1. Deferred to **1.4.2**: the soundscape line art
-(`lib/soundMotifs`) drawn on the watch during playback.
+from the wrist is not in 1.4.1.
+
+**1.4.2 adds the soundscape line art on the wrist.** `SoundMotif.swift` ports the
+per-soundscape motifs from `lib/soundMotifs.tsx` to a SwiftUI `Canvas` (same
+100x100 grid, single Bone stroke), shown inside the breathing ring on the remote
+screen. The state snapshot carries the soundscape `motif` id so the watch draws the
+right one. Still deferred: per-motif micro-animation and tighter breath sync.
 
 ## 8. Known native gotchas
 

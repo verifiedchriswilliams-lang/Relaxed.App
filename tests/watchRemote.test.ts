@@ -13,6 +13,7 @@ const base: WatchState = {
   playing: true,
   title: "Your session",
   soundscape: "Rain on leaves",
+  motif: "rain",
   remaining: 300,
   total: 300,
 };

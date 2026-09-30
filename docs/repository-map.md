@@ -96,9 +96,10 @@ relaxed.app/
   (Swift + `.m` + a `.storekit` test config + README); dragged into the Xcode
   project on the Mac (the `ios/` project isn't in this repo).
 - `native/watch/` — the **native watchOS (SwiftUI) companion**: a standalone
-  haptic breathing pacer that logs Mindful Minutes to Health (V1), plus the
-  phone-mirroring **remote** (`PhoneLink.swift` + `RemoteView`, 1.4.1). Swift
-  files, a tracked reference copy of the target's `Info.plist`, and a README.
+  haptic breathing pacer that logs Mindful Minutes to Health (V1), the
+  phone-mirroring **remote** (`PhoneLink.swift` + `RemoteView`, 1.4.1), and the
+  soundscape **line art** on the wrist during playback (`SoundMotif.swift`, 1.4.2).
+  Swift files, a tracked reference copy of the target's `Info.plist`, and a README.
   Added as a watch target in the Xcode project on the Mac. Not a web wrapper — see
   [ios-native.md](./ios-native.md) and the folder's README.
 - `public/aurora.jpg` — the ElevenMind night-sky background (relaxed uses none).

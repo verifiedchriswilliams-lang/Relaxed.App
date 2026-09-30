@@ -166,28 +166,42 @@ struct SessionView: View {
 
 // MARK: - Remote: mirror + control a session playing on the phone (1.4.1).
 
-// Shown when a phone session is active. The soundscape name and countdown are
-// mirrored from the phone; the orb breathes locally (a smooth wrist visual, driven
-// by the same cadence) while playing, and pauses when the phone pauses. The
-// buttons send play/pause/stop back to the phone.
+// Shown when a phone session is active. Mirrors the phone's player: the soundscape
+// line art sits inside a ring that breathes on the shared cadence while playing,
+// with the countdown below and play/pause/stop that drive the phone. The line art
+// is the star here (1.4.2) — the thing that feels made for the wrist.
 struct RemoteView: View {
     @EnvironmentObject var link: PhoneLink
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 5) {
             Text(link.soundscape.isEmpty ? "relaxed" : link.soundscape)
-                .font(.system(size: 15))
+                .font(.system(size: 14))
                 .foregroundStyle(Theme.boneDim)
                 .lineLimit(1)
                 .padding(.horizontal, 4)
 
-            // Breathe the orb locally so it's smooth on the wrist without streaming
-            // per-frame data; hold it steady when the phone is paused.
-            TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !link.playing)) { ctx in
-                let t = ctx.date.timeIntervalSinceReferenceDate
-                let pb = link.playing ? Breath.at(t).pb : 0.5
-                Orb(pb: pb, label: timeString(link.remaining))
+            ZStack {
+                // The soundscape's line-art motif, mirrored from the phone.
+                SoundMotif(id: link.motif)
+                    .frame(width: 82, height: 82)
+
+                // A thin ring that breathes locally on the shared cadence while
+                // playing (no per-frame data over the link); steady when paused.
+                TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !link.playing)) { ctx in
+                    let pb = link.playing ? Breath.at(ctx.date.timeIntervalSinceReferenceDate).pb : 0.5
+                    Circle()
+                        .stroke(Theme.bone.opacity(0.5), lineWidth: 1.5)
+                        .frame(width: 96, height: 96)
+                        .scaleEffect(0.74 + 0.26 * pb)
+                }
             }
+            .frame(width: 100, height: 100)
+
+            Text(timeString(link.remaining))
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(Theme.bone)
 
             HStack(spacing: 8) {
                 Button("stop") { link.send("stop") }
@@ -199,7 +213,7 @@ struct RemoteView: View {
                 .tint(Theme.hair)
                 .foregroundStyle(Theme.bone)
             }
-            .font(.system(size: 14))
+            .font(.system(size: 13))
         }
         .padding(.horizontal, 6)
     }
