@@ -10,9 +10,10 @@ enum Theme {
     static let bone = Color(red: 0xEF / 255, green: 0xEB / 255, blue: 0xE3 / 255)
     static let boneDim = bone.opacity(0.55)
     static let hair = bone.opacity(0.22)
-    // A warm, shadowed Bone for the far edge of the breathing sphere, so the orb
-    // reads as a lit ball rather than a flat disc.
-    static let sphereEdge = Color(red: 0xB0 / 255, green: 0xA7 / 255, blue: 0x97 / 255)
+    // Luminous orb (concept 6): a warm cast for the outer halo, and a quiet,
+    // legible warm-dark for the numeral that sits in the bloom.
+    static let warm = Color(red: 0xEF / 255, green: 0xE7 / 255, blue: 0xD6 / 255)
+    static let lumenInk = Color(red: 38 / 255, green: 35 / 255, blue: 30 / 255).opacity(0.88)
 }
 
 // The breathing cycle, mirrored from lib/breath.ts: 6s inhale, 2.5s hold at the

@@ -40,74 +40,72 @@ struct SetupView: View {
     }
 }
 
-// MARK: - The breathing orb.
+// MARK: - The breathing orb (concept 6 · Luminous).
 
-// A soft, dimensional Bone sphere on the Ink ground: an offset radial gradient
-// gives it volume (a bright highlight up-left through Bone to a shadowed edge),
-// a small specular dot glosses it, and a halo swells and brightens on the inhale.
-// The countdown sits at the centre at a fixed size (it stays crisp and readable
-// while the sphere breathes around it). `pb` is 0 exhaled .. 1 fully inhaled.
+// No edge, no chrome: light rising out of the Ink. A warm outer halo and the
+// main bloom swell and brighten on the inhale; a steady inner bed of light keeps
+// the numeral legible even at the bottom of the exhale, when the bloom is at its
+// smallest. The countdown is a fixed size on top and never scales, so it stays
+// crisp while only the light moves. `pb` is 0 fully exhaled .. 1 fully inhaled.
 struct Orb: View {
     var pb: Double
     var label: String
 
-    // The sphere breathes between ~0.58 and full; the halo brightens as it fills.
-    private var scale: Double { 0.58 + 0.42 * pb }
-    private var glow: Double { 0.12 + 0.30 * pb }
+    // A gentle swell: the light does more of the breathing than the size does,
+    // which keeps a bright bed under the numeral at every point in the breath.
+    private var scale: Double { 0.72 + 0.28 * pb }
+    private var glow: Double { 0.82 + 0.18 * pb }
 
     var body: some View {
         ZStack {
-            // Halo: a soft aura that grows and glows brighter on the inhale.
+            // Warm outer halo.
             Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Theme.bone.opacity(glow), .clear],
-                        center: .center,
-                        startRadius: 6,
-                        endRadius: 58
-                    )
-                )
-                .scaleEffect(1.12 * scale)
-                .blur(radius: 6)
+                .fill(RadialGradient(
+                    colors: [Theme.warm.opacity(0.14 * glow), .clear],
+                    center: .center, startRadius: 4, endRadius: 64))
+                .scaleEffect(1.18 * scale)
+                .blur(radius: 10)
 
-            // The lit sphere: highlight offset up-left so it reads as a round ball.
+            // The main bloom: edgeless light emerging from the Ink.
             Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color.white.opacity(0.95), Theme.bone, Theme.sphereEdge],
-                        center: UnitPoint(x: 0.36, y: 0.32),
-                        startRadius: 2,
-                        endRadius: 54
-                    )
-                )
-                // Deepen the lower-right terminator so the volume rounds off.
-                .overlay(
-                    Circle().fill(
-                        RadialGradient(
-                            colors: [.clear, Theme.ink.opacity(0.26)],
-                            center: UnitPoint(x: 0.68, y: 0.72),
-                            startRadius: 16,
-                            endRadius: 56
-                        )
-                    )
-                )
-                // A glossy specular dot near the top-left.
-                .overlay(
-                    Ellipse()
-                        .fill(Color.white.opacity(0.8))
-                        .frame(width: 13, height: 9)
-                        .blur(radius: 4)
-                        .offset(x: -15, y: -17)
-                )
+                .fill(RadialGradient(
+                    stops: [
+                        .init(color: Theme.bone.opacity(0.92 * glow), location: 0.0),
+                        .init(color: Theme.bone.opacity(0.55 * glow), location: 0.24),
+                        .init(color: Theme.bone.opacity(0.20 * glow), location: 0.48),
+                        .init(color: Theme.bone.opacity(0.05 * glow), location: 0.70),
+                        .init(color: .clear, location: 0.84),
+                    ],
+                    center: .center, startRadius: 0, endRadius: 54))
                 .scaleEffect(scale)
 
-            // The clock: dark on the light sphere, fixed size so it never jitters.
+            // Inner bright breath, sitting a touch high.
+            Circle()
+                .fill(RadialGradient(
+                    colors: [Color.white.opacity(0.5), .clear],
+                    center: .center, startRadius: 2, endRadius: 34))
+                .frame(width: 78, height: 78)
+                .offset(y: -4)
+                .scaleEffect(scale)
+                .blur(radius: 6)
+
+            // A steady bed of light so the numeral stays legible through the whole
+            // breath. This layer does not scale.
+            Circle()
+                .fill(RadialGradient(
+                    colors: [Theme.bone.opacity(0.82), .clear],
+                    center: .center, startRadius: 2, endRadius: 44))
+                .frame(width: 76, height: 76)
+                .blur(radius: 6)
+
+            // The clock: fixed size, legible, quiet.
             Text(label)
-                .font(.system(size: 19, weight: .medium, design: .rounded))
+                .font(.system(size: 20, weight: .regular, design: .rounded))
                 .monospacedDigit()
-                .foregroundStyle(Theme.ink)
+                .tracking(0.4)
+                .foregroundStyle(Theme.lumenInk)
         }
-        .frame(width: 104, height: 104)
+        .frame(width: 108, height: 108)
     }
 }
 
