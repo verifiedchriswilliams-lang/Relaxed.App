@@ -83,8 +83,11 @@ required to save):
 
 - **`NSHealthUpdateUsageDescription`** →
   `relaxed logs your finished sessions to Apple Health as Mindful Minutes.`
-- (Optional, harmless) **`NSHealthShareUsageDescription`** → same string. We never
-  read Health data; this only appears if the OS asks.
+- **`NSHealthShareUsageDescription`** (write string plus a note that we don't read).
+  **Required for App Store upload**, not optional: because the target carries the
+  HealthKit entitlement, Apple's uploader rejects the build (error 90683) without
+  *both* Health purpose strings, even though we only ever write. It won't appear to
+  users unless the app requests read access, which it never does.
 
 If the Mindfulness capability checkbox wasn't available in step 3, also add:
 

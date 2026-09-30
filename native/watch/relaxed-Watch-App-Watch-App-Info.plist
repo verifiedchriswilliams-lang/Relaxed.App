@@ -20,6 +20,8 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>relaxed logs your finished sessions to Apple Health as Mindful Minutes. It does not read your Health data.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>relaxed logs your finished sessions to Apple Health as Mindful Minutes.</string>
 	<key>WKApplication</key>
