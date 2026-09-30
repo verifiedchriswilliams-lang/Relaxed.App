@@ -32,10 +32,82 @@ struct SetupView: View {
                     .font(.system(size: 16, weight: .medium))
                     .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.borderedProminent)
             .tint(Theme.bone)
             .foregroundStyle(Theme.ink)
         }
         .padding(.horizontal, 6)
+    }
+}
+
+// MARK: - The breathing orb.
+
+// A soft, dimensional Bone sphere on the Ink ground: an offset radial gradient
+// gives it volume (a bright highlight up-left through Bone to a shadowed edge),
+// a small specular dot glosses it, and a halo swells and brightens on the inhale.
+// The countdown sits at the centre at a fixed size (it stays crisp and readable
+// while the sphere breathes around it). `pb` is 0 exhaled .. 1 fully inhaled.
+struct Orb: View {
+    var pb: Double
+    var label: String
+
+    // The sphere breathes between ~0.58 and full; the halo brightens as it fills.
+    private var scale: Double { 0.58 + 0.42 * pb }
+    private var glow: Double { 0.12 + 0.30 * pb }
+
+    var body: some View {
+        ZStack {
+            // Halo: a soft aura that grows and glows brighter on the inhale.
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Theme.bone.opacity(glow), .clear],
+                        center: .center,
+                        startRadius: 6,
+                        endRadius: 58
+                    )
+                )
+                .scaleEffect(1.12 * scale)
+                .blur(radius: 6)
+
+            // The lit sphere: highlight offset up-left so it reads as a round ball.
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Color.white.opacity(0.95), Theme.bone, Theme.sphereEdge],
+                        center: UnitPoint(x: 0.36, y: 0.32),
+                        startRadius: 2,
+                        endRadius: 54
+                    )
+                )
+                // Deepen the lower-right terminator so the volume rounds off.
+                .overlay(
+                    Circle().fill(
+                        RadialGradient(
+                            colors: [.clear, Theme.ink.opacity(0.26)],
+                            center: UnitPoint(x: 0.68, y: 0.72),
+                            startRadius: 16,
+                            endRadius: 56
+                        )
+                    )
+                )
+                // A glossy specular dot near the top-left.
+                .overlay(
+                    Ellipse()
+                        .fill(Color.white.opacity(0.8))
+                        .frame(width: 13, height: 9)
+                        .blur(radius: 4)
+                        .offset(x: -15, y: -17)
+                )
+                .scaleEffect(scale)
+
+            // The clock: dark on the light sphere, fixed size so it never jitters.
+            Text(label)
+                .font(.system(size: 19, weight: .medium, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(Theme.ink)
+        }
+        .frame(width: 104, height: 104)
     }
 }
 
@@ -58,19 +130,7 @@ struct SessionView: View {
                 .font(.system(size: 15))
                 .foregroundStyle(Theme.boneDim)
 
-            ZStack {
-                Circle()
-                    .stroke(Theme.hair, lineWidth: 1)
-                Circle()
-                    .fill(Theme.bone.opacity(0.9))
-                    // 0 exhaled -> 1 inhaled maps to a gentle 0.42..1.0 scale.
-                    .scaleEffect(0.42 + 0.58 * engine.pb)
-                Text(timeString(engine.remaining))
-                    .font(.system(size: 15, weight: .medium, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(Theme.ink)
-            }
-            .frame(width: 96, height: 96)
+            Orb(pb: engine.pb, label: timeString(engine.remaining))
 
             HStack(spacing: 8) {
                 Button("end") { engine.end(completed: false) }
@@ -108,6 +168,7 @@ struct DoneView: View {
                     .foregroundStyle(Theme.boneDim)
             }
             Button("done") { engine.reset() }
+                .buttonStyle(.borderedProminent)
                 .tint(Theme.bone)
                 .foregroundStyle(Theme.ink)
                 .padding(.top, 2)
