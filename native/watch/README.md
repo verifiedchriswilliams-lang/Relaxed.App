@@ -93,6 +93,25 @@ If the Mindfulness capability checkbox wasn't available in step 3, also add:
 
 - **`WKBackgroundModes`** → Array → one String item: `mindfulness`.
 
+### Where the Info keys actually live (important)
+
+The watch target is set to **`GENERATE_INFOPLIST_FILE = YES`**, so at build time
+Xcode generates the Info.plist from **`INFOPLIST_KEY_*` build settings** in
+`ios/App/App.xcodeproj/project.pbxproj` (not committed), *not* from the physical
+file or the Xcode "Info" tab. So editing the plist file or the Info tab has no
+effect on the build. The keys that must be present as build settings:
+
+- `INFOPLIST_KEY_CFBundleDisplayName = relaxed`
+- `INFOPLIST_KEY_NSHealthUpdateUsageDescription = <write string>`
+- `INFOPLIST_KEY_NSHealthShareUsageDescription = <string>` — **both** Health
+  strings are required or the App Store upload fails with error 90683, even though
+  we only write.
+- `INFOPLIST_KEY_WKCompanionAppBundleIdentifier = app.relaxed`
+
+If `ios/` is ever regenerated, re-add these (the display name and both Health
+strings via the target's Info tab, which writes them as build settings when
+`GENERATE_INFOPLIST_FILE = YES`; the companion id is set by the watch template).
+
 ### Recovering a lost Info.plist
 
 The watch target uses a **physical** `Info.plist` (build setting `INFOPLIST_FILE`
