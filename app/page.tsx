@@ -40,6 +40,7 @@ import {
   clearNowPlaying,
   notificationsAvailable,
 } from "@/lib/native";
+import { pushWatchState, clearWatchState, onWatchCommand } from "@/lib/watchRemote";
 import {
   loadRecent,
   loadFavs,
@@ -692,6 +693,7 @@ export default function Home() {
     const engine = engineRef.current;
     return () => {
       engine.stop();
+      clearWatchState();
       releaseWakeLock();
       if (endTimerRef.current) window.clearTimeout(endTimerRef.current);
       if (tickRef.current) window.clearInterval(tickRef.current);
@@ -756,6 +758,39 @@ export default function Home() {
     if (screen !== "player") return;
     setPlaybackState(playing);
   }, [screen, playing]);
+
+  // Apple Watch remote (1.4.1): mirror the live session to the wrist so the watch
+  // can show what's playing and drive it. Guarded no-op unless the native
+  // WatchBridge plugin is present, so the web and pre-1.4.1 app builds are
+  // unaffected (dedupe in pushWatchState throttles this to ~once a second).
+  useEffect(() => {
+    if (screen !== "player") {
+      clearWatchState();
+      return;
+    }
+    pushWatchState({
+      active: true,
+      playing,
+      title: selected.custom ? "Your session" : selected.label,
+      soundscape: soundLabel,
+      remaining: Math.max(0, totalSecs - elapsed),
+      total: totalSecs,
+    });
+  }, [screen, playing, elapsed, totalSecs, selected.custom, selected.label, soundLabel]);
+
+  // Route the wrist's play/pause/stop to the same handlers the lock screen uses,
+  // so watch, lock screen, and in-app controls stay in lockstep. Registered once;
+  // the handler reads mediaActionRef.current so it always hits the latest closure.
+  useEffect(() => {
+    const off = onWatchCommand((cmd) => {
+      const m = mediaActionRef.current;
+      if (cmd === "play") m.play();
+      else if (cmd === "pause") m.pause();
+      else if (cmd === "stop") m.stop();
+    });
+    return off;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Karaoke + breathing: one rAF loop on the player screen. It follows the
   // spoken line (synced to the audio clock) and advances the breathing clock
