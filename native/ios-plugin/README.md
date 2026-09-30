@@ -106,3 +106,21 @@ web inspector console on the running app and check
   `lib/entitlement.ts` subscribes and updates the UI live.
 - The entitlement is cached on-device (`relaxed.premium.v1`) so the UI is correct
   offline and instantly on next launch; StoreKit remains the source of truth.
+
+---
+
+## WatchBridge plugin (Apple Watch remote, 1.4.1)
+
+This folder also holds the phone side of the Apple Watch remote:
+
+- `WatchBridgePlugin.swift` — a Capacitor plugin `WatchBridge` that speaks
+  WatchConnectivity: `updateState()` pushes the live session snapshot to the watch,
+  and watch commands are emitted to JS as a `command` event.
+- `WatchBridgePlugin.m` — the `CAP_PLUGIN` macro registering it as `WatchBridge`.
+- `MainViewController.swift` now also registers `WatchBridgePlugin()` (add both
+  Swift/.m files to the App target, or remove that line until you do).
+
+The web side (`lib/watchRemote.ts`) is already shipped and dormant until this
+plugin exists. WatchConnectivity needs no entitlement or Info.plist key. Full
+architecture and the watch-side files are documented in
+[`../watch/README.md`](../watch/README.md#phone--watch-remote-141).

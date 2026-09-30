@@ -164,6 +164,51 @@ struct SessionView: View {
     }
 }
 
+// MARK: - Remote: mirror + control a session playing on the phone (1.4.1).
+
+// Shown when a phone session is active. The soundscape name and countdown are
+// mirrored from the phone; the orb breathes locally (a smooth wrist visual, driven
+// by the same cadence) while playing, and pauses when the phone pauses. The
+// buttons send play/pause/stop back to the phone.
+struct RemoteView: View {
+    @EnvironmentObject var link: PhoneLink
+
+    var body: some View {
+        VStack(spacing: 6) {
+            Text(link.soundscape.isEmpty ? "relaxed" : link.soundscape)
+                .font(.system(size: 15))
+                .foregroundStyle(Theme.boneDim)
+                .lineLimit(1)
+                .padding(.horizontal, 4)
+
+            // Breathe the orb locally so it's smooth on the wrist without streaming
+            // per-frame data; hold it steady when the phone is paused.
+            TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !link.playing)) { ctx in
+                let t = ctx.date.timeIntervalSinceReferenceDate
+                let pb = link.playing ? Breath.at(t).pb : 0.5
+                Orb(pb: pb, label: timeString(link.remaining))
+            }
+
+            HStack(spacing: 8) {
+                Button("stop") { link.send("stop") }
+                    .tint(Theme.hair)
+                    .foregroundStyle(Theme.bone)
+                Button(link.playing ? "pause" : "play") {
+                    link.send(link.playing ? "pause" : "play")
+                }
+                .tint(Theme.hair)
+                .foregroundStyle(Theme.bone)
+            }
+            .font(.system(size: 14))
+        }
+        .padding(.horizontal, 6)
+    }
+
+    private func timeString(_ s: Int) -> String {
+        String(format: "%d:%02d", s / 60, s % 60)
+    }
+}
+
 // MARK: - Done: a quiet well done.
 
 struct DoneView: View {

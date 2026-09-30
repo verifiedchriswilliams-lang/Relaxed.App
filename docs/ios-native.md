@@ -138,6 +138,16 @@ It's added as a watch target in the Xcode project on the Mac (the `ios/` project
 isn't committed) — full setup in [`native/watch/README.md`](../native/watch/README.md).
 This is also the strongest App Store *featuring* hook (native watchOS + HealthKit).
 
+**1.4.1 adds a phone ⇄ watch remote.** When a session is playing on the phone, the
+watch becomes its live mirror and remote: it shows the soundscape, the countdown,
+and a breathing orb, and its play / pause / stop drive the phone over
+WatchConnectivity (no entitlement needed). The web side (`lib/watchRemote.ts`) is a
+guarded no-op until a native build includes the `WatchBridge` plugin
+(`native/ios-plugin/WatchBridgePlugin.*`); the watch side is `PhoneLink.swift` +
+`RemoteView`. The phone still composes and plays every session; starting a new one
+from the wrist is not in 1.4.1. Deferred to **1.4.2**: the soundscape line art
+(`lib/soundMotifs`) drawn on the watch during playback.
+
 ## 8. Known native gotchas
 
 - **Launch-screen cache:** iOS aggressively caches the launch image; to verify a

@@ -18,5 +18,8 @@ import Capacitor
 class MainViewController: CAPBridgeViewController {
     override func capacitorDidLoad() {
         bridge?.registerPluginInstance(PremiumPlugin())
+        // Apple Watch remote (1.4.1). Requires WatchBridgePlugin.swift/.m to be in
+        // the App target; remove this line if you haven't added them yet.
+        bridge?.registerPluginInstance(WatchBridgePlugin())
     }
 }

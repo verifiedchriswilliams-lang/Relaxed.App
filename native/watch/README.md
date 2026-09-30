@@ -151,3 +151,53 @@ changes you make in Xcode.
   annotations later.
 - Ship checklist (when V1 is ready): a watch app icon set, then archive the
   combined app; the watch app rides along with the iOS submission.
+
+## Phone ⇄ Watch remote (1.4.1)
+
+Turns the watch into a live **mirror + remote** for a session playing on the
+phone: the watch shows what's playing, the countdown, and a breathing orb, and its
+play / pause / stop drive the phone. The phone still composes and plays the session
+(intention, voice, soundscape stay on the phone). Starting a brand-new session from
+the watch is **not** in 1.4.1.
+
+**How it's wired** (WatchConnectivity, no special entitlement needed):
+
+- **Web** (`lib/watchRemote.ts`, already shipped): pushes a tiny snapshot
+  `{active, playing, title, soundscape, remaining, total}` to the phone plugin and
+  receives `{action}` commands back. Guarded no-op unless the plugin is present.
+- **Phone plugin** (`native/ios-plugin/WatchBridgePlugin.swift` + `.m`): a Capacitor
+  plugin `WatchBridge`. `updateState()` forwards the snapshot to the watch
+  (`updateApplicationContext` + `sendMessage` when reachable); watch messages become
+  a `command` event for the web. Registered in `MainViewController.swift`.
+- **Watch** (`native/watch/PhoneLink.swift`): a `WCSession` client publishing the
+  phone's state; `RemoteView` (in `Views.swift`) renders the mirror and sends
+  commands. `RootView` shows `RemoteView` when `phone.active`, else the standalone
+  pacer.
+
+The snapshot is deliberately tiny (it changes ~once a second); the watch runs its
+own breath clock locally while `playing`, so nothing per-frame crosses the link.
+
+**Xcode integration (on the Mac):**
+
+1. **Watch target:** add `PhoneLink.swift` to the **relaxed Watch App** target (it's
+   copied in by the usual `cp native/watch/*.swift "ios/App/relaxed Watch App Watch App/"`;
+   then in Xcode add the file to the target if it isn't already a member). `Views.swift`
+   and `RelaxedWatchApp.swift` are updated in place.
+2. **iOS App target:** add `WatchBridgePlugin.swift` and `WatchBridgePlugin.m` to the
+   **App** target, and make sure `MainViewController.swift` (which now registers
+   `WatchBridgePlugin`) is the current copy. No capability or Info.plist key is
+   required for WatchConnectivity.
+3. **Test on real, paired devices** (WatchConnectivity is unreliable in the
+   simulator): start a session on the phone → the watch should switch to the remote,
+   mirror the countdown, and its play/pause/stop should drive the phone.
+
+**Message protocol:**
+
+| Direction | Payload |
+|---|---|
+| Phone → Watch (state) | `{ active, playing, title, soundscape, remaining, total }` |
+| Watch → Phone (command) | `{ action: "play" \| "pause" \| "stop" }` |
+
+**Deferred to 1.4.2:** the soundscape **line art** (`lib/soundMotifs`) drawn on the
+watch during playback, and tighter breath sync (send a breath anchor rather than
+letting the watch free-run).

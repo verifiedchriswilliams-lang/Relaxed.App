@@ -91,13 +91,15 @@ relaxed.app/
   for `@capacitor/assets`.
 - `native/www/index.html` — the offline fallback shown if the hosted site is
   unreachable.
-- `native/ios-plugin/` — the StoreKit 2 Capacitor plugin for the premium IAP
+- `native/ios-plugin/` — the StoreKit 2 Capacitor plugin for the premium IAP, plus
+  the `WatchBridge` plugin (phone side of the Apple Watch remote, 1.4.1)
   (Swift + `.m` + a `.storekit` test config + README); dragged into the Xcode
   project on the Mac (the `ios/` project isn't in this repo).
-- `native/watch/` — the **native watchOS (SwiftUI) companion** V1: a standalone
-  haptic breathing pacer that logs Mindful Minutes to Health (6 `.swift` files, a
-  tracked reference copy of the target's `Info.plist`, and a README). Added as a
-  watch target in the Xcode project on the Mac. Not a web wrapper — see
+- `native/watch/` — the **native watchOS (SwiftUI) companion**: a standalone
+  haptic breathing pacer that logs Mindful Minutes to Health (V1), plus the
+  phone-mirroring **remote** (`PhoneLink.swift` + `RemoteView`, 1.4.1). Swift
+  files, a tracked reference copy of the target's `Info.plist`, and a README.
+  Added as a watch target in the Xcode project on the Mac. Not a web wrapper — see
   [ios-native.md](./ios-native.md) and the folder's README.
 - `public/aurora.jpg` — the ElevenMind night-sky background (relaxed uses none).
 
