@@ -8,6 +8,7 @@
 
 import SwiftUI
 import WatchKit
+import Combine // @Published / ObservableObject live here (needed explicitly on watchOS)
 
 final class SessionEngine: ObservableObject {
     enum Screen { case setup, playing, paused, done }
