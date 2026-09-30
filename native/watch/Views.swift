@@ -51,9 +51,10 @@ struct Orb: View {
     var pb: Double
     var label: String
 
-    // A clear swell so the breath is visible, and the light brightens as it fills.
-    private var scale: Double { 0.58 + 0.47 * pb }   // ~0.58 .. 1.05
-    private var glow: Double { 0.75 + 0.25 * pb }
+    // A generous swell so the breath is unmistakable, and the light brightens as
+    // it fills. The fixed bed below keeps the numeral legible at the trough.
+    private var scale: Double { 0.52 + 0.66 * pb }   // ~0.52 .. 1.18
+    private var glow: Double { 0.72 + 0.28 * pb }
 
     var body: some View {
         ZStack {
