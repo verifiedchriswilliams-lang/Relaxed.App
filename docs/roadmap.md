@@ -166,6 +166,14 @@ spending a headline on it:
   away the no-backend elegance. When it comes, it future-proofs the IAP.
 - **Rest of the Apple ecosystem** — Siri / App Intents, standalone HealthKit
   beyond the Watch write, and **Apple Watch v2** (phone-free on-watch playback).
+- **tvOS app** — a native tvOS (SwiftUI + AVAudioEngine) build for the big screen:
+  pick an intention with the remote and let a session play across the room,
+  especially strong for **sleep** and ambient wind-down. The earlier "poor control
+  surface" worry doesn't hold for this use case — you choose once and let it run, so
+  minimal input is a feature, not a limit. Like the Watch it can't reuse the
+  Capacitor/Web-Audio app, so it's a net-new native build (real depth, not a port),
+  sharing the catalog and brand. A platform-breadth cousin to Android; weigh the two
+  by appetite. Down the list, but on it.
 - **ElevenMind iPad layout pass** — its own aurora/glass large-screen design.
 - **Exploration** — multi-day programs / journeys, a second script/voice provider
   for resilience (Anthropic + ElevenLabs are single points of failure today),
@@ -186,6 +194,5 @@ whole point:
   text-forward; the breathing orb's plainness is a *choice*. A fluid shader risks
   fighting the brand. (A subtle, on-brand enhancement could be revisited, but not a
   gaudy "wow" visualizer.)
-- **Home-screen widgets as a headline**, a giant premium content library (more beds
-  isn't the differentiator — generation is), and **tvOS** (Capacitor can't target
-  it; a TV is a poor control surface for this product — highest effort, lowest ROI).
+- **Home-screen widgets as a headline** and a giant premium content library (more
+  beds isn't the differentiator — generation is).
