@@ -16,7 +16,8 @@ final class PhoneLink: NSObject, ObservableObject, WCSessionDelegate {
     @Published var active = false        // is a phone session playing right now
     @Published var playing = false       // playing vs paused
     @Published var title = ""            // session label
-    @Published var soundscape = ""       // soundscape label
+    @Published var soundscape = ""       // soundscape label (human-readable)
+    @Published var motif = ""            // soundscape id → picks the line-art motif
     @Published var remaining = 0         // whole seconds left (from the phone)
     @Published var total = 0             // whole seconds total
 
@@ -52,6 +53,7 @@ final class PhoneLink: NSObject, ObservableObject, WCSessionDelegate {
             self.playing = d["playing"] as? Bool ?? false
             self.title = d["title"] as? String ?? ""
             self.soundscape = d["soundscape"] as? String ?? ""
+            self.motif = d["motif"] as? String ?? ""
             self.remaining = d["remaining"] as? Int ?? 0
             self.total = d["total"] as? Int ?? 0
         }
