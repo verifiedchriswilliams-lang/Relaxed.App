@@ -12,7 +12,7 @@ _As of 2026-10-02._
 
 | Version | State | What it is |
 |---|---|---|
-| **1.4** | **In Review** | Apple Watch build (standalone pacer + phone↔watch remote + soundscape line art), build 13. Resubmitted after removing the IAP promotional image (2.3.2). |
+| **1.4** | **Released** (live) | Apple Watch build (standalone pacer + phone↔watch remote + soundscape line art). The native watchOS companion is live on the App Store. |
 | **1.3** | **Released** (Ready for Distribution) | The live IAP build. Makes the **$4.99 premium unlock** available in production. |
 
 ## Live in production
@@ -25,19 +25,21 @@ _As of 2026-10-02._
 
 ## In flight
 
-- **1.4 Apple Watch build — in Apple review.** Awaiting verdict. (No new build needed
-  for metadata; the IAP promo image was removed to clear the 2.3.2 rejection.)
+- Nothing in Apple review right now. The next build would be a **1.4.1 point release
+  carrying the watch-remote motif fix** (see Known issues), not yet scheduled; the
+  open question is whether to ship it on its own or fold it into 1.5.
 
 ## Known issues
 
-- **Watch remote motif (build 13).** The phone-side `WatchBridgePlugin.updateState()`
+- **Watch remote motif (live in 1.4).** The phone-side `WatchBridgePlugin.updateState()`
   previously dropped the soundscape `motif` id when pushing state to the watch, so
-  during phone↔watch remote control the watch showed the generic default motif
+  during phone↔watch remote control the watch shows the generic default motif
   instead of the per-soundscape line art (the 1.4.2 feature). Fixed in source
-  (`native/ios-plugin/WatchBridgePlugin.swift` now forwards `motif`), but **build 13
-  (the one in review) predates the fix** — it reaches users only in the next build.
-  Cosmetic (the ring, countdown, and controls work regardless). Decision: let it ride
-  to a later build, or expedite a rebuild. Standalone watch pacer is unaffected.
+  (`native/ios-plugin/WatchBridgePlugin.swift` now forwards `motif`), but the **1.4
+  build live on the App Store predates the fix** — it reaches users only in the next
+  build (1.4.1). Cosmetic (the ring, countdown, and controls work regardless).
+  Decision: ship a 1.4.1 for it, or fold the fix into 1.5. Standalone watch pacer is
+  unaffected.
 
 ## Offer codes (free premium for friends/testers)
 
@@ -72,8 +74,10 @@ _As of 2026-10-02._
 
 ## Next up
 
-- **Await the 1.4 review verdict**; if approved, release and add the Watch to the
-  live story (and a follow-up LinkedIn post).
+- **Apple Watch is live** — post the "Apple Watch is here" LinkedIn follow-up (teased
+  "more next week" in the 2026-10-01 post).
+- **Decide on the motif fix**: a 1.4.1 point release, or fold it into 1.5 (see Known
+  issues).
 - **1.5 candidates** (see [roadmap.md](./roadmap.md)): local personalization loop
   ("make another like this"), or Live Activity, or the in-app offer-code redemption
   sheet. Not yet chosen.

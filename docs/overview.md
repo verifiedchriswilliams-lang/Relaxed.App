@@ -31,8 +31,8 @@ For live operational state (review status, offer codes, outbound) see [status.md
 | Dimension | State |
 |---|---|
 | Web | **Live in production** at `relaxed.app` (Vercel, deploys on every push to `main`). |
-| iOS | **On the App Store.** 1.3 released (the in-app-purchase build); 1.4 (Apple Watch) in Apple review (see [CHANGELOG](./CHANGELOG.md)). |
-| Apple Watch | 1.4, in review. Native SwiftUI companion: standalone breathing pacer (writes HealthKit Mindful Minutes), phone↔watch remote, soundscape line art. |
+| iOS | **On the App Store.** 1.3 released (the in-app-purchase build); 1.4 (Apple Watch) released (see [CHANGELOG](./CHANGELOG.md)). |
+| Apple Watch | 1.4, live. Native SwiftUI companion: standalone breathing pacer (writes HealthKit Mindful Minutes), phone↔watch remote, soundscape line art. |
 | Android | Not built. Capacitor supports it; deferred. |
 | Accounts | None. All per-user state is on-device (`localStorage`). |
 | Backend/DB | None. Three stateless serverless API routes; no persistence layer. |

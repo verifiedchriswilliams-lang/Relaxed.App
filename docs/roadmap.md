@@ -47,10 +47,10 @@ The personalized experience, its depth, and monetization are live in production:
   where a purchase is possible so the web and pre-IAP apps are unaffected. Small
   Business Program approved (15%). See [monetization.md](./monetization.md).
 - **iOS + Mac** — a Capacitor shell over the hosted site. **1.3 (the IAP build)
-  released/live; 1.4 (Apple Watch) in Apple review.** Mac ("Designed for iPad") is
+  released/live; 1.4 (Apple Watch) released/live.** Mac ("Designed for iPad") is
   fully functional via a capability-detected WASM-FLAC decode fallback for its
   WKWebView. 47 countries availability.
-- **Apple Watch (1.4, in Apple review)** — a net-new native **SwiftUI** companion:
+- **Apple Watch (1.4, live)** — a net-new native **SwiftUI** companion:
   a standalone breathing-haptic pacer (1 / 3 / 5 / 10-minute, luminous orb,
   HealthKit Mindful Minutes, a mindfulness extended-runtime session, no phone
   needed), a **phone↔watch remote** over WatchConnectivity (mirror + control an

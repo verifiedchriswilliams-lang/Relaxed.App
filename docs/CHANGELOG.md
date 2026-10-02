@@ -18,7 +18,7 @@ build carried, not the review timeline.
 
 ## iOS — App Store releases
 
-### 1.4 — in review (as of 2026-10-02)
+### 1.4 — released 2026-10-02
 The **Apple Watch** release, the first net-new native platform (a standalone
 **SwiftUI** app, not the Capacitor shell). Three parts shipped together as 1.4,
 build 13:
@@ -36,8 +36,11 @@ build 13:
   `lib/soundMotifs.tsx` to a SwiftUI `Canvas` (`SoundMotif.swift`).
 
 Metadata-rejected once under Guideline 2.3.2 (IAP promotional image text too small),
-resolved by **removing the IAP promotional image**, then resubmitted. Version 1.4,
-build 13. See [ios-native.md](./ios-native.md).
+resolved by **removing the IAP promotional image**, then resubmitted. **Approved and
+released** (version 1.4, build 13). Known issue in this build: the phone→watch remote
+does not forward the soundscape `motif`, so the watch shows the default motif during
+remote control (cosmetic); fixed in source for the next build (1.4.1). See
+[ios-native.md](./ios-native.md).
 
 ### 1.3 — released (the live IAP build; submitted 2026-09-24)
 The **in-app purchase** build. First native code since the shell: a StoreKit 2

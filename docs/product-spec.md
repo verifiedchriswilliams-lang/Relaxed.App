@@ -174,8 +174,8 @@ fully reachable. All history is on-device (`localStorage`); see
 
 ### 3g. Apple Watch (1.4)
 
-A native **SwiftUI** companion (not the Capacitor shell), shipping as 1.4 and
-currently in Apple review. Three parts:
+A native **SwiftUI** companion (not the Capacitor shell), shipped as 1.4 and now
+live on the App Store. Three parts:
 
 - **Standalone pacer.** On the watch alone, with no phone needed: pick a
   **1 / 3 / 5 / 10-minute** session, watch a "luminous" breathing orb, and follow

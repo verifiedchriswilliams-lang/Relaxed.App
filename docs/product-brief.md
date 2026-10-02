@@ -155,11 +155,11 @@ A public privacy page ships with the app.
 
 - **Web:** live in production, continuously deployed.
 - **iOS:** **1.3** released on the App Store (the IAP build); **1.4** (Apple Watch)
-  in Apple review.
+  now released too.
 - **Monetization:** the **$4.99 one-time "unlock all premium"** IAP is **live in
   production** (9 premium soundscapes, 10 premium voices, infinite sessions).
-- **Apple Watch:** shipped as **1.4** (native SwiftUI companion), currently in
-  review.
+- **Apple Watch:** shipped as **1.4** (native SwiftUI companion), live on the App
+  Store.
 - **Availability:** 47 countries.
 - The personalized pipeline, the meditation engine, instant start, the flagship
   home, on-device continuity (recents/saved/reminder), and the audio craft are
@@ -178,7 +178,7 @@ The three items that were the active backlog have all shipped:
 2. **EU launch.** ✅ Shipped. DSA trader verification passed; availability has since
    grown to **47 countries**.
 
-3. **Apple Watch companion.** ✅ Shipped as **1.4** (in Apple review). A net-new
+3. **Apple Watch companion.** ✅ Shipped as **1.4** (live on the App Store). A net-new
    native **SwiftUI** app: a standalone breathing-haptic pacer writing HealthKit
    Mindful Minutes, a phone↔watch remote, and the soundscape line art on the wrist.
 

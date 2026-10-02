@@ -7,8 +7,8 @@ grounded in the actual code, with every non-obvious claim traceable to a file.
 
 > **Status at a glance.** Live in production on the web (`relaxed.app`) and on the
 > iOS App Store (1.3, the IAP build), in 47 countries. Monetization is live (a
-> $4.99 one-time "unlock all premium"); the Apple Watch companion (1.4) is in
-> Apple review. Next.js on Vercel; no database; two AI providers (Anthropic for
+> $4.99 one-time "unlock all premium"); the Apple Watch companion (1.4) is live.
+> Next.js on Vercel; no database; two AI providers (Anthropic for
 > scripts, ElevenLabs for voice). Solo founder, AI-assisted development. See
 > [overview.md](./overview.md) for the full snapshot and [status.md](./status.md)
 > for the live operational state.
