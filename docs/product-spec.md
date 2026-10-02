@@ -24,16 +24,18 @@ what you need and it makes one for you."
 
 ### Soundscapes (24)
 
-Eight per family (3 free + 5 premium; the free/premium split is recorded on each
-bed but not yet enforced, so every bed is currently unlocked, see
-[roadmap](./roadmap.md)):
+Eight per family (5 free + 3 premium). The free/premium split is now **enforced**
+via the 1.3 IAP: the premium beds are gated behind the one-time "unlock all
+premium" purchase. Every bed is free to preview; the gate is at Begin (see
+[monetization.md](./monetization.md)). Premium beds marked **(premium)** below:
 
-- **Nature:** Rain, Ocean Waves, Birdsong, Wind, Thunderstorm, Windchimes,
-  Babbling Brook, Campfire.
-- **Music:** Ambient, Piano, LoFi, Singing Bowls, Harp, Warm Strings, Kalimba,
-  Flute.
-- **Frequencies:** Brown Noise, 432 Hz, White Noise, Binaural, Delta, Theta,
-  Green Noise, Alpha (ElevenLabs recordings, like the other families).
+- **Nature:** Rain, Ocean Waves, Birdsong, Wind, Thunderstorm, Windchimes
+  (premium), Babbling Brook (premium), Campfire (premium).
+- **Music:** Ambient, Piano, LoFi, Harp, Warm Strings, Singing Bowls (premium),
+  Kalimba (premium), Flute (premium).
+- **Frequencies:** Brown Noise, 432 Hz, White Noise, Binaural, Alpha, Green Noise
+  (premium), Theta (premium), Delta (premium) (ElevenLabs recordings, like the
+  other families).
 
 The nine beds added in the 24-bed upgrade reuse the fallback line motif until
 bespoke motifs are drawn for them.
@@ -169,6 +171,24 @@ locks the page (single-screen shell), the list is its own inner scroller: the
 back-button bar stays fixed while the sessions scroll, so a long saved list stays
 fully reachable. All history is on-device (`localStorage`); see
 [data-privacy.md](./data-privacy.md).
+
+### 3g. Apple Watch (1.4)
+
+A native **SwiftUI** companion (not the Capacitor shell), shipping as 1.4 and
+currently in Apple review. Three parts:
+
+- **Standalone pacer.** On the watch alone, with no phone needed: pick a
+  **1 / 3 / 5 / 10-minute** session, watch a "luminous" breathing orb, and follow
+  **haptic breathing guidance** on the breath cadence. It writes **Mindful Minutes
+  to HealthKit** and is backed by a mindfulness `WKExtendedRuntimeSession` so it
+  keeps running on the wrist.
+- **Phone↔watch remote (1.4.1).** When a session is playing on the phone, the watch
+  mirrors and controls it over WatchConnectivity (`WCSession`): the soundscape name,
+  the breathing ring, the countdown, and stop / play-pause. Bridged by an iOS
+  Capacitor plugin ("WatchBridge") and a web bridge (`lib/watchRemote.ts`).
+- **Soundscape line art (1.4.2).** The per-soundscape line motifs are ported from
+  `lib/soundMotifs.tsx` to a native SwiftUI Canvas (`native/watch/SoundMotif.swift`),
+  so the wrist shows the same motif as the player.
 
 ## 4. Personalization pipeline (user's view)
 

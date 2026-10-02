@@ -101,7 +101,11 @@ At [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → **Apps →
     anywhere identifiable;
   - Vercel **Web Analytics** records anonymous, aggregate page views (no
     cross-app tracking, no advertising ID).
-  Answer accordingly (no data "linked to identity", no tracking).
+  Answer accordingly (no data "linked to identity", no tracking). **As of the
+  Apple Watch release (1.4) there is one on-device health interaction:** the watch
+  **writes** Mindful Minutes to Apple Health. It is write-only and never read, and
+  the data stays in the user's HealthKit store — but declare the HealthKit write in
+  the questionnaire rather than claiming the app touches nothing.
 - **Export compliance**: the app uses only standard HTTPS encryption →
   choose the **exempt** option (add `ITSAppUsesNonExemptEncryption = NO` to
   Info.plist to skip the prompt on every upload).
@@ -113,6 +117,9 @@ At [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → **Apps →
   - **iPad 13" Display** — `2064 × 2752` (portrait). (This is the 13" iPad Pro
     M4 size; the older 12.9" `2048 × 2732` is a *different* slot and is rejected
     here.)
+  - **Apple Watch** (optional, for the Watch release) — a watch screenshot slot is
+    available once the watch app is attached; a shot of the breathing orb or the
+    length picker reads well. Optional, but worth filling for the 1.4 listing.
 
   Good screens to show: **home** (with the replay/history glyph in the topbar),
   the **make-your-own** tray (duration slider on the new 45/60 stops), a
@@ -136,6 +143,23 @@ In Xcode:
 3. When the Organizer opens: **Distribute App → App Store Connect → Upload**.
 4. Back in App Store Connect, attach the build to the version, fill in the
    description, keywords, and support URL, then **Submit for Review**.
+
+### Apple Watch (the 1.4 release)
+
+1.4 is the **Apple Watch** release, so the watch target ships inside the same
+submission:
+
+- **The watch target rides along in the combined archive** — when you archive the
+  **App** scheme, the paired watch app is embedded automatically; you do not archive
+  or upload it separately. The watch target setup (adding it, capabilities, Info
+  keys) is in [`../native/watch/README.md`](../native/watch/README.md).
+- **A watch app icon set is required** — the watch app needs its own AppIcon set, or
+  the build is rejected. Add it to the watch target before archiving.
+- **HealthKit usage strings:** because the watch target carries the HealthKit
+  entitlement, the watch `Info.plist` must contain **both**
+  `NSHealthShareUsageDescription` **and** `NSHealthUpdateUsageDescription`. The
+  uploader rejects the build with **error 90683** if either is missing — even though
+  the app only ever **writes** Mindful Minutes and never reads Health.
 
 ## 6. Review notes (read this — it's the one real risk)
 

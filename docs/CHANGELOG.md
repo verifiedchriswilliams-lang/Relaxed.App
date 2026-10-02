@@ -70,6 +70,8 @@ The splash fix and the EU/international launch.
   now available across the EU/EEA, plus the UK, Australia, and New Zealand (42 new
   territories), on top of US + Canada. Availability is an App Store Connect setting,
   so it reached the live 1.2 build before this build; 1.2.1 carries it forward.
+  (Availability has since expanded to **47 countries** — this entry records the
+  count as of 1.2.1; see [status.md](./status.md) for the current figure.)
 - All web-side work since 1.2 (the reminder fixes and warmer/personalized reminder
   copy) reaches this build automatically, as always.
 

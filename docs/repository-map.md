@@ -68,6 +68,7 @@ relaxed.app/
 | `lib/reminders.ts` | Daily-reminder preference (`relaxed.reminder.v1`) + schedule/cancel orchestration | [ios-native](./ios-native.md), [data-privacy](./data-privacy.md) |
 | `lib/analytics.ts` | Anonymous first-party events (`ev`) | [data-privacy](./data-privacy.md) |
 | `lib/native.ts` | Capacitor bridge: haptics + MediaSession + local notifications; safe web no-ops | [ios-native](./ios-native.md) |
+| `lib/watchRemote.ts` | Web side of the Apple Watch remote: dedupe + push session state / clear, and `onWatchCommand`, bridged to the `WatchBridge` Capacitor plugin; a no-op without the plugin (tests in `tests/watchRemote.test.ts`) | [ios-native](./ios-native.md) |
 | `lib/voices.json` | Voice guide names used by the preview builder | [audio-engine](./audio-engine.md) |
 
 ## `scripts/` — maintenance tooling
@@ -91,15 +92,28 @@ relaxed.app/
   for `@capacitor/assets`.
 - `native/www/index.html` — the offline fallback shown if the hosted site is
   unreachable.
-- `native/ios-plugin/` — the StoreKit 2 Capacitor plugin for the premium IAP, plus
-  the `WatchBridge` plugin (phone side of the Apple Watch remote, 1.4.1)
-  (Swift + `.m` + a `.storekit` test config + README); dragged into the Xcode
-  project on the Mac (the `ios/` project isn't in this repo).
-- `native/watch/` — the **native watchOS (SwiftUI) companion**: a standalone
-  haptic breathing pacer that logs Mindful Minutes to Health (V1), the
-  phone-mirroring **remote** (`PhoneLink.swift` + `RemoteView`, 1.4.1), and the
-  soundscape **line art** on the wrist during playback (`SoundMotif.swift`, 1.4.2).
-  Swift files, a tracked reference copy of the target's `Info.plist`, and a README.
+- `native/ios-plugin/` — the app-local Capacitor plugins, dragged into the Xcode
+  project on the Mac (the `ios/` project isn't in this repo):
+  - `MainViewController.swift` — `CAPBridgeViewController` subclass whose
+    `capacitorDidLoad` **registers** the app-local plugins.
+  - `PremiumPlugin.swift` / `.m` — the StoreKit 2 plugin for the premium IAP.
+  - `WatchBridgePlugin.swift` / `.m` — the `WatchBridge` plugin, the phone side of
+    the Apple Watch remote (WatchConnectivity, 1.4.1).
+  - `Premium.storekit` — a StoreKit test config, plus the folder's READMEs.
+- `native/watch/` — the **native watchOS (SwiftUI) companion**: a standalone haptic
+  breathing pacer that logs Mindful Minutes to Health (V1), the phone-mirroring
+  **remote** (1.4.1), and the soundscape **line art** on the wrist (1.4.2). Eight
+  `.swift` files plus a tracked reference copy of the target's `Info.plist`
+  (`relaxed-Watch-App-Watch-App-Info.plist`) and a README:
+  - `RelaxedWatchApp.swift` — `@main` app entry + root router.
+  - `Views.swift` — the screens, including the luminous breathing orb and `RemoteView`.
+  - `SessionEngine.swift` — session / breath state machine.
+  - `Theme.swift` — Ink/Bone tokens + the breath cadence.
+  - `HealthStore.swift` — HealthKit Mindful-Minutes write.
+  - `ExtendedRuntime.swift` — the mindfulness extended-runtime session.
+  - `PhoneLink.swift` — the `WCSession` client.
+  - `SoundMotif.swift` — the SwiftUI `Canvas` soundscape motifs.
+
   Added as a watch target in the Xcode project on the Mac. Not a web wrapper — see
   [ios-native.md](./ios-native.md) and the folder's README.
 - `public/aurora.jpg` — the ElevenMind night-sky background (relaxed uses none).

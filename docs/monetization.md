@@ -16,8 +16,10 @@
   on paid apps and in-app purchases is now **15%**. Eligibility ends if proceeds
   pass **$1M** in the calendar year, and an app transfer pools proceeds across all
   accounts that initiate/accept it.
-- **In-app purchases:** none yet. The app is free; the soundscape `tier` field
-  (`free`/`premium`) is data only and everything is unlocked.
+- **In-app purchases:** ✅ **live (shipped in 1.3).** The $4.99 one-time
+  "unlock all premium" (`app.relaxed.premium`) is in production and the
+  free/premium tier is enforced; the soundscape `tier` field (`free`/`premium`)
+  now gates real access rather than being data only.
 - **Schedule 3 (Custom App Distribution / enterprise via Volume Content):** not
   applicable to relaxed (consumer app).
 
@@ -74,6 +76,18 @@ nuanced and largely mutually exclusive with a clean IAP model. **Default plan: I
 
 ### 7. Growth tools available
 - **Offer Codes** (§3.13): give free/discounted access (press, testers, promos).
+  **Live free-access program:** 500 one-time-use offer codes are generated on
+  `app.relaxed.premium` under the **"Free"** offer, eligibility **"never purchased
+  before,"** expiry **2027-04-01**. These grant the premium **IAP entitlement** and
+  are redeemed via the **App Store app** (profile → Redeem Gift Card or Code). See
+  [status.md](./status.md#offer-codes-free-premium-for-friendstesters) for the
+  operational detail (tracking sheet, test confirmation).
+  - **Load-bearing distinction:** App Store **promo codes** grant a free **app
+    download** and do **not** unlock the IAP; **Offer Codes** grant the **IAP
+    entitlement**. For free premium, use Offer Codes.
+  - **No in-app redemption sheet yet.** Redemption is App-Store-app-only today; an
+    in-app flow would need `AppStore.presentOfferCodeRedeemSheet` in `PremiumPlugin`
+    plus a paywall button and a new build. Parked (see status.md).
 - **Bundles / Complete My Bundle** (§3.14): sell multiple apps together (less
   relevant with a single app today).
 
@@ -85,8 +99,8 @@ premium soundscapes plus infinite (∞) sessions.** No subscription for now —
 
 **Split revised 2026-09-23 (was 3 free / 5 premium per family):** now **5 free +
 3 premium per family**, so **15 free + 9 premium** across the 24. The catalog's
-`tier` values currently encode the OLD ratio (9 free / 15 premium) and must be
-flipped when 1.3 is built.
+`tier` values were flipped to this 15-free / 9-premium ratio in 1.3 (done; shipped
+live).
 
 **Row ordering + premium picks (working proposal 2026-09-23).** The array order in
 `lib/audio/soundscapes.ts` *is* the tray display order, so reordering and tiering
@@ -167,18 +181,18 @@ Unlock copy grows to cover all three (see unlock-bar copy below):
 - **Entitlement:** cached on-device (fits the no-accounts model); the source of
   truth is the StoreKit transaction, re-checked on launch.
 
-### Release sequencing
-1. **1.2.2 — all 24 soundscapes + infinite, free (marketing build).** The audio,
-   ∞ sessions, instant previews and new motifs are already live on the web (prod),
-   so this is a **native build to refresh the App Store listing**: "What's New"
-   copy (24 sounds, infinite sessions, upgraded voice model — verify the exact
-   ElevenLabs model id before claiming a version), refreshed screenshots, then
-   submit. Everything unlocked; no StoreKit. Free version, no IAP.
-2. **1.3 — add the IAP.** Introduce the $4.99 unlock; gate the **9 premium beds +
-   infinite**; flip the catalog `tier` values to the 15-free / 9-premium split.
-   Requires a native build (StoreKit) and the paywall UI below.
-   **Gate: submit 1.3 only after 1.2.2 is approved and released** — do not have two
-   builds in review at once.
+### Release sequencing (shipped)
+1. **1.2.2 — all 24 soundscapes + infinite, free (marketing build).** ✅ Released.
+   The audio, ∞ sessions, instant previews and new motifs were already live on the
+   web (prod), so this was a **native build to refresh the App Store listing**:
+   "What's New" copy (24 sounds, infinite sessions, upgraded voice model),
+   refreshed screenshots, then submit. Everything unlocked; no StoreKit. Free
+   version, no IAP.
+2. **1.3 — add the IAP.** ✅ Released and live. Introduced the $4.99 unlock; gates
+   the **9 premium beds + 10 premium voices + infinite**; the catalog `tier` values
+   were flipped to the 15-free / 9-premium split. Shipped as a native build
+   (StoreKit) with the paywall UI below. (Submitted only after 1.2.2 was approved
+   and released — the two were never in review at once.)
 
 ### UX: locked sounds stay previewable
 Even after the gate goes up, **every sound previews free** on tap in the tray — the
@@ -221,7 +235,9 @@ purchasable only in the iOS app via StoreKit; on the plain web those items show
 locked (previewable, not usable in a session), no web purchase for now. Web
 selling (Stripe) stays a later option.
 
-## To-do before we charge (the paywall project)
+## The paywall project (shipped in 1.3)
+
+All items below are complete; the paywall is live in production.
 
 1. **Enroll in the App Store Small Business Program** (→ 15%). *(done — approved
    2026-09-25.)*
@@ -229,15 +245,14 @@ selling (Stripe) stays a later option.
    all Active.)*
 3. **Create the IAP product** in App Store Connect: one non-consumable, $4.99,
    product ID **`app.relaxed.premium`** (matches the plugin), review screenshot +
-   description. *(pending — see native/ios-plugin/README.md.)*
-4. **StoreKit purchase + Capacitor bridge.** *(scaffolded on `iap-1.3`:*
-   *`lib/entitlement.ts` + `native/ios-plugin/` — Swift StoreKit 2 plugin with*
-   *getEntitlement / purchase / restore + a live updates listener. Remaining: add*
-   *the two files to the Xcode project and test, per the plugin README.)*
-5. **`tier` gate + lock/buy UI.** *(done on `iap-1.3`: lock states on premium beds*
-   *and voices, the gate at Begin covering beds + voices + infinite, and the unlock*
-   *sheet. Everything still previews free.)*
-6. **Web/native split.** *(decided: native-only unlock — see above.)*
+   description. *(done — live and approved.)*
+4. **StoreKit purchase + Capacitor bridge.** *(done — `lib/entitlement.ts` +*
+   *`native/ios-plugin/` Swift StoreKit 2 plugin with getEntitlement / purchase /*
+   *restore + a live updates listener, wired into the Xcode project and shipped.)*
+5. **`tier` gate + lock/buy UI.** *(done: lock states on premium beds and voices,*
+   *the gate at Begin covering beds + voices + infinite, and the unlock sheet.*
+   *Everything still previews free.)*
+6. **Web/native split.** *(decided and shipped: native-only unlock — see above.)*
 
 ## Content / marketing guardrails
 - Don't use child-pressuring purchase language ("buy now!", "upgrade now!") aimed

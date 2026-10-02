@@ -3,7 +3,10 @@
 > The "stem" identity for relaxed.app, its design tokens, and the mechanism that
 > produces two brands from one codebase. Implementation: `app/globals.css` (base),
 > `app/relaxed.css` (relaxed overrides), `lib/brand.ts`, `lib/mark.tsx`,
-> `lib/iconArt.ts`, `lib/soundMotifs.tsx`.
+> `lib/iconArt.ts`, `lib/soundMotifs.tsx`. The Apple Watch app is a third design
+> surface that consumes the same stem identity in Swift: `native/watch/Theme.swift`
+> (tokens + breath cadence), `native/watch/SoundMotif.swift` (the motifs ported to a
+> SwiftUI Canvas), `native/watch/Views.swift` (the screens, including the luminous orb).
 
 > **Source of record.** A formal brand handoff lives in
 > [`brand/relaxed-stem/`](./brand/relaxed-stem/README.md): the exact mark
@@ -58,6 +61,17 @@ ElevenMind base in `globals.css`). relaxed is **deliberately dark-only.**
 | `--rx-line-strong` | `rgba(239,235,227,.24)` | Stronger hairline |
 | `--rx-hover` | `rgba(239,235,227,.06)` | Hover wash |
 
+**Watch-only tokens** (`native/watch/Theme.swift`, for the luminous orb and the wrist chrome; no web equivalent)
+| Token | Value | Role |
+|---|---|---|
+| `warm` | `#EFE7D6` | Warm cast for the orb's outer halo |
+| `lumenInk` | `rgb(38,35,30)` @ .88 | Legible warm-dark numeral inside the bloom |
+
+The watch also uses its **own** Bone opacity steps that differ from the web ones:
+`boneDim` = Bone at .55 and `hair` = Bone at .22 (vs. the web `--ink-1` .72,
+`--glass-line` .14, `--rx-line-strong` .24). Ink/Bone and the breath cadence match
+the web; the opacity ladder is hand-chosen for the small screen.
+
 **Type**
 - `--rx-font-family` = Figtree (loaded in `layout.tsx`, weights 300–600), applied
   via `--font`.
@@ -111,7 +125,28 @@ beds draw spikes, tones draw waves). These are the only "illustration" in the
 relaxed world and stay monochrome line art; an id with no bespoke motif falls
 back to a calm single wave.
 
-## 6. Accessibility & motion
+The motifs are ported **1:1** to a SwiftUI Canvas on the Apple Watch
+(`native/watch/SoundMotif.swift`): the same 100×100 grid, the same Bone-on-Ink
+line language, the same oscilloscope/axis treatment for the Frequencies family.
+On the wrist they are drawn **statically** — the breathing ring around the motif
+supplies the motion, so the per-motif keyframe animation is dropped (a later
+refinement). The same fallback single wave covers any id without a bespoke motif.
+
+## 6. The watch "luminous" orb
+
+The web player breathes as a monochrome bloom behind the orb plus a ring driven by
+the shared JS clock. The Apple Watch session screen uses a different device for the
+same breath: a **luminous orb** (`native/watch/Views.swift`, concept 6). It is
+edgeless — no disc outline, no chrome — just light rising out of the Ink: a wide
+ambient scatter, a `warm` outer halo, and a main Bone bloom whose radial stops swell
+and brighten on the inhale and settle on the exhale. A steady inner bed of light
+does **not** scale, so the countdown stays legible at the bottom of the exhale when
+the bloom is at its smallest, and the numeral itself is a fixed size (in `lumenInk`)
+that never scales — only the light moves. On the remote screen (mirroring a phone
+session) the orb gives way to the soundscape motif inside a thin breathing ring, so
+the line art is the star on the wrist.
+
+## 7. Accessibility & motion
 
 - The design respects reduced-motion preferences (the base stylesheet has a
   reduced-motion block; relaxed's ring is JS-clock driven and calm by default).
@@ -120,7 +155,7 @@ back to a calm single wave.
 - Icon-only controls carry `aria-label`s (e.g. the history entry, back, and star
   buttons).
 
-## 7. Brand assets in the repo
+## 8. Brand assets in the repo
 
 - `assets/icon.png` (1024²) — source app icon (flat; iOS 26 applies the live bevel).
 - `assets/splash.png`, `assets/splash-dark.png` (2732²) — source launch images
@@ -128,7 +163,7 @@ back to a calm single wave.
 - These feed `@capacitor/assets` to generate all native icon/splash sizes; see
   [ios-native.md](./ios-native.md).
 
-## 8. Spec vs implementation (reconciled)
+## 9. Spec vs implementation (reconciled)
 
 The [brand handoff](./brand/relaxed-stem/README.md) has been **updated to match the
 shipped product** (2026-09-07): where an earlier spec value and the code once
@@ -149,7 +184,7 @@ The mark geometry, wordmark, spacing, and radius specs were already consistent a
 are unchanged. Going forward the handoff and the code are kept in sync by hand
 (there is no automated token pipeline; see below).
 
-## 9. Diligence note
+## 10. Diligence note
 
 The design system is intentional and consistent. It exists both as a formal
 handoff (mark geometry, palette, type, motion, production SVGs, tokens under
@@ -157,4 +192,13 @@ handoff (mark geometry, palette, type, motion, production SVGs, tokens under
 implementation (CSS custom properties + SVG paths in code). There is no published
 component library, Storybook, or automated token pipeline connecting the two, so
 the handoff and the code are kept in sync by hand. Tracked in
+[risks-tech-debt.md](./risks-tech-debt.md).
+
+With the Apple Watch app, the tokens and the motif geometry now live in **three**
+hand-synced copies: the web CSS (`app/relaxed.css`), the brand handoff package
+(`brand/relaxed-stem/` `tokens.json`/`tokens.css`), and the Swift constants
+(`native/watch/Theme.swift` for the tokens + breath cadence,
+`native/watch/SoundMotif.swift` for the motif geometry). That is a new drift
+surface — a change to Ink/Bone, the breath cadence, or a motif's geometry must now
+be reflected in the Swift copy by hand too. Tracked in
 [risks-tech-debt.md](./risks-tech-debt.md).

@@ -98,11 +98,12 @@ intensity and voice presence across the session.
   (kept), each replayable in one tap; swipe to delete.
 - **Daily reminder:** an on-device local notification at a chosen time (no server);
   native app only (the bell is hidden on the web, where nothing could schedule it).
-- **Durations:** 5, 10, 15, 20, 30, 45, 60 minutes.
+- **Durations:** 5, 10, 15, 20, 30, 45, 60 minutes, or ∞ (endless).
 - **Voices:** ElevenLabs Her/Him × US/UK, or None (sounds only).
 - **Soundscapes:** 24, across Nature / Music / Frequencies (8 each), seamless FLAC
-  loops with a line motif in the player. A 3-free / 5-premium split per family is
-  recorded but not yet enforced (all unlocked until the paywall project).
+  loops with a line motif in the player. A 5-free / 3-premium split per family is
+  enforced since the 1.3 IAP (premium beds behind the one-time "unlock all premium"
+  purchase; free to preview, gate at Begin).
 
 ---
 
@@ -130,8 +131,9 @@ intensity and voice presence across the session.
   generation wait is essentially the *custom* path, not every session.
 - **iOS app** is a thin **Capacitor shell** (a WKWebView over the hosted site),
   so web changes reach installed apps immediately. Native adds: dark launch,
-  background audio, lock-screen controls, haptics, and (in 1.2) local
-  notifications.
+  background audio, lock-screen controls, haptics, (in 1.2) local notifications,
+  and (in 1.4) an **Apple Watch companion** — net-new SwiftUI, not the Capacitor
+  shell.
 - **Web ships continuously** (every push to `main`); **iOS ships via the App
   Store**.
 - *(There is a sibling brand, ElevenMind, that runs the same codebase with a
@@ -152,42 +154,37 @@ A public privacy page ships with the app.
 ## 8. Where we are today (status)
 
 - **Web:** live in production, continuously deployed.
-- **iOS:** version **1.2.1** released on the App Store; it adds the daily-reminder
-  plugin (which lights up the native-only reminder bell), refreshed screenshots,
-  and the corrected launch screen.
-- **Availability:** US + Canada, the EU/EEA, UK, Australia, and New Zealand. Apple's
-  Digital Services Act "trader" verification passed, unlocking the EU/EEA.
+- **iOS:** **1.3** released on the App Store (the IAP build); **1.4** (Apple Watch)
+  in Apple review.
+- **Monetization:** the **$4.99 one-time "unlock all premium"** IAP is **live in
+  production** (9 premium soundscapes, 10 premium voices, infinite sessions).
+- **Apple Watch:** shipped as **1.4** (native SwiftUI companion), currently in
+  review.
+- **Availability:** 47 countries.
 - The personalized pipeline, the meditation engine, instant start, the flagship
   home, on-device continuity (recents/saved/reminder), and the audio craft are
   all shipped.
 
 ---
 
-## 9. Active backlog (the only planned work)
+## 9. Recently shipped (the former active backlog)
 
-Deliberately three items. Everything else has been parked or cut to protect focus.
+The three items that were the active backlog have all shipped:
 
-1. **Premium soundscape audio → infinite sessions + an "∞" duration.**
-   Replace the current ambient beds with premium, seamless-looping audio;
-   normalize levels; set loop points so there is no audible gap at the restart.
-   This unlocks **infinite sessions** (the bed loops as long as the person wants),
-   surfaced as an **∞ stop** at the end of the duration slider
-   (5 · 10 · 15 · 20 · 30 · 45 · 60 · ∞).
-   *Dependency:* sourcing the right seamless-loop source audio (in progress, not
-   yet found). Once files exist, the engineering is small.
+1. **Infinite sessions + an "∞" duration.** ✅ Shipped.
+   Premium seamless-looping beds, normalized levels, gapless loop points, and the
+   **∞ stop** at the end of the duration slider (5 · 10 · 15 · 20 · 30 · 45 · 60 · ∞).
 
-2. **EU launch (version 1.2.1).** ✅ Done.
-   DSA trader verification passed; the EU/EEA (plus UK, Australia, New Zealand) were
-   added to availability, and 1.2.1 shipped (also fixing the launch screen).
+2. **EU launch.** ✅ Shipped. DSA trader verification passed; availability has since
+   grown to **47 countries**.
 
-3. **Apple Watch — v1 "companion."**
-   A native watchOS (SwiftUI) app that shares the App Store listing and backend:
-   a breathing-haptic pacer on the wrist (no audio pipeline needed), start/pause/
-   end a session that plays on the phone, a complication + quick "5-min reset,"
-   and optional HealthKit "Mindful Minutes."
-   *Reality:* this is the one item that leaves the web stack, watchOS can't reuse
-   the Capacitor/Web-Audio app, so it's a net-new Swift build (medium effort).
-   Standalone on-watch playback is deliberately deferred.
+3. **Apple Watch companion.** ✅ Shipped as **1.4** (in Apple review). A net-new
+   native **SwiftUI** app: a standalone breathing-haptic pacer writing HealthKit
+   Mindful Minutes, a phone↔watch remote, and the soundscape line art on the wrist.
+
+For the current forward plan see [roadmap.md](./roadmap.md) and the living
+[status.md](./status.md). The next candidates are a local personalization
+"make another like this" loop and a Lock-Screen Live Activity.
 
 ---
 

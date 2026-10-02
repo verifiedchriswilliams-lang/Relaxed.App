@@ -46,10 +46,19 @@ The personalized experience, its depth, and monetization are live in production:
   premium"** (9 premium beds, 10 premium voices, infinite sessions), gated only
   where a purchase is possible so the web and pre-IAP apps are unaffected. Small
   Business Program approved (15%). See [monetization.md](./monetization.md).
-- **iOS + Mac** — a Capacitor shell over the hosted site. **1.2.2 live; 1.3 (the
-  IAP build) in review.** Mac ("Designed for iPad") is fully functional via a
-  capability-detected WASM-FLAC decode fallback for its WKWebView. EU/EEA + UK +
-  AU + NZ + US + Canada availability.
+- **iOS + Mac** — a Capacitor shell over the hosted site. **1.3 (the IAP build)
+  released/live; 1.4 (Apple Watch) in Apple review.** Mac ("Designed for iPad") is
+  fully functional via a capability-detected WASM-FLAC decode fallback for its
+  WKWebView. 47 countries availability.
+- **Apple Watch (1.4, in Apple review)** — a net-new native **SwiftUI** companion:
+  a standalone breathing-haptic pacer (1 / 3 / 5 / 10-minute, luminous orb,
+  HealthKit Mindful Minutes, a mindfulness extended-runtime session, no phone
+  needed), a **phone↔watch remote** over WatchConnectivity (mirror + control an
+  active phone session), and the **soundscape line art** ported to a SwiftUI
+  Canvas. Source in `native/watch/` (see its README).
+- **Free-access offer codes** — 500 one-time StoreKit offer codes on the premium
+  IAP for testers/friends, redeemed via the App Store app. Current state and the
+  redemption flow live in [status.md](./status.md).
 - **Brand parity** — relaxed.app and elevenmind.io run the same build at feature
   parity, with ElevenMind retaining its ElevenLabs / ElevenMusic attribution.
 
@@ -60,15 +69,15 @@ replayable scripts + moods (`lib/history.ts`), an event hook for telemetry
 (`lib/analytics.ts`), a structured session assembler (`lib/sessions.ts`), scene
 envelopes + a dual-bus (voice + ambient) mixer in the audio engine, a voice-cache
 builder for the free voices (`build-voice-cache.mjs`), and the Xcode project that
-a Watch target / Live Activity would ride in. Most of the plan below is surfacing
-and extending machinery that's already here.
+the Watch target (now shipped in 1.4) and a future Live Activity ride in. Most of
+the plan below is surfacing and extending machinery that's already here.
 
-## The plan (after 1.3 lands)
+## The plan (next releases)
 
-Ordered by effort-to-impact and demo value, not ambition. Ship momentum first,
-then the big native lift.
+Ordered by effort-to-impact and demo value, not ambition. The big native lift (the
+Watch) has shipped; these keep the momentum.
 
-1. **1.4 — Local personalization loop.** *Effort: S/M. Strongest retention move
+1. **1.5 — Local personalization loop.** *Effort: S/M. Strongest retention move
    with zero new infrastructure.* After a session, capture lightweight feedback
    (👍/👎, "more/less like this") and a one-tap **"make another like this"** that
    reuses the last session's intention/voice/soundscape and nudges the next
@@ -76,25 +85,12 @@ then the big native lift.
    accounts, no backend. Reframes "no accounts" from an MVP limitation into a
    deliberate product stance. Keep it invisible: no dashboard, no score, no streak.
 
-2. **1.5 — Live Activity (Lock Screen breath clock).** *Effort: M (first native
-   Swift). Highest native-credibility-per-effort, and a lower-risk warm-up for the
-   Watch.* A Lock Screen / Dynamic Island Live Activity showing the breath clock +
-   elapsed time during an active session. Genuinely native (WidgetKit/ActivityKit),
-   independently demoable, and it exercises the Swift muscle at a fraction of the
-   Watch's scope. (Home-screen streak/intention widgets are explicitly *not* in
-   scope — see "Explicitly not building".)
-
-3. **1.6 — Apple Watch companion (flagship native). 🔨 V1 source landed
-   2026-09-29; integrating in Xcode.** *Effort: L. The single strongest portfolio
-   move: it ends the "it's a Capacitor wrapper" conversation.* A genuinely native
-   **SwiftUI** app that does three things exceptionally well: pick a
-   **1 / 3 / 5 / 10-minute** session, **haptic breathing guidance** (up/down wrist
-   taps on the phone's exact cadence), and write **Mindful Minutes to HealthKit**,
-   with a mindfulness extended-runtime session. Source is in `native/watch/` (see
-   its README). **Scope discipline held:** V1 is *standalone* — no phone-session
-   handoff (WatchConnectivity is v1.1) and no on-watch AI voice (an AVAudioEngine
-   rebuild = v2). watchOS can't reuse the Capacitor/Web-Audio app, so this is a
-   net-new Swift build — precisely the point: it demonstrates native depth.
+2. **1.6 — Live Activity (Lock Screen breath clock).** *Effort: M. Highest
+   native-credibility-per-effort.* A Lock Screen / Dynamic Island Live Activity
+   showing the breath clock + elapsed time during an active session. Genuinely
+   native (WidgetKit/ActivityKit) and independently demoable. (Home-screen
+   streak/intention widgets are explicitly *not* in scope — see "Explicitly not
+   building".)
 
 **Android — strong parallel consideration.** *Effort: M. Business breadth over
 portfolio depth — slot it by appetite.* The web app already runs under Capacitor,
@@ -103,9 +99,9 @@ entitlement) + a Play Store listing. It proves cross-platform delivery and
 multi-store monetization, and there's real demonstrated demand (Android users who
 can't install the iOS app today). Honest trade-off: it's more a *port* than a
 net-new skill, so it moves the "can ship across platforms" axis more than the "can
-build hard native things" axis that the Watch owns. Worth doing — sequence it
-against 1.5/1.6 depending on whether the next conversation you're optimizing for
-values breadth (ship it sooner) or native depth (Watch first). Reuses the paywall,
+build hard native things" axis that the Watch already owns. Worth doing — sequence
+it against 1.5/1.6 by appetite: whether the next conversation you're optimizing for
+values breadth (ship it sooner) or more native depth. Reuses the paywall,
 entitlement, and audio work wholesale.
 
 ## Quiet hygiene (do alongside, never as a headline)

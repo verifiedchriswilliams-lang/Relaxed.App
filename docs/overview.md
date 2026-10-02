@@ -24,17 +24,20 @@ The wedge against Calm and Headspace is not a bigger library, it is "tell relaxe
 what you need and it makes one for you." The full strategy and phased plan live in
 [roadmap.md](./roadmap.md).
 
-## Current status (2026-09)
+## Current status (2026-10)
+
+For live operational state (review status, offer codes, outbound) see [status.md](./status.md).
 
 | Dimension | State |
 |---|---|
 | Web | **Live in production** at `relaxed.app` (Vercel, deploys on every push to `main`). |
-| iOS | **On the App Store.** v1.2.1 released, available in US + Canada, the EU/EEA, UK, Australia, and New Zealand (see [CHANGELOG](./CHANGELOG.md)). |
+| iOS | **On the App Store.** 1.3 released (the in-app-purchase build); 1.4 (Apple Watch) in Apple review (see [CHANGELOG](./CHANGELOG.md)). |
+| Apple Watch | 1.4, in review. Native SwiftUI companion: standalone breathing pacer (writes HealthKit Mindful Minutes), phone↔watch remote, soundscape line art. |
 | Android | Not built. Capacitor supports it; deferred. |
 | Accounts | None. All per-user state is on-device (`localStorage`). |
 | Backend/DB | None. Three stateless serverless API routes; no persistence layer. |
-| Availability | US + Canada (App Store). |
-| Monetization | Not yet. Premium tier ("relaxed+") is a Phase 3 bet. |
+| Availability | 47 countries (App Store). |
+| Monetization | Live. A $4.99 one-time IAP, "unlock all premium" (9 premium soundscapes, 10 premium voices, infinite sessions). Free-access offer codes exist for testers. See [monetization.md](./monetization.md). |
 | Analytics | Anonymous, aggregate-only (Vercel Web Analytics + custom events). No accounts, no identifiers, never the name or the typed phrase. |
 
 ## Technology stack (snapshot)

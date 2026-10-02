@@ -42,6 +42,15 @@ tradeoff).
 | **Vercel** (hosting) | Standard HTTPS request metadata (IP, user agent) inherent to serving the site and functions. | No application-level personal data is logged by the app. |
 | **Vercel Web Analytics** | Anonymous pageviews + the custom product events below. | No accounts, no identifiers, no free text, never the name or phrase. |
 
+The two rows below are **not** third-party transmission: Apple Health is an
+on-device store the user controls, and the watch link is a device-to-device
+channel (no server, no third party) between the user's own phone and watch.
+
+| Destination | What is sent | What is NOT sent |
+|---|---|---|
+| **Apple HealthKit / Apple Health** (on-device; iOS/watch) | On a completed session, one **Mindful Minutes** category sample (start/end only). Write-only, user-permission gated, best-effort (silent no-op if denied). | No name, no phrase, no mood. The app **never reads** any Health data (authorization is `toShare:[mindful], read:[]`). |
+| **WatchConnectivity** (phone↔watch; device-to-device) | The small session snapshot (`active`, `playing`, `title` = preset name or "Your session", `soundscape` label, `motif` = soundscape id, `remaining`/`total` whole seconds) plus play/pause/stop commands back from the watch. | No identifiers of any kind, never the custom phrase or the user's name. Goes only between the user's own paired devices, not to any server. |
+
 The API keys for Anthropic and ElevenLabs are server-only and never reach the
 browser (see [security.md](./security.md)).
 
@@ -107,10 +116,13 @@ purchase amount or receipt. Plus Vercel's cookieless auto-pageviews.
 - **COPPA / age:** the product is not directed at children; there is no age gate.
   An acquirer should confirm App Store age rating and marketing alignment.
 - **Health data:** the app offers mindfulness content and is **not** medical or
-  therapeutic; the UI states this. No HealthKit / Mindful Minutes integration
-  today (a Phase 4 idea). Mood entries stay on-device and are not health records.
-- **Availability:** US + Canada today; broadening to the EU should account for
-  DSA/trader obligations (noted in [roadmap.md](./roadmap.md)).
+  therapeutic; the UI states this. The Apple Watch app now **writes** completed
+  sessions to Apple Health as **Mindful Minutes** — write-only (it never reads any
+  Health data), user-permission gated, and best-effort (a silent no-op if the user
+  declines). Mood entries stay on-device, are not health records, and are **not**
+  written to Health.
+- **Availability:** 47 countries; further EU-specific gates (DSA/trader
+  obligations) are noted in [roadmap.md](./roadmap.md).
 
 ## 7. Content safety
 

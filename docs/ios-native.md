@@ -129,11 +129,12 @@ Guideline 4.2 "minimum functionality" review-notes guidance, is in
 
 The one part of the product that leaves the web stack. `native/watch/` holds a
 **native watchOS SwiftUI** app — watchOS can't reuse the Capacitor/Web-Audio app,
-so it's a genuine SwiftUI build. **V1 is standalone:** a haptic breathing pacer
-(1/3/5/10 min, up/down wrist taps on the same 6s/2.5s/6s cadence as the phone —
-mirrored from `lib/breath.ts`), a mindfulness `WKExtendedRuntimeSession` to keep
-it alive, and **Mindful Minutes written to Apple Health**. No on-watch AI voice
-(that's a v2 AVAudioEngine rebuild) and no WatchConnectivity phone-control (v1.1).
+so it's a genuine SwiftUI build. **V1 shipped standalone:** a haptic breathing
+pacer (1/3/5/10 min, a "luminous" breathing orb + up/down wrist taps on the same
+6s/2.5s/6s cadence as the phone — mirrored from `lib/breath.ts`), a mindfulness
+`WKExtendedRuntimeSession` to keep it alive, and **Mindful Minutes written to
+Apple Health**. The phone ⇄ watch remote came later, as 1.4.1 (see below); V1
+itself has no on-watch AI voice (that's a v2 AVAudioEngine rebuild).
 It's added as a watch target in the Xcode project on the Mac (the `ios/` project
 isn't committed) — full setup in [`native/watch/README.md`](../native/watch/README.md).
 This is also the strongest App Store *featuring* hook (native watchOS + HealthKit).
@@ -151,7 +152,9 @@ from the wrist is not in 1.4.1.
 per-soundscape motifs from `lib/soundMotifs.tsx` to a SwiftUI `Canvas` (same
 100x100 grid, single Bone stroke), shown inside the breathing ring on the remote
 screen. The state snapshot carries the soundscape `motif` id so the watch draws the
-right one. Still deferred: per-motif micro-animation and tighter breath sync.
+right one. (The in-review build 13 predates the motif-forwarding fix in the phone
+plugin, so on that build the remote shows the default/generic motif; corrected in
+the next build.) Still deferred: per-motif micro-animation and tighter breath sync.
 
 ## 8. Known native gotchas
 

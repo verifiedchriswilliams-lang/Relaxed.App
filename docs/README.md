@@ -6,9 +6,12 @@ acquirer's technical and product diligence would expect: precise, current, and
 grounded in the actual code, with every non-obvious claim traceable to a file.
 
 > **Status at a glance.** Live in production on the web (`relaxed.app`) and on the
-> iOS App Store. Next.js on Vercel; no database; two AI providers (Anthropic for
+> iOS App Store (1.3, the IAP build), in 47 countries. Monetization is live (a
+> $4.99 one-time "unlock all premium"); the Apple Watch companion (1.4) is in
+> Apple review. Next.js on Vercel; no database; two AI providers (Anthropic for
 > scripts, ElevenLabs for voice). Solo founder, AI-assisted development. See
-> [overview.md](./overview.md) for the full snapshot.
+> [overview.md](./overview.md) for the full snapshot and [status.md](./status.md)
+> for the live operational state.
 
 ## How this set is organized
 
@@ -78,6 +81,6 @@ Conventions:
 - **Add a pin.** When you add a value worth protecting from drift, add a check to
   `scripts/check-docs.mjs` so it can never silently fall out of sync again.
 
-_Last full pass: 2026-09-07 (Sunday). Reconcile the items in
+_Last full pass: 2026-10-02. Reconcile the items in
 [risks-tech-debt.md](./risks-tech-debt.md#documentation-reconciliation) when
 convenient._

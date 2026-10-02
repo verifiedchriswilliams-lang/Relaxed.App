@@ -48,11 +48,33 @@ Notable properties and residual risks:
   Tracked in [risks-tech-debt.md](./risks-tech-debt.md#security--abuse).
 - **No CSRF/session risk:** there is no authenticated session or cookie to forge;
   routes are pure content generators.
-- **Transport:** HTTPS only (`cleartext: false` in the native shell; Vercel TLS on
-  the web).
+- **Transport:** HTTPS only for all network traffic (`cleartext: false` in the
+  native shell; Vercel TLS on the web). The Apple Watch link is **not** a network
+  transport surface: it is a local **WatchConnectivity (WCSession)** channel between
+  the user's own paired phone and watch — on-device/device-to-device, unauthenticated
+  by design, carrying only session state + play/pause/stop commands, with no secrets
+  and no identifiers (see the native surfaces below).
 - **Output size:** `/api/generate` caps inline audio under Vercel's response limit
   by using a compact format for live lines, so a large session can't blow the
   response.
+
+### Native surfaces (iOS / watchOS)
+
+Beyond the server routes, the app ships two native capabilities. Neither reaches a
+server or handles secrets:
+
+- **HealthKit (write-only).** The watch app logs a completed session to Apple Health
+  as a Mindful Minutes sample. It adds the HealthKit entitlement and two Info.plist
+  usage strings (`NSHealthUpdateUsageDescription` for write and
+  `NSHealthShareUsageDescription` — both are required or the write is rejected, even
+  though no read is requested). Authorization is `toShare:[mindful], read:[]`, so it
+  grants **no** read access to any Health data; the write is user-permission gated
+  and best-effort (a silent no-op if denied).
+- **WatchBridge / WCSession (local IPC).** The `WatchBridge` plugin speaks
+  WatchConnectivity to mirror and control a session between phone and watch. It
+  carries only the session-state snapshot + play/pause/stop commands, stays
+  on-device (device-to-device, never to a server), and contains no secrets and no
+  identifiers.
 
 ## 3. Content safety
 <a id="content-safety"></a>

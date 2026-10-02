@@ -30,13 +30,16 @@ npm run ios:open        # opens ios/App/App.xcworkspace
 Capacitor 6+ does **not** auto-discover app-local plugins. The bridge registers
 only its built-ins plus the npm plugins in `capacitor.config.json`'s
 `packageClassList`; a plugin that lives in the App target (like this one) is
-never in that list, so it must be registered by hand. `MainViewController.swift`
-(a `CAPBridgeViewController` subclass) does that in `capacitorDidLoad()` — but it
-only runs if the app actually instantiates it as its root view controller.
+never in that list, so it must be registered by hand. **The registration point is
+`MainViewController.swift`** (a `CAPBridgeViewController` subclass): its
+`capacitorDidLoad()` calls `registerPluginInstance(...)` for each app-local plugin
+(`PremiumPlugin`, and `WatchBridgePlugin` as of 1.4). That hook only runs if the
+app actually instantiates `MainViewController` as its root view controller, so the
+remaining step is just to make it the root.
 
 **This Capacitor template builds the root VC in code, not from the storyboard.**
-So the registration hook is wired in `SceneDelegate.swift`, not via a storyboard
-custom class. In `ios/App/App/SceneDelegate.swift`, inside
+So `MainViewController` is wired in as the root in `SceneDelegate.swift`, not via a
+storyboard custom class. In `ios/App/App/SceneDelegate.swift`, inside
 `scene(_:willConnectTo:options:)`, change:
 
 ```swift
@@ -53,7 +56,8 @@ window?.rootViewController = MainViewController()
 > one-line edit must be re-applied after a fresh `cap add ios`. If a future
 > template instead uses the storyboard for its root VC, set the bridge view
 > controller's **Custom Class** to `MainViewController` in Main.storyboard rather
-> than editing SceneDelegate.
+> than editing SceneDelegate — either way the goal is that `MainViewController`
+> (which does the `registerPluginInstance` calls) is the root VC.
 
 Without this step there are **no lock glyphs and no "more voices"** in the app:
 the web layer probes the bridge for `Premium`, finds nothing, and treats the
@@ -97,6 +101,10 @@ web inspector console on the running app and check
   attach to the 1.3 version, submit. Per the plan, submit 1.3 only after 1.2.2 is
   approved.
 
+> The Premium plugin shipped with 1.3. The **WatchBridge** plugin in this folder
+> ships with **1.4**, the Apple Watch release (currently in App review) — it rides
+> along in the same App target, registered by the same `MainViewController.swift`.
+
 ## How the two halves talk
 
 - JS → native: `Capacitor.Plugins.Premium.getEntitlement() / purchase() / restore()`,
@@ -114,8 +122,10 @@ web inspector console on the running app and check
 This folder also holds the phone side of the Apple Watch remote:
 
 - `WatchBridgePlugin.swift` — a Capacitor plugin `WatchBridge` that speaks
-  WatchConnectivity: `updateState()` pushes the live session snapshot to the watch,
-  and watch commands are emitted to JS as a `command` event.
+  WatchConnectivity: `updateState()` pushes the live session snapshot to the watch
+  (`{ active, playing, title, soundscape, motif, remaining, total }` — the `motif`
+  id is what `SoundMotif.swift` maps to the per-soundscape line art), and watch
+  commands are emitted to JS as a `command` event.
 - `WatchBridgePlugin.m` — the `CAP_PLUGIN` macro registering it as `WatchBridge`.
 - `MainViewController.swift` now also registers `WatchBridgePlugin()` (add both
   Swift/.m files to the App target, or remove that line until you do).

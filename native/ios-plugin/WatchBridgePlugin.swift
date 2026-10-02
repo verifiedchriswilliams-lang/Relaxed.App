@@ -5,7 +5,7 @@ import WatchConnectivity
 // Phone-side WatchConnectivity bridge for the Apple Watch remote (1.4.1).
 //
 // The web layer (lib/watchRemote.ts) reaches this as Capacitor.Plugins.WatchBridge:
-//   updateState({active, playing, title, soundscape, remaining, total})
+//   updateState({active, playing, title, soundscape, motif, remaining, total})
 //       -> pushed to the watch as the latest state
 // and the plugin emits a "command" event ({ action: "play" | "pause" | "stop" })
 // whenever the watch sends one, which the web routes to the same play/pause/stop
@@ -33,6 +33,7 @@ public class WatchBridgePlugin: CAPPlugin, WCSessionDelegate {
         state["playing"] = call.getBool("playing") ?? false
         state["title"] = call.getString("title") ?? ""
         state["soundscape"] = call.getString("soundscape") ?? ""
+        state["motif"] = call.getString("motif") ?? ""
         state["remaining"] = call.getInt("remaining") ?? 0
         state["total"] = call.getInt("total") ?? 0
         latest = state

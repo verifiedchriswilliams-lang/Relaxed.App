@@ -13,8 +13,11 @@ shares the App Store listing. V1 is standalone and does three things well:
 Plus start / pause / end, a quiet "well done", and a mindfulness extended-runtime
 session so it keeps running with the wrist down.
 
-**Not in V1** (later): on-watch AI voice/soundscape (needs an AVAudioEngine
-rebuild — v2), and controlling a phone session over WatchConnectivity (v1.1).
+**Not in V1** (V1-era scope, kept for history): on-watch AI voice/soundscape
+(needs an AVAudioEngine rebuild — v2), and controlling a phone session over
+WatchConnectivity. The WatchConnectivity remote has since shipped — see the
+**Phone ⇄ Watch remote (1.4.1)** section below — so that second item is no longer
+a gap; on-watch AI voice remains a v2 item.
 
 The files here are the whole app:
 
@@ -50,9 +53,12 @@ npm run ios:open        # opens ios/App/App.xcworkspace
 
 ## 2. Add these source files
 
-- Drag **all six `.swift` files** from `native/watch/` into the **`relaxed Watch
-  App`** group in Xcode. When prompted: **Copy items if needed**, and add them to
-  the **`relaxed Watch App` target only** (not the iOS app target).
+- Drag the `.swift` files from `native/watch/` into the **`relaxed Watch App`**
+  group in Xcode. When prompted: **Copy items if needed**, and add them to the
+  **`relaxed Watch App` target only** (not the iOS app target). The folder now holds
+  **eight** `.swift` files (see the table above): this step covers the original V1
+  six; `PhoneLink.swift` and `SoundMotif.swift` are the 1.4.1 / 1.4.2 additions and
+  are added the same way (see the **Phone ⇄ Watch remote (1.4.1)** section).
 
 ### Keeping the target in sync
 
@@ -203,6 +209,11 @@ own breath clock locally while `playing`, so nothing per-frame crosses the link.
 
 `motif` is the soundscape **id** (e.g. `rain`), which `SoundMotif.swift` maps to the
 line-art drawing; `soundscape` is the human-readable name for the label line.
+
+> Note: the in-review **build 13** predates the fix that forwards `motif` across the
+> link (`WatchBridgePlugin.updateState()` previously dropped it), so on that build the
+> watch remote shows the default/generic motif rather than the per-soundscape line
+> art. The source now forwards `motif`; it is corrected in the next build.
 
 ### Line art on the wrist (1.4.2)
 

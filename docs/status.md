@@ -28,6 +28,17 @@ _As of 2026-10-02._
 - **1.4 Apple Watch build — in Apple review.** Awaiting verdict. (No new build needed
   for metadata; the IAP promo image was removed to clear the 2.3.2 rejection.)
 
+## Known issues
+
+- **Watch remote motif (build 13).** The phone-side `WatchBridgePlugin.updateState()`
+  previously dropped the soundscape `motif` id when pushing state to the watch, so
+  during phone↔watch remote control the watch showed the generic default motif
+  instead of the per-soundscape line art (the 1.4.2 feature). Fixed in source
+  (`native/ios-plugin/WatchBridgePlugin.swift` now forwards `motif`), but **build 13
+  (the one in review) predates the fix** — it reaches users only in the next build.
+  Cosmetic (the ring, countdown, and controls work regardless). Decision: let it ride
+  to a later build, or expedite a rebuild. Standalone watch pacer is unaffected.
+
 ## Offer codes (free premium for friends/testers)
 
 - **500 one-time-use offer codes** generated on the `app.relaxed.premium` IAP, under
