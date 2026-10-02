@@ -14,6 +14,7 @@ grounded in the actual code, with every non-obvious claim traceable to a file.
 
 | # | Document | What it covers |
 |---|---|---|
+| 0 | [status.md](./status.md) | **Read first.** The living "now": App Store review state, what's live, what's in flight, offer codes, recent outbound. |
 | 1 | [overview.md](./overview.md) | Product, positioning, current status, tech-stack snapshot, team. Start here. |
 | 2 | [architecture.md](./architecture.md) | System design, component boundaries, request lifecycles, key decisions. |
 | 3 | [product-spec.md](./product-spec.md) | Features, user flows, intentions, voices, soundscapes, personalization. |

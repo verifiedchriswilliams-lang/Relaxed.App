@@ -41,6 +41,12 @@ change**. This is enforced, not just requested:
 - If `check:docs` fails, either the code changed and a doc must catch up, or a new
   fact needs pinning — fix the doc (or add the pin in `scripts/check-docs.mjs`).
 - User-facing changes get a [CHANGELOG](./docs/CHANGELOG.md) entry.
+- **Read [docs/status.md](./docs/status.md) first, and keep it current.** It is the
+  living "now" (App Store review state, what's live, in-flight work, offer codes,
+  outbound/marketing). Read it at the start of a session before acting, and update it
+  the moment any of that changes, so finished work is never re-surfaced as a TODO.
+  When a version is approved and released, move its detail into the CHANGELOG and
+  leave only the current state in status.md.
 
 ### Code → docs map
 

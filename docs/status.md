@@ -1,0 +1,75 @@
+# Status & In-Flight
+
+> **Read this first.** The living operational snapshot: what is live, what is in
+> flight, and what is next. The [CHANGELOG](./CHANGELOG.md) is durable release
+> history (the past); the [roadmap](./roadmap.md) is strategy (the future); this
+> doc is the **now**, and it is updated the moment something changes so no finished
+> work gets re-surfaced as a TODO. Keep it short and current.
+
+_As of 2026-10-02._
+
+## App Store state
+
+| Version | State | What it is |
+|---|---|---|
+| **1.4** | **In Review** | Apple Watch build (standalone pacer + phone↔watch remote + soundscape line art), build 13. Resubmitted after removing the IAP promotional image (2.3.2). |
+| **1.3** | **Released** (Ready for Distribution) | The live IAP build. Makes the **$4.99 premium unlock** available in production. |
+
+## Live in production
+
+- **Web** (`relaxed.app`): continuous deploy on push to `main` (Vercel).
+- **iOS**: **1.3** is the live App Store build, premium IAP (`app.relaxed.premium`,
+  Apple ID 6815434042) active and approved.
+- **Premium unlock** (one-time $4.99): 9 soundscapes + 10 voices + infinite sessions.
+- **Availability**: 47 countries.
+
+## In flight
+
+- **1.4 Apple Watch build — in Apple review.** Awaiting verdict. (No new build needed
+  for metadata; the IAP promo image was removed to clear the 2.3.2 rejection.)
+
+## Offer codes (free premium for friends/testers)
+
+- **500 one-time-use offer codes** generated on the `app.relaxed.premium` IAP, under
+  the **Free** offer. Eligibility: **"Never purchased before."** Expiry **2027-04-01**.
+- Redeemed via the **App Store app → profile → Redeem Gift Card or Code** (one-time
+  codes support the in-app manual field; custom codes would not). Tested end to end
+  on 2026-10-02: redeeming unlocks premium immediately, no Restore needed (the
+  `entitlementChanged` listener in `PremiumPlugin` fires on its own).
+- Codes tracked in a private Google Sheet (name beside each code as it's assigned).
+- **No in-app redemption sheet yet** — that would be a small native addition to
+  `PremiumPlugin` (`AppStore.presentOfferCodeRedeemSheet`) + a paywall button, and a
+  new build. Parked as a 1.5 polish item; not needed, the redeem flow works today.
+
+## Email / infra
+
+- **chris@relaxed.app** added (2026-10-02) and confirmed receiving. It and
+  **support@relaxed.app** are aliases on the Workspace user `Chris@theprob.ai`
+  (relaxed.app is a secondary domain in the **theprob.ai** Google Workspace); mail
+  funnels to **verifiedchriswilliams@gmail.com**. Documented in
+  [infrastructure.md](./infrastructure.md#email-relaxedapp).
+
+## Marketing / outbound
+
+- **LinkedIn release-notes post** published **2026-10-01** — "Premium is now live on
+  relaxed.app." Covered: premium via in-app purchase, 10 premium voices, 9 premium
+  soundscapes, infinite sessions; now in **47 countries**; asked people to download,
+  give honest feedback, and **DM for a free promo code rather than pay**. 1.4 (Apple
+  Watch) teased as "more next week." Link: https://lnkd.in/gYZKTF7y
+- Assets produced: LinkedIn banner (1584×396), a phone+watch App Store hero image,
+  App Store Apple Watch screenshots.
+
+## Next up
+
+- **Await the 1.4 review verdict**; if approved, release and add the Watch to the
+  live story (and a follow-up LinkedIn post).
+- **1.5 candidates** (see [roadmap.md](./roadmap.md)): local personalization loop
+  ("make another like this"), or Live Activity, or the in-app offer-code redemption
+  sheet. Not yet chosen.
+
+---
+
+_Maintenance: update the table and the in-flight list whenever App Store state,
+monetization, or a shipped/outbound item changes. When a version is approved and
+released, move its narrative detail into the [CHANGELOG](./CHANGELOG.md) and leave
+only the current state here._

@@ -18,7 +18,28 @@ build carried, not the review timeline.
 
 ## iOS — App Store releases
 
-### 1.3 — submitted 2026-09-24 (in review)
+### 1.4 — in review (as of 2026-10-02)
+The **Apple Watch** release, the first net-new native platform (a standalone
+**SwiftUI** app, not the Capacitor shell). Three parts shipped together as 1.4,
+build 13:
+- **V1 standalone pacer.** A fully native watchOS app: pick a **1 / 3 / 5 / 10-minute**
+  session, a luminous breathing orb with **haptic breathing guidance**, and
+  **Mindful Minutes written to HealthKit**, backed by a mindfulness
+  `WKExtendedRuntimeSession`. Runs on its own, no phone required. Source in
+  `native/watch/`.
+- **1.4.1 — phone↔watch remote.** With a session playing on the phone, the watch
+  becomes a remote (WatchConnectivity / `WCSession`): it shows the soundscape name,
+  a breathing ring, and a live countdown, with stop / play-pause controls. New iOS
+  Capacitor plugin **`WatchBridge`** (registered in `MainViewController`); web bridge
+  in `lib/watchRemote.ts` (tested in `tests/watchRemote.test.ts`).
+- **1.4.2 — soundscape line art.** Native line-art motifs on the watch, ported from
+  `lib/soundMotifs.tsx` to a SwiftUI `Canvas` (`SoundMotif.swift`).
+
+Metadata-rejected once under Guideline 2.3.2 (IAP promotional image text too small),
+resolved by **removing the IAP promotional image**, then resubmitted. Version 1.4,
+build 13. See [ios-native.md](./ios-native.md).
+
+### 1.3 — released (the live IAP build; submitted 2026-09-24)
 The **in-app purchase** build. First native code since the shell: a StoreKit 2
 Capacitor plugin (`Premium`, product `app.relaxed.premium`) registered via a
 `CAPBridgeViewController` subclass, plus the In-App Purchase capability. Adds the
@@ -29,7 +50,9 @@ activates **only where a purchase is possible** (`purchaseAvailable`), so the
 live web and pre-1.3 builds are unaffected. Purchase, restore, restore-on-launch,
 and purchase-into-session were verified in the StoreKit test environment.
 Submitted with the IAP in one review submission (required for a first IAP).
-Version 1.3, build 8; set to auto-release after approval.
+Version 1.3, build 8. **Approved and released** — now "Ready for Distribution" in
+App Store Connect and the live build that makes the $4.99 premium IAP available in
+production.
 
 ### 1.2.2 — released 2026-09-24
 The "24 sounds + infinite" marketing build. **Free, no IAP.** No native code
