@@ -102,6 +102,34 @@ are handled by Vercel's Git integration on push to `main`.
   pointed at their Vercel projects in the Vercel domains tab.
 - App Store bundle id: `app.relaxed`; app name "relaxed".
 
+### Email (relaxed.app)
+
+Inbound mail for `relaxed.app` is handled by **Google Workspace**, not a registrar
+forwarder (the domain's MX records point at Google: `aspmx.l.google.com` + alts).
+The setup:
+
+- `relaxed.app` is a **secondary domain** inside the **theprob.ai** Google Workspace
+  org (verified; see Admin console → Account → Domains → Manage domains). It is not
+  its own standalone Workspace.
+- `support@relaxed.app` and `chris@relaxed.app` are **email aliases on the single
+  Workspace user `Chris@theprob.ai`** (Admin console → Directory → Users → Chris
+  Williams → Alternate email addresses). Aliases are free (up to 30/user) and need
+  no extra license.
+- That user's mail funnels into the personal inbox **verifiedchriswilliams@gmail.com**,
+  so in practice every relaxed.app address lands in one Gmail. There is a single
+  delivery path — add any new relaxed.app address as another alias on this same user,
+  never as a separate forwarder, to avoid split routing.
+
+To add a new relaxed.app address: Admin console → Directory → Users →
+`Chris@theprob.ai` → **Add alternate emails** → type the local part, set the domain
+dropdown to `relaxed.app`, Save. Verify with a test send; aliases usually go live
+within minutes.
+
+DNS note: `relaxed.app` also publishes SPF, DKIM, and a DMARC record
+(`p=none; rua=mailto:support@relaxed.app`). The "Attention required" badge in the
+Workspace domains list refers to finishing outbound-authentication records for
+deliverability; inbound receipt already works.
+
 ## 7. Runtimes & limits worth knowing
 
 - `/api/generate`: Node runtime, `maxDuration 300s`. Cached lines are Blob URLs
