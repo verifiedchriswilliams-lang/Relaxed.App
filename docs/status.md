@@ -6,12 +6,13 @@
 > doc is the **now**, and it is updated the moment something changes so no finished
 > work gets re-surfaced as a TODO. Keep it short and current.
 
-_As of 2026-10-02._
+_As of 2026-10-03._
 
 ## App Store state
 
 | Version | State | What it is |
 |---|---|---|
+| **1.4.1** | **In Review** (expedited) | Maintenance build (14): watch-remote motif fix, in-app offer-code redemption, watch line-art polish. |
 | **1.4** | **Released** (live) | Apple Watch build (standalone pacer + phone↔watch remote + soundscape line art). The native watchOS companion is live on the App Store. |
 | **1.3** | **Released** (Ready for Distribution) | The live IAP build. Makes the **$4.99 premium unlock** available in production. |
 
@@ -25,12 +26,11 @@ _As of 2026-10-02._
 
 ## In flight
 
-- **1.4.1 — in development** (a native build: needs an Xcode compile + resubmission).
-  Planned scope: the **watch-remote motif fix** (done, in `main`), **in-app
-  offer-code redemption** (done in source), and **watch line-art polish** (done in
-  source: breath-synced ring + motif, wave drift, ember/ring pulse; finer per-motif
-  motions deferred). Web-side code deploys gated behind the native methods, so nothing
-  is user-visible until the 1.4.1 build ships.
+- **1.4.1 — submitted, expedited review granted (2026-10-03).** Version 1.4.1, build
+  14, "Waiting for Review" with an approved expedite request. Contents: the
+  watch-remote motif fix, in-app offer-code redemption ("Redeem a code"), and the
+  watch line-art polish (breath-synced ring + motif, wave drift, ember/ring pulse;
+  finer per-motif motions deferred). Awaiting the verdict.
 
 ## Known issues
 
@@ -79,10 +79,10 @@ _As of 2026-10-02._
 
 ## Next up
 
-- **Build + submit 1.4.1** on the Mac (Xcode): the motif fix, in-app redemption, and
-  watch line-art polish.
-- **Create the universal custom offer code** in App Store Connect once 1.4.1 is live,
-  and switch the friends message to the in-app "Redeem a code" flow.
+- **Await the 1.4.1 verdict** (expedited). On approval, confirm the in-app "Redeem a
+  code" flow and the watch remote on the live build.
+- **Create the universal custom offer code** in App Store Connect, and switch the
+  friends message to the in-app "Redeem a code" flow once 1.4.1 is live.
 - **Apple Watch is live** — post the "Apple Watch is here" LinkedIn follow-up (teased
   "more next week" in the 2026-10-01 post).
 - **1.5 candidates** (see [roadmap.md](./roadmap.md)): local personalization loop
