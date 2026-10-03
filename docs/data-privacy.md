@@ -77,13 +77,16 @@ included:
 | `purchase_fail` | reason (incomplete / error) |
 | `restore_success` | — |
 | `restore_none` | — |
+| `redeem_start` | — |
+| `redeem_success` | — |
 
 Every event also carries `brand` and `platform` (ios / android / web), so app
 traffic (the WKWebView shells load the same hosted page, so their events land in
 the same Vercel analytics) can be told apart from web without any identifier.
 `mood` is one of a fixed set ("much calmer" / "a little calmer" / "about the
 same"), not free text. The monetization events (`paywall_shown` →
-`purchase_start` → `purchase_success`/`purchase_fail`, plus `restore_*`) form the
+`purchase_start` → `purchase_success`/`purchase_fail`, plus `restore_*` and the
+offer-code `redeem_*`) form the
 conversion funnel; they carry only the *shape* of the selection (which locked
 item, which soundscape/voice), never the name or the typed phrase, and no
 purchase amount or receipt. Plus Vercel's cookieless auto-pageviews.

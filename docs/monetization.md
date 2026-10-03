@@ -85,9 +85,15 @@ nuanced and largely mutually exclusive with a clean IAP model. **Default plan: I
   - **Load-bearing distinction:** App Store **promo codes** grant a free **app
     download** and do **not** unlock the IAP; **Offer Codes** grant the **IAP
     entitlement**. For free premium, use Offer Codes.
-  - **No in-app redemption sheet yet.** Redemption is App-Store-app-only today; an
-    in-app flow would need `AppStore.presentOfferCodeRedeemSheet` in `PremiumPlugin`
-    plus a paywall button and a new build. Parked (see status.md).
+  - **In-app redemption (added in 1.4.1).** A "Redeem a code" button in the paywall
+    opens Apple's native redemption sheet via `AppStore.presentOfferCodeRedeemSheet`
+    (a `redeem()` method on `PremiumPlugin`); the unlock then lands out of band via
+    the existing `entitlementChanged` listener. This is what enables a **single
+    universal custom offer code**: custom codes can't be entered in the App Store
+    app's manual field (only via link or in-app), so the in-app sheet lets one
+    memorable code be redeemed inside relaxed. Source is complete; it reaches users in
+    the 1.4.1 build (the web "Redeem a code" button is gated on the native method, so
+    it stays hidden on pre-1.4.1 shells).
 - **Bundles / Complete My Bundle** (§3.14): sell multiple apps together (less
   relevant with a single app today).
 

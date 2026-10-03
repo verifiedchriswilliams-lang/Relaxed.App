@@ -25,9 +25,11 @@ _As of 2026-10-02._
 
 ## In flight
 
-- Nothing in Apple review right now. The next build would be a **1.4.1 point release
-  carrying the watch-remote motif fix** (see Known issues), not yet scheduled; the
-  open question is whether to ship it on its own or fold it into 1.5.
+- **1.4.1 — in development** (a native build: needs an Xcode compile + resubmission).
+  Planned scope: the **watch-remote motif fix** (done, in `main`), **in-app
+  offer-code redemption** (done in source), and **watch line-art polish** (per-motif
+  micro-animation + tighter breath sync, in progress). Web-side code deploys gated
+  behind the native methods, so nothing is user-visible until the 1.4.1 build ships.
 
 ## Known issues
 
@@ -50,9 +52,11 @@ _As of 2026-10-02._
   on 2026-10-02: redeeming unlocks premium immediately, no Restore needed (the
   `entitlementChanged` listener in `PremiumPlugin` fires on its own).
 - Codes tracked in a private Google Sheet (name beside each code as it's assigned).
-- **No in-app redemption sheet yet** — that would be a small native addition to
-  `PremiumPlugin` (`AppStore.presentOfferCodeRedeemSheet`) + a paywall button, and a
-  new build. Parked as a 1.5 polish item; not needed, the redeem flow works today.
+- **In-app redemption added in 1.4.1** — a "Redeem a code" button in the paywall opens
+  Apple's native sheet (`PremiumPlugin.redeem()` → `AppStore.presentOfferCodeRedeemSheet`).
+  Source complete; ships in the 1.4.1 build. This unlocks a **single universal custom
+  offer code** (custom codes can't use the App Store manual field, only link/in-app),
+  so once 1.4.1 is out you can hand out one memorable code instead of 500 discrete ones.
 
 ## Email / infra
 
@@ -74,13 +78,14 @@ _As of 2026-10-02._
 
 ## Next up
 
+- **Build + submit 1.4.1** on the Mac (Xcode): the motif fix, in-app redemption, and
+  watch line-art polish.
+- **Create the universal custom offer code** in App Store Connect once 1.4.1 is live,
+  and switch the friends message to the in-app "Redeem a code" flow.
 - **Apple Watch is live** — post the "Apple Watch is here" LinkedIn follow-up (teased
   "more next week" in the 2026-10-01 post).
-- **Decide on the motif fix**: a 1.4.1 point release, or fold it into 1.5 (see Known
-  issues).
 - **1.5 candidates** (see [roadmap.md](./roadmap.md)): local personalization loop
-  ("make another like this"), or Live Activity, or the in-app offer-code redemption
-  sheet. Not yet chosen.
+  ("make another like this"), or Live Activity. Not yet chosen.
 
 ---
 

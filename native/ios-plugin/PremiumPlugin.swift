@@ -1,6 +1,7 @@
 import Foundation
 import Capacitor
 import StoreKit
+import UIKit
 
 // Native StoreKit 2 bridge for the one-time "unlock all premium" purchase
 // (the 9 premium soundscapes, the 10 premium voices, and infinite sessions).
@@ -78,6 +79,33 @@ public class PremiumPlugin: CAPPlugin {
         Task {
             try? await AppStore.sync()
             call.resolve(["entitled": await PremiumPlugin.entitled(productID)])
+        }
+    }
+
+    // Present Apple's native offer-code redemption sheet (iOS 16+). Lets someone
+    // redeem a StoreKit offer code (e.g. a custom code we hand out) WITHOUT leaving
+    // the app. The unlock itself lands out of band: once a code is redeemed, the
+    // Transaction.updates listener above fires "entitlementChanged" and the UI flips.
+    // This call only presents the sheet (resolves when it has been presented).
+    @objc func redeem(_ call: CAPPluginCall) {
+        Task { @MainActor in
+            guard #available(iOS 16.0, *) else {
+                call.reject("Offer code redemption requires iOS 16.")
+                return
+            }
+            let scene = UIApplication.shared.connectedScenes
+                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene
+                ?? UIApplication.shared.connectedScenes.first as? UIWindowScene
+            guard let scene = scene else {
+                call.reject("No active window scene to present the redemption sheet.")
+                return
+            }
+            do {
+                try await AppStore.presentOfferCodeRedeemSheet(in: scene)
+                call.resolve(["presented": true])
+            } catch {
+                call.reject(error.localizedDescription)
+            }
         }
     }
 

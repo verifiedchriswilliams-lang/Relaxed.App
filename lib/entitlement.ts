@@ -53,6 +53,10 @@ interface PremiumPlugin {
   getEntitlement(): Promise<{ entitled: boolean }>;
   purchase(): Promise<{ entitled: boolean }>;
   restore(): Promise<{ entitled: boolean }>;
+  // Present Apple's native offer-code redemption sheet (iOS 16+). Optional so web /
+  // pre-1.4.1 shells (which don't register it) don't break. The unlock lands out of
+  // band via the entitlementChanged event, same as a purchase.
+  redeem?(): Promise<{ presented: boolean }>;
   // Fired when a transaction lands out of band (Ask to Buy, another device, a
   // refund). Optional so web / older shells don't break.
   addListener?(
@@ -72,7 +76,7 @@ interface PremiumPlugin {
 interface CapacitorGlobal {
   registerPlugin?: (name: string, impl?: unknown) => unknown;
   isPluginAvailable?: (name: string) => boolean;
-  PluginHeaders?: { name: string }[];
+  PluginHeaders?: { name: string; methods?: { name: string }[] }[];
   Plugins?: Record<string, unknown>;
 }
 
@@ -185,6 +189,34 @@ export async function restorePurchase(): Promise<boolean> {
   const { entitled } = await p.restore();
   setEntitled(entitled);
   return entitled;
+}
+
+// Is the native in-app offer-code redemption sheet available? Only on a 1.4.1+
+// shell whose Premium plugin registers `redeem`. The web layer is shared across
+// every installed app version, so the UI must use this to hide the "Redeem a code"
+// affordance on older shells (1.3 / 1.4) where it would do nothing.
+export function isRedeemAvailable(): boolean {
+  const p = nativePlugin();
+  if (p && typeof p.redeem === "function") return true;
+  // Fallback: the bridge's PluginHeaders list the plugin's registered methods.
+  const cap = capacitor();
+  const hdr = cap?.PluginHeaders?.find((h) => h.name === "Premium");
+  return !!hdr?.methods?.some((m) => m.name === "redeem");
+}
+
+// Open Apple's native offer-code redemption sheet (for a StoreKit offer code we
+// hand out). The unlock lands out of band via the entitlementChanged listener —
+// same path as a purchase — so this only needs to present the sheet. Returns false
+// (no-op) without the native redeem method.
+export async function redeemCode(): Promise<boolean> {
+  const p = nativePlugin();
+  if (!p?.redeem) return false;
+  try {
+    await p.redeem();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // Dev-only: a query flag (?devUnlock=1 / ?devUnlock=0) to preview the unlocked

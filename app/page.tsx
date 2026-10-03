@@ -27,6 +27,8 @@ import {
   applyDevUnlockFlag,
   purchasePremium,
   restorePurchase,
+  redeemCode,
+  isRedeemAvailable,
   isNativePurchaseAvailable,
 } from "@/lib/entitlement";
 import { asset } from "@/lib/assets";
@@ -410,6 +412,11 @@ export default function Home() {
   const [paywallOpen, setPaywallOpen] = useState(false);
   const [paywallNote, setPaywallNote] = useState("");
   const [paywallBusy, setPaywallBusy] = useState(false);
+  // Whether the native in-app offer-code redemption sheet exists (1.4.1+ shell).
+  const [redeemAvailable, setRedeemAvailable] = useState(false);
+  // True between opening the redemption sheet and the unlock landing, so the
+  // out-of-band entitlement flip can be attributed to a redeemed code.
+  const redeemStartedRef = useRef(false);
   const [accent, setAccent] = useState<Accent>("us");
   // Whether the user has picked a voice this tray-open. Starts false so nothing
   // is highlighted on open — the first tap both selects and plays a preview,
@@ -548,9 +555,23 @@ export default function Home() {
     applyDevUnlockFlag();
     setEntitledState(isEntitled());
     setPurchaseAvailable(isNativePurchaseAvailable());
+    setRedeemAvailable(isRedeemAvailable());
     refreshEntitlement().then((e) => setEntitledState(e));
     return onEntitlementChange(setEntitledState);
   }, []);
+
+  // Any out-of-band unlock (a redeemed offer code, an Ask-to-Buy approval, another
+  // device) flips `entitled` via the bridge; close the paywall when it does. If a
+  // code redemption drove it, record the funnel success.
+  useEffect(() => {
+    if (entitled && paywallOpen) {
+      if (redeemStartedRef.current) {
+        ev("redeem_success");
+        redeemStartedRef.current = false;
+      }
+      setPaywallOpen(false);
+    }
+  }, [entitled, paywallOpen]);
 
   // Reveal the premium voices section whenever a premium voice is the current
   // selection (restored as the saved default, or just picked) so the choice stays
@@ -2641,6 +2662,23 @@ export default function Home() {
             <button className="pw-buy" disabled={paywallBusy} onClick={handlePurchase}>
               {paywallBusy ? "…" : "$4.99 once"}
             </button>
+            {redeemAvailable && (
+              <button
+                className="pw-redeem pw-restore"
+                onClick={async () => {
+                  setPaywallNote("");
+                  redeemStartedRef.current = true;
+                  ev("redeem_start");
+                  const ok = await redeemCode();
+                  if (!ok) {
+                    redeemStartedRef.current = false;
+                    setPaywallNote("Code redemption isn't available here.");
+                  }
+                }}
+              >
+                Redeem a code
+              </button>
+            )}
             <button
               className="pw-restore"
               onClick={async () => {

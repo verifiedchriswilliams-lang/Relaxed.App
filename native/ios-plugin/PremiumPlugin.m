@@ -8,4 +8,5 @@ CAP_PLUGIN(PremiumPlugin, "Premium",
   CAP_PLUGIN_METHOD(getEntitlement, CAPPluginReturnPromise);
   CAP_PLUGIN_METHOD(purchase, CAPPluginReturnPromise);
   CAP_PLUGIN_METHOD(restore, CAPPluginReturnPromise);
+  CAP_PLUGIN_METHOD(redeem, CAPPluginReturnPromise);
 )
