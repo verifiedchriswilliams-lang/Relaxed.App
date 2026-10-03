@@ -128,9 +128,12 @@ back to a calm single wave.
 The motifs are ported **1:1** to a SwiftUI Canvas on the Apple Watch
 (`native/watch/SoundMotif.swift`): the same 100×100 grid, the same Bone-on-Ink
 line language, the same oscilloscope/axis treatment for the Frequencies family.
-On the wrist they are drawn **statically** — the breathing ring around the motif
-supplies the motion, so the per-motif keyframe animation is dropped (a later
-refinement). The same fallback single wave covers any id without a bespoke motif.
+Motion on the wrist (1.4.1): the motif is driven by the same **phone-synced breath
+clock** as the ring (a breath anchor sent over the link), so the waves **drift** and
+the campfire embers / ambient rings **pulse** in phase with the phone. The finer
+per-element web motions (spin, sway, chime, bob, ripple, pluck, fall, flash, swirl,
+shimmer) are still static, a later refinement best tuned on a real watch. The same
+fallback single wave covers any id without a bespoke motif.
 
 ## 6. The watch "luminous" orb
 

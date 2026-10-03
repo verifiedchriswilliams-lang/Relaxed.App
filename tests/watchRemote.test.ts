@@ -16,6 +16,8 @@ const base: WatchState = {
   motif: "rain",
   remaining: 300,
   total: 300,
+  breathPos: 0,
+  breathTs: 1000,
 };
 
 function setBridge(bridge: any) {
@@ -67,6 +69,18 @@ describe("watchRemote with a native bridge", () => {
     pushWatchState({ ...base }); // identical -> skipped
     expect(updateState).toHaveBeenCalledTimes(1);
     pushWatchState({ ...base, remaining: 299 }); // changed -> sent
+    expect(updateState).toHaveBeenCalledTimes(2);
+  });
+
+  it("dedupes when only the breath anchor changes (it is not part of the key)", () => {
+    const updateState = vi.fn();
+    setBridge({ updateState });
+    pushWatchState(base);
+    // Same facts, new breath anchor -> skipped (breath piggybacks on fact changes).
+    pushWatchState({ ...base, breathPos: 5.2, breathTs: 2000 });
+    expect(updateState).toHaveBeenCalledTimes(1);
+    // A real fact change carries the fresh breath anchor through.
+    pushWatchState({ ...base, remaining: 299, breathPos: 6.1, breathTs: 3000 });
     expect(updateState).toHaveBeenCalledTimes(2);
   });
 

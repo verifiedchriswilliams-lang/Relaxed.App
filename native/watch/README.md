@@ -204,16 +204,19 @@ own breath clock locally while `playing`, so nothing per-frame crosses the link.
 
 | Direction | Payload |
 |---|---|
-| Phone → Watch (state) | `{ active, playing, title, soundscape, motif, remaining, total }` |
+| Phone → Watch (state) | `{ active, playing, title, soundscape, motif, remaining, total, breathPos, breathTs }` |
 | Watch → Phone (command) | `{ action: "play" \| "pause" \| "stop" }` |
 
 `motif` is the soundscape **id** (e.g. `rain`), which `SoundMotif.swift` maps to the
 line-art drawing; `soundscape` is the human-readable name for the label line.
+`breathPos`/`breathTs` are the breath anchor (the phone's breath cycle position in
+seconds and the epoch ms it was sampled); the watch advances `breathPos` by the time
+since `breathTs` so the ring + motif breathe in phase with the phone (1.4.1).
 
-> Note: the in-review **build 13** predates the fix that forwards `motif` across the
-> link (`WatchBridgePlugin.updateState()` previously dropped it), so on that build the
-> watch remote shows the default/generic motif rather than the per-soundscape line
-> art. The source now forwards `motif`; it is corrected in the next build.
+> Note: the **live 1.4 build** predates the fix that forwards `motif` across the link
+> (`WatchBridgePlugin.updateState()` previously dropped it), so on that build the watch
+> remote shows the default/generic motif rather than the per-soundscape line art. The
+> source now forwards `motif`; it reaches users in the **1.4.1** build.
 
 ### Line art on the wrist (1.4.2)
 
@@ -223,6 +226,9 @@ remote screen the motif sits inside a ring that breathes on the shared cadence, 
 the wrist shows the same line art the phone does. Geometry mirrors the web
 one-to-one; the motifs are drawn statically (the ring supplies the motion).
 
-**Still deferred:** per-motif micro-animation (drift/pulse/shimmer, as on the web)
-and tighter breath sync (send a breath anchor rather than letting the watch
-free-run its clock).
+**Motion (1.4.1):** the ring and motif now breathe **in phase with the phone** — the
+snapshot carries a breath anchor (`breathPos`/`breathTs`) and `SoundMotif` takes that
+same `t`, so the waves **drift** and the campfire embers / ambient (pad) rings
+**pulse** on the phone's clock instead of the watch free-running its own. Still
+deferred: the finer per-element web motions (spin, sway, chime, bob, ripple, pluck,
+fall, flash, swirl, shimmer), best tuned with eyes on a real watch.

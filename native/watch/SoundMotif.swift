@@ -1,11 +1,28 @@
 // Per-soundscape line motifs for the watch remote (1.4.2), ported from
 // lib/soundMotifs.tsx. Same language as the phone: a single Bone stroke, no fill
 // except the small accent dots, drawn on the shared 100x100 grid and scaled to the
-// view. Geometry mirrors the web one-to-one (the identity Chris wants on the
-// wrist); motion on the watch comes from the breathing ring around it, so these are
-// drawn statically here (per-motif animation is a later refinement).
+// view. Geometry mirrors the web one-to-one (the identity Chris wants on the wrist).
+//
+// Motion (1.4.1 polish): the view drives a time `t` (the phone-synced breath clock,
+// see RemoteView) into the drawing, so the motifs are no longer frozen. The two
+// motions that read clearly on a small, low-contrast line are ported here:
+//   • wave DRIFT  — every wave() glides one period sideways and loops seamlessly
+//                   (ocean, wind, brook, and the frequency family), the web m-drift.
+//   • accent PULSE — campfire embers and the ambient (pad) rings breathe in opacity
+//                   (web m-pulse).
+// The remaining per-element web motions (spin, sway, chime, bob, ripple, pluck,
+// fall, flash, swirl, shimmer) are still drawn statically; they are a finer blind
+// port best tuned with eyes on a real watch.
 
 import SwiftUI
+
+// Seconds for a wave to drift one full period, and the pulse periods.
+private let kDriftSecs: Double = 7
+
+private func pulse(_ t: Double, _ period: Double, _ delay: Double, _ lo: Double, _ hi: Double) -> Double {
+    let p = sin((t - delay) / period * 2 * .pi) * 0.5 + 0.5 // 0..1
+    return lo + (hi - lo) * p
+}
 
 // MARK: - Drawing helpers (operate in the 100x100 grid on a scaled context)
 
@@ -33,9 +50,10 @@ private func axis(_ c: inout GraphicsContext) { mline(&c, 10, 50, 90, 50, 1.0, 0
 
 // A sine-ish wave path (mirrors wave() in soundMotifs.tsx): one Q then reflected
 // T (smooth) quads, drawn wider than the grid so the ends never show in the ring.
-private func wavePath(_ y: CGFloat, _ amp: CGFloat, _ step: CGFloat) -> Path {
+// `drift` shifts the whole wave left (0 .. one period) for the seamless glide.
+private func wavePath(_ y: CGFloat, _ amp: CGFloat, _ step: CGFloat, _ drift: CGFloat) -> Path {
     var p = Path()
-    var x = -2 * step
+    var x = -2 * step - drift
     p.move(to: CGPoint(x: x, y: y))
     let c1 = CGPoint(x: x + step * 0.5, y: y - amp)
     let e1 = CGPoint(x: x + step, y: y)
@@ -51,8 +69,11 @@ private func wavePath(_ y: CGFloat, _ amp: CGFloat, _ step: CGFloat) -> Path {
     }
     return p
 }
-private func wave(_ c: inout GraphicsContext, _ y: CGFloat, _ amp: CGFloat, _ step: CGFloat, _ op: Double = 1) {
-    mstroke(&c, wavePath(y, amp, step), 1.2, op)
+private func wave(_ c: inout GraphicsContext, _ t: Double, _ y: CGFloat, _ amp: CGFloat, _ step: CGFloat, _ op: Double = 1) {
+    let period = 2 * step
+    var drift = CGFloat((t / kDriftSecs).truncatingRemainder(dividingBy: 1)) * period
+    if drift < 0 { drift += period }
+    mstroke(&c, wavePath(y, amp, step, drift), 1.2, op)
 }
 
 // Build a Path from move + a list of quad segments (to, control).
@@ -65,12 +86,11 @@ private func quads(_ start: CGPoint, _ segs: [(CGPoint, CGPoint)], close: Bool =
 
 // MARK: - The motifs
 
-private func drawMotif(_ id: String, _ c: inout GraphicsContext) {
+private func drawMotif(_ id: String, _ t: Double, _ c: inout GraphicsContext) {
     switch id {
     // ---- Nature ----
     case "rain":
-        for (i, pt) in [(38.0, 38.0), (50, 34), (62, 38), (44, 42), (56, 42)].enumerated() {
-            _ = i
+        for pt in [(38.0, 38.0), (50, 34), (62, 38), (44, 42), (56, 42)] {
             mline(&c, pt.0, pt.1, pt.0 - 3, pt.1 + 14)
         }
     case "ocean":
@@ -82,15 +102,15 @@ private func drawMotif(_ id: String, _ c: inout GraphicsContext) {
             (CGPoint(x: 52, y: 46), CGPoint(x: 47, y: 51)),
         ]), 1.2, 1)
         mfCircle(&c, 61, 36, 1.5)
-        wave(&c, 63, 3, 18)
-        wave(&c, 70, 2.4, 18, 0.8)
+        wave(&c, t, 63, 3, 18)
+        wave(&c, t, 70, 2.4, 18, 0.8)
     case "wind":
-        wave(&c, 40, 3, 20)
+        wave(&c, t, 40, 3, 20)
         var sw = Path(); sw.move(to: CGPoint(x: 24, y: 50)); sw.addLine(to: CGPoint(x: 56, y: 50))
         sw.addCurve(to: CGPoint(x: 57, y: 40), control1: CGPoint(x: 64, y: 50), control2: CGPoint(x: 64, y: 40))
         sw.addCurve(to: CGPoint(x: 58, y: 48), control1: CGPoint(x: 51, y: 40), control2: CGPoint(x: 52, y: 48))
         mstroke(&c, sw, 1.2, 1)
-        wave(&c, 60, 3, 20)
+        wave(&c, t, 60, 3, 20)
     case "thunder":
         mstroke(&c, quads(CGPoint(x: 33, y: 52), [
             (CGPoint(x: 27, y: 45), CGPoint(x: 26, y: 52)),
@@ -123,9 +143,9 @@ private func drawMotif(_ id: String, _ c: inout GraphicsContext) {
             (CGPoint(x: 53, y: 56), CGPoint(x: 49, y: 51.5)),
         ]), 1.2, 1)
     case "brook":
-        wave(&c, 43, 2.4, 16)
-        wave(&c, 52, 2.4, 15)
-        wave(&c, 61, 2.4, 16)
+        wave(&c, t, 43, 2.4, 16)
+        wave(&c, t, 52, 2.4, 15)
+        wave(&c, t, 61, 2.4, 16)
         msCircle(&c, 43, 52, 4)
         msCircle(&c, 60, 47, 4)
     case "campfire":
@@ -137,8 +157,8 @@ private func drawMotif(_ id: String, _ c: inout GraphicsContext) {
             (CGPoint(x: 57, y: 39), CGPoint(x: 52, y: 29)),
             (CGPoint(x: 50, y: 60), CGPoint(x: 63, y: 50)),
         ], close: true), 1.2, 1)
-        mfCircle(&c, 45, 31, 1.6)
-        mfCircle(&c, 56, 28, 1.4)
+        mfCircle(&c, 45, 31, 1.6, pulse(t, 2.2, 0, 0.3, 1))
+        mfCircle(&c, 56, 28, 1.4, pulse(t, 2.2, 1.6, 0.3, 1))
 
     // ---- Music ----
     case "bowls":
@@ -148,9 +168,9 @@ private func drawMotif(_ id: String, _ c: inout GraphicsContext) {
         mstroke(&c, quads(CGPoint(x: 33, y: 60), [(CGPoint(x: 67, y: 60), CGPoint(x: 50, y: 78))]), 1.6, 1)
         mline(&c, 33, 60, 67, 60, 1.6)
     case "pad":
-        msCircle(&c, 50, 50, 12)
-        msCircle(&c, 50, 50, 20)
-        msCircle(&c, 50, 50, 28)
+        msCircle(&c, 50, 50, 12, 1.2, pulse(t, 4.2, 0, 0.3, 0.85))
+        msCircle(&c, 50, 50, 20, 1.2, pulse(t, 4.2, 1.4, 0.3, 0.85))
+        msCircle(&c, 50, 50, 28, 1.2, pulse(t, 4.2, 2.8, 0.3, 0.85))
     case "piano":
         let x0: CGFloat = 27, w: CGFloat = 46, keys: CGFloat = 7
         let kw = w / keys, top: CGFloat = 42, h: CGFloat = 22
@@ -200,13 +220,13 @@ private func drawMotif(_ id: String, _ c: inout GraphicsContext) {
             mline(&c, x, 50 - hs[i] / 2, x, 50 + hs[i] / 2)
         }
     case "pad432":
-        axis(&c); wave(&c, 50, 5, 10)
+        axis(&c); wave(&c, t, 50, 5, 10)
     case "binaural":
-        axis(&c); wave(&c, 50, 7, 16); wave(&c, 50, 7, 16.9, 0.75)
+        axis(&c); wave(&c, t, 50, 7, 16); wave(&c, t, 50, 7, 16.9, 0.75)
     case "delta":
-        axis(&c); wave(&c, 52, 16, 32)
+        axis(&c); wave(&c, t, 52, 16, 32)
     case "theta":
-        axis(&c); wave(&c, 50, 9, 17)
+        axis(&c); wave(&c, t, 50, 9, 17)
     case "whitenoise":
         axis(&c)
         let hs: [CGFloat] = [10, 16, 8, 18, 12, 20, 9, 17, 13, 19, 10, 16, 8, 15, 11, 18, 9]
@@ -222,18 +242,21 @@ private func drawMotif(_ id: String, _ c: inout GraphicsContext) {
             mline(&c, x, 50 - hs[i] / 2, x, 50 + hs[i] / 2)
         }
     case "alpha":
-        axis(&c); wave(&c, 50, 7, 15)
+        axis(&c); wave(&c, t, 50, 7, 15)
 
     default:
-        wave(&c, 50, 8, 20) // calm single wave for any id without a bespoke motif
+        wave(&c, t, 50, 8, 20) // calm single wave for any id without a bespoke motif
     }
 }
 
 // MARK: - View
 
 // The line-art motif for a soundscape, drawn on the 100x100 grid, Bone on Ink.
+// `t` is the phone-synced breath clock (seconds); it drives the wave drift and the
+// accent pulse, and is 0 (static) when nothing is driving it.
 struct SoundMotif: View {
     var id: String
+    var t: Double = 0
 
     var body: some View {
         Canvas { context, size in
@@ -241,7 +264,7 @@ struct SoundMotif: View {
             context.scaleBy(x: s, y: s)
             // Keep wave ends / overflow inside the ring.
             context.clip(to: Path(ellipseIn: CGRect(x: 8, y: 8, width: 84, height: 84)))
-            drawMotif(id, &context)
+            drawMotif(id, t, &context)
         }
     }
 }

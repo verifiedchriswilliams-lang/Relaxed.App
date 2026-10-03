@@ -27,9 +27,10 @@ _As of 2026-10-02._
 
 - **1.4.1 — in development** (a native build: needs an Xcode compile + resubmission).
   Planned scope: the **watch-remote motif fix** (done, in `main`), **in-app
-  offer-code redemption** (done in source), and **watch line-art polish** (per-motif
-  micro-animation + tighter breath sync, in progress). Web-side code deploys gated
-  behind the native methods, so nothing is user-visible until the 1.4.1 build ships.
+  offer-code redemption** (done in source), and **watch line-art polish** (done in
+  source: breath-synced ring + motif, wave drift, ember/ring pulse; finer per-motif
+  motions deferred). Web-side code deploys gated behind the native methods, so nothing
+  is user-visible until the 1.4.1 build ships.
 
 ## Known issues
 

@@ -5,7 +5,8 @@ import WatchConnectivity
 // Phone-side WatchConnectivity bridge for the Apple Watch remote (1.4.1).
 //
 // The web layer (lib/watchRemote.ts) reaches this as Capacitor.Plugins.WatchBridge:
-//   updateState({active, playing, title, soundscape, motif, remaining, total})
+//   updateState({active, playing, title, soundscape, motif, remaining, total,
+//                breathPos, breathTs})
 //       -> pushed to the watch as the latest state
 // and the plugin emits a "command" event ({ action: "play" | "pause" | "stop" })
 // whenever the watch sends one, which the web routes to the same play/pause/stop
@@ -36,6 +37,10 @@ public class WatchBridgePlugin: CAPPlugin, WCSessionDelegate {
         state["motif"] = call.getString("motif") ?? ""
         state["remaining"] = call.getInt("remaining") ?? 0
         state["total"] = call.getInt("total") ?? 0
+        // Breath anchor for the watch ring (see lib/watchRemote.ts). Doubles: a
+        // cycle position in seconds and an epoch-ms timestamp.
+        state["breathPos"] = call.getDouble("breathPos") ?? 0
+        state["breathTs"] = call.getDouble("breathTs") ?? 0
         latest = state
         send(state)
         call.resolve()

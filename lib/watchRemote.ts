@@ -49,6 +49,14 @@ export interface WatchState {
   motif: string; // soundscape id (e.g. "rain") → picks the watch line-art motif
   remaining: number; // whole seconds left
   total: number; // whole seconds in the session
+  // Breath sync: the phone's breath cycle position (seconds, 0..BREATH_CYCLE) at the
+  // moment the snapshot was taken, plus the epoch ms it was taken. The watch advances
+  // breathPos by the small real time since breathTs, so the wrist ring breathes in
+  // phase with the phone instead of free-running its own clock. Deliberately NOT part
+  // of the dedupe key (they change every snapshot); they piggyback on the ~1/sec
+  // sends that the countdown already triggers.
+  breathPos: number;
+  breathTs: number;
 }
 
 // Dedupe identical snapshots so we don't spend WatchConnectivity bandwidth (and
@@ -89,6 +97,8 @@ export function clearWatchState(): void {
       motif: "",
       remaining: 0,
       total: 0,
+      breathPos: 0,
+      breathTs: 0,
     });
   } catch {
     /* best-effort */

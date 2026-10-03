@@ -173,6 +173,15 @@ struct SessionView: View {
 struct RemoteView: View {
     @EnvironmentObject var link: PhoneLink
 
+    // The phone-synced breath time: advance the phone's last breathPos by the real
+    // seconds since its snapshot while playing, so the wrist stays in phase with the
+    // phone instead of free-running its own clock. Frozen at breathPos when paused.
+    private func breathT(_ date: Date) -> Double {
+        guard link.playing else { return link.breathPos }
+        let since = max(0, (date.timeIntervalSince1970 * 1000 - link.breathTs) / 1000)
+        return link.breathPos + since
+    }
+
     var body: some View {
         VStack(spacing: 5) {
             Text(link.soundscape.isEmpty ? "relaxed" : link.soundscape)
@@ -181,15 +190,14 @@ struct RemoteView: View {
                 .lineLimit(1)
                 .padding(.horizontal, 4)
 
-            ZStack {
-                // The soundscape's line-art motif, mirrored from the phone.
-                SoundMotif(id: link.motif)
-                    .frame(width: 82, height: 82)
-
-                // A thin ring that breathes locally on the shared cadence while
-                // playing (no per-frame data over the link); steady when paused.
-                TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !link.playing)) { ctx in
-                    let pb = link.playing ? Breath.at(ctx.date.timeIntervalSinceReferenceDate).pb : 0.5
+            // Motif + ring breathe in phase with the phone (via the breath anchor
+            // sent over the link), and the motif's drift/pulse run on the same clock.
+            TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !link.playing)) { ctx in
+                let t = breathT(ctx.date)
+                let pb = Breath.at(t).pb
+                ZStack {
+                    SoundMotif(id: link.motif, t: t)
+                        .frame(width: 82, height: 82)
                     Circle()
                         .stroke(Theme.bone.opacity(0.5), lineWidth: 1.5)
                         .frame(width: 96, height: 96)

@@ -85,7 +85,7 @@ import {
 import { arrivalLines, detectPosture } from "@/lib/arrival";
 import { AudioEngine } from "@/lib/audio/engine";
 import { timeAgo, rotatingGreeting, mmss, transcriptLines } from "@/lib/format";
-import { breathAt } from "@/lib/breath";
+import { breathAt, BREATH_CYCLE } from "@/lib/breath";
 
 // Which visual world are we in? relaxed swaps the aurora + coloured discs for
 // the flat, no-accent "stem" identity; ElevenMind keeps its night sky.
@@ -797,6 +797,10 @@ export default function Home() {
       motif: soundscape,
       remaining: Math.max(0, totalSecs - elapsed),
       total: totalSecs,
+      // Breath anchor: where the phone's breath clock sits now, and when, so the
+      // watch ring can stay in phase. breathClockRef only advances while playing.
+      breathPos: ((breathClockRef.current % BREATH_CYCLE) + BREATH_CYCLE) % BREATH_CYCLE,
+      breathTs: Date.now(),
     });
   }, [screen, playing, elapsed, totalSecs, selected.custom, selected.label, soundLabel, soundscape]);
 

@@ -20,6 +20,8 @@ final class PhoneLink: NSObject, ObservableObject, WCSessionDelegate {
     @Published var motif = ""            // soundscape id → picks the line-art motif
     @Published var remaining = 0         // whole seconds left (from the phone)
     @Published var total = 0             // whole seconds total
+    @Published var breathPos = 0.0       // phone's breath cycle position (s) at snapshot
+    @Published var breathTs = 0.0        // epoch ms when the snapshot was taken
 
     override init() {
         super.init()
@@ -56,6 +58,8 @@ final class PhoneLink: NSObject, ObservableObject, WCSessionDelegate {
             self.motif = d["motif"] as? String ?? ""
             self.remaining = d["remaining"] as? Int ?? 0
             self.total = d["total"] as? Int ?? 0
+            self.breathPos = d["breathPos"] as? Double ?? 0
+            self.breathTs = d["breathTs"] as? Double ?? 0
         }
     }
 
