@@ -18,6 +18,23 @@ build carried, not the review timeline.
 
 ## iOS — App Store releases
 
+### 1.4.1 — released 2026-10-04
+A maintenance update over 1.4 (version 1.4.1, build 14), reviewed under an approved
+expedited request:
+- **Watch-remote motif fix.** `WatchBridgePlugin.updateState()` now forwards the
+  soundscape `motif`, so the watch remote shows the correct per-soundscape line art
+  instead of a generic placeholder (the 1.4 build dropped the field).
+- **In-app offer-code redemption.** A "Redeem a code" button in the paywall presents
+  Apple's native sheet (`PremiumPlugin.redeem()` → `AppStore.presentOfferCodeRedeemSheet`,
+  iOS 16+); the unlock lands via the existing `entitlementChanged` listener. This
+  enables a **single universal custom offer code** redeemed inside the app (custom
+  codes can't use the App Store app's manual field). The web "Redeem a code" button is
+  gated on the native method, so older shells never show a dead button.
+- **Watch line-art polish.** The remote's ring and motif now breathe **in phase with
+  the phone** (a breath anchor over the WatchConnectivity link, instead of the watch
+  free-running its clock), and the motifs animate: waves **drift**, campfire embers /
+  ambient rings **pulse**. Finer per-element motions remain a later refinement.
+
 ### 1.4 — released 2026-10-02
 The **Apple Watch** release, the first net-new native platform (a standalone
 **SwiftUI** app, not the Capacitor shell). Three parts shipped together as 1.4,
@@ -39,7 +56,7 @@ Metadata-rejected once under Guideline 2.3.2 (IAP promotional image text too sma
 resolved by **removing the IAP promotional image**, then resubmitted. **Approved and
 released** (version 1.4, build 13). Known issue in this build: the phone→watch remote
 does not forward the soundscape `motif`, so the watch shows the default motif during
-remote control (cosmetic); fixed in source for the next build (1.4.1). See
+remote control (cosmetic); **fixed in 1.4.1** (released 2026-10-04). See
 [ios-native.md](./ios-native.md).
 
 ### 1.3 — released (the live IAP build; submitted 2026-09-24)

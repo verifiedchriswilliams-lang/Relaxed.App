@@ -91,9 +91,8 @@ nuanced and largely mutually exclusive with a clean IAP model. **Default plan: I
     the existing `entitlementChanged` listener. This is what enables a **single
     universal custom offer code**: custom codes can't be entered in the App Store
     app's manual field (only via link or in-app), so the in-app sheet lets one
-    memorable code be redeemed inside relaxed. Source is complete; it reaches users in
-    the 1.4.1 build (the web "Redeem a code" button is gated on the native method, so
-    it stays hidden on pre-1.4.1 shells).
+    memorable code be redeemed inside relaxed. **Live as of 1.4.1** (the web "Redeem a
+    code" button is gated on the native method, so it stayed hidden on pre-1.4.1 shells).
 - **Bundles / Complete My Bundle** (§3.14): sell multiple apps together (less
   relevant with a single app today).
 

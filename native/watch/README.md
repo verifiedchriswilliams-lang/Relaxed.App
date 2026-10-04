@@ -213,10 +213,10 @@ line-art drawing; `soundscape` is the human-readable name for the label line.
 seconds and the epoch ms it was sampled); the watch advances `breathPos` by the time
 since `breathTs` so the ring + motif breathe in phase with the phone (1.4.1).
 
-> Note: the **live 1.4 build** predates the fix that forwards `motif` across the link
-> (`WatchBridgePlugin.updateState()` previously dropped it), so on that build the watch
-> remote shows the default/generic motif rather than the per-soundscape line art. The
-> source now forwards `motif`; it reaches users in the **1.4.1** build.
+> Note: the 1.4 build dropped `motif` across the link
+> (`WatchBridgePlugin.updateState()` previously omitted it), so on 1.4 the watch remote
+> showed the default/generic motif. **Fixed in 1.4.1**, which forwards `motif` so the
+> remote shows the correct per-soundscape line art.
 
 ### Line art on the wrist (1.4.2)
 

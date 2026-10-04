@@ -152,9 +152,11 @@ from the wrist is not in 1.4.1.
 per-soundscape motifs from `lib/soundMotifs.tsx` to a SwiftUI `Canvas` (same
 100x100 grid, single Bone stroke), shown inside the breathing ring on the remote
 screen. The state snapshot carries the soundscape `motif` id so the watch draws the
-right one. (The in-review build 13 predates the motif-forwarding fix in the phone
-plugin, so on that build the remote shows the default/generic motif; corrected in
-the next build.) Still deferred: per-motif micro-animation and tighter breath sync.
+right one. (The 1.4 build dropped the `motif` field; **fixed in 1.4.1**, which forwards
+it so the remote shows the correct per-soundscape art.) 1.4.1 also added the watch
+line-art polish: the ring + motif breathe in phase with the phone (a breath anchor over
+the link), with wave drift and ember/ring pulse. Finer per-element motions remain
+deferred.
 
 ## 8. Known native gotchas
 

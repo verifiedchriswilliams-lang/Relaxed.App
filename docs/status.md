@@ -6,43 +6,33 @@
 > doc is the **now**, and it is updated the moment something changes so no finished
 > work gets re-surfaced as a TODO. Keep it short and current.
 
-_As of 2026-10-03._
+_As of 2026-10-04._
 
 ## App Store state
 
 | Version | State | What it is |
 |---|---|---|
-| **1.4.1** | **In Review** (expedited) | Maintenance build (14): watch-remote motif fix, in-app offer-code redemption, watch line-art polish. |
+| **1.4.1** | **Released** (live) | Maintenance build (14): watch-remote motif fix, in-app offer-code redemption, watch line-art polish. |
 | **1.4** | **Released** (live) | Apple Watch build (standalone pacer + phone↔watch remote + soundscape line art). The native watchOS companion is live on the App Store. |
 | **1.3** | **Released** (Ready for Distribution) | The live IAP build. Makes the **$4.99 premium unlock** available in production. |
 
 ## Live in production
 
 - **Web** (`relaxed.app`): continuous deploy on push to `main` (Vercel).
-- **iOS**: **1.3** is the live App Store build, premium IAP (`app.relaxed.premium`,
-  Apple ID 6815434042) active and approved.
+- **iOS**: **1.4.1** is the live App Store build (Apple Watch app + in-app code
+  redemption); premium IAP (`app.relaxed.premium`, Apple ID 6815434042) active and approved.
 - **Premium unlock** (one-time $4.99): 9 soundscapes + 10 voices + infinite sessions.
 - **Availability**: 47 countries.
 
 ## In flight
 
-- **1.4.1 — submitted, expedited review granted (2026-10-03).** Version 1.4.1, build
-  14, "Waiting for Review" with an approved expedite request. Contents: the
-  watch-remote motif fix, in-app offer-code redemption ("Redeem a code"), and the
-  watch line-art polish (breath-synced ring + motif, wave drift, ember/ring pulse;
-  finer per-motif motions deferred). Awaiting the verdict.
+- Nothing in Apple review. 1.4.1 shipped (released 2026-10-04, expedited); the web
+  continues to deploy continuously on push to `main`.
 
 ## Known issues
 
-- **Watch remote motif (live in 1.4).** The phone-side `WatchBridgePlugin.updateState()`
-  previously dropped the soundscape `motif` id when pushing state to the watch, so
-  during phone↔watch remote control the watch shows the generic default motif
-  instead of the per-soundscape line art (the 1.4.2 feature). Fixed in source
-  (`native/ios-plugin/WatchBridgePlugin.swift` now forwards `motif`), but the **1.4
-  build live on the App Store predates the fix** — it reaches users only in the next
-  build (1.4.1). Cosmetic (the ring, countdown, and controls work regardless).
-  Decision: ship a 1.4.1 for it, or fold the fix into 1.5. Standalone watch pacer is
-  unaffected.
+- None open. The watch-remote motif bug that shipped in 1.4 was fixed in **1.4.1** (the
+  phone plugin now forwards the soundscape `motif`).
 
 ## Offer codes (free premium for friends/testers)
 
@@ -53,11 +43,15 @@ _As of 2026-10-03._
   on 2026-10-02: redeeming unlocks premium immediately, no Restore needed (the
   `entitlementChanged` listener in `PremiumPlugin` fires on its own).
 - Codes tracked in a private Google Sheet (name beside each code as it's assigned).
-- **In-app redemption added in 1.4.1** — a "Redeem a code" button in the paywall opens
+- **In-app redemption is live (1.4.1)** — a "Redeem a code" button in the paywall opens
   Apple's native sheet (`PremiumPlugin.redeem()` → `AppStore.presentOfferCodeRedeemSheet`).
-  Source complete; ships in the 1.4.1 build. This unlocks a **single universal custom
-  offer code** (custom codes can't use the App Store manual field, only link/in-app),
-  so once 1.4.1 is out you can hand out one memorable code instead of 500 discrete ones.
+  This unlocks a **single universal custom offer code** (custom codes can't use the App
+  Store app's manual field, only link/in-app), so one memorable code can be handed out
+  instead of 500 discrete ones. The link path works on any build; the in-app button
+  needs 1.4.1+.
+- **Universal custom code: `TRYRELAXED`** (created 2026-10-04) — the Free offer,
+  redemption limit 1,000, expiry 2027-04-01. Redeem in-app (1.4.1+) or via the link
+  `https://apps.apple.com/redeem?ctx=offercodes&id=6807080633&code=TRYRELAXED`.
 
 ## Email / infra
 
@@ -79,10 +73,10 @@ _As of 2026-10-03._
 
 ## Next up
 
-- **Await the 1.4.1 verdict** (expedited). On approval, confirm the in-app "Redeem a
-  code" flow and the watch remote on the live build.
-- **Create the universal custom offer code** in App Store Connect, and switch the
-  friends message to the in-app "Redeem a code" flow once 1.4.1 is live.
+- **Finish the universal custom offer code** in App Store Connect (if not already), and
+  switch the friends message to the in-app "Redeem a code" flow now that 1.4.1 is live.
+- **Spot-check 1.4.1 on your iPhone**: the paywall's "Redeem a code" button appears and
+  opens Apple's sheet.
 - **Apple Watch is live** — post the "Apple Watch is here" LinkedIn follow-up (teased
   "more next week" in the 2026-10-01 post).
 - **1.5 candidates** (see [roadmap.md](./roadmap.md)): local personalization loop
