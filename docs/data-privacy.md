@@ -80,6 +80,7 @@ included:
 | `restore_none` | — |
 | `redeem_start` | — |
 | `redeem_success` | — |
+| `appstore_click` | — |
 
 Every event also carries `brand` and `platform` (ios / android / web), so app
 traffic (the WKWebView shells load the same hosted page, so their events land in

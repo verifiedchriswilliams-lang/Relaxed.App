@@ -2316,8 +2316,9 @@ export default function Home() {
             href={APPSTORE_URL}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => ev("appstore_click")}
           >
-            download relaxed on the App Store
+            download relaxed.app on the App Store
             <span className="appbanner-arrow" aria-hidden="true">↗</span>
           </a>
           <button

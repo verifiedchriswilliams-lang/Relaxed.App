@@ -73,7 +73,8 @@ _As of 2026-10-04._
   1080×1080, portrait 1080×1350, landscape 1200×630).
 - **Web:** a quiet, dismissible "download on the App Store" strip on the relaxed web
   landing (→ `apps.apple.com/.../id6807080633`) to convert social traffic to installs.
-  relaxed web only; hidden inside the native app.
+  relaxed web only; hidden inside the native app. Taps fire a shape-only
+  `appstore_click` event so conversion is measurable.
 
 ## Next up
 

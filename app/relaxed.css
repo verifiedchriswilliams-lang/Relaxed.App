@@ -742,9 +742,9 @@
   min-height: calc(100vh - var(--appbanner-h));
   min-height: calc(100dvh - var(--appbanner-h));
 }
-@media (max-width: 380px) {
+@media (max-width: 440px) {
   [data-brand="relaxed"] .appbanner {
     font-size: 13px;
-    padding: 0 40px;
+    padding: 0 38px;
   }
 }
