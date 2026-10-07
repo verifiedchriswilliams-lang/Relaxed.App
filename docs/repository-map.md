@@ -119,6 +119,19 @@ relaxed.app/
 
   Added as a watch target in the Xcode project on the Mac. Not a web wrapper — see
   [ios-native.md](./ios-native.md) and the folder's README.
+- `native/tvos/` — the **native tvOS (SwiftUI) app** (1.5, in development): an ambient
+  big-screen experience — pick a soundscape + length with the remote, then a full-screen
+  breathing orb with the soundscape line art while the bed loops via `AVAudioEngine`.
+  Reuses the breath cadence, brand, motifs, and measured loudness. V1 is the 15 free beds
+  (guided voice + premium/IAP are tvOS v2). Seven `.swift` files + a README:
+  - `RelaxedTVApp.swift` — `@main` app + 2-screen router.
+  - `Views.swift` — `HomeView` (soundscape + length picker), `SessionView` (the big orb).
+  - `SessionEngine.swift` — session state + countdown.
+  - `AudioEngine.swift` — `BedPlayer` (download, loudness gain, looping bed).
+  - `Catalog.swift` — the 24-bed catalog + `normGain` + the Blob host `Config`.
+  - `SoundMotif.swift`, `Theme.swift` — motifs + brand/breath (shared language with the watch).
+
+  A separate tvOS target in the Xcode project on the Mac — see the folder's README.
 - `public/aurora.jpg` — the ElevenMind night-sky background (relaxed uses none).
 
 ## Where to make common changes

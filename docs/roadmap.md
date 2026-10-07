@@ -77,7 +77,22 @@ the plan below is surfacing and extending machinery that's already here.
 Ordered by effort-to-impact and demo value, not ambition. The big native lift (the
 Watch) has shipped; these keep the momentum.
 
-1. **1.5 — Local personalization loop.** *Effort: S/M. Strongest retention move
+> **Reprioritized 2026-10-07:** **tvOS was pulled forward from "Someday" to 1.5**
+> (Chris's call), and the personalization loop + Live Activity each shift back one. The
+> tvOS V1 is built and staged in `native/tvos/` — see its
+> [README](../native/tvos/README.md) and [status.md](./status.md).
+
+1. **1.5 — Apple TV (native, ambient V1).** *Effort: M. Net-new native platform, real
+   depth, strong for sleep / ambient wind-down in the living room.* A native tvOS
+   (SwiftUI + `AVAudioEngine`) app: pick a soundscape + a length with the remote, then a
+   full-screen breathing orb with the soundscape line art plays across the room while the
+   bed loops. Reuses the breath cadence, the brand, the motifs, and the measured loudness
+   normalization (`normGain`). **Guided AI voice is deferred to tvOS v2** (the voice
+   mix/ducking port, same reason the Watch shipped silent first); V1 ships the 15 free
+   beds. Like the Watch it can't reuse the Capacitor/Web-Audio app, so it's genuinely
+   native. Source + Xcode setup in `native/tvos/`.
+
+2. **1.6 — Local personalization loop.** *Effort: S/M. Strongest retention move
    with zero new infrastructure.* After a session, capture lightweight feedback
    (👍/👎, "more/less like this") and a one-tap **"make another like this"** that
    reuses the last session's intention/voice/soundscape and nudges the next
@@ -85,7 +100,7 @@ Watch) has shipped; these keep the momentum.
    accounts, no backend. Reframes "no accounts" from an MVP limitation into a
    deliberate product stance. Keep it invisible: no dashboard, no score, no streak.
 
-2. **1.6 — Live Activity (Lock Screen breath clock).** *Effort: M. Highest
+3. **1.7 — Live Activity (Lock Screen breath clock).** *Effort: M. Highest
    native-credibility-per-effort.* A Lock Screen / Dynamic Island Live Activity
    showing the breath clock + elapsed time during an active session. Genuinely
    native (WidgetKit/ActivityKit) and independently demoable. (Home-screen
@@ -162,14 +177,11 @@ spending a headline on it:
   away the no-backend elegance. When it comes, it future-proofs the IAP.
 - **Rest of the Apple ecosystem** — Siri / App Intents, standalone HealthKit
   beyond the Watch write, and **Apple Watch v2** (phone-free on-watch playback).
-- **tvOS app** — a native tvOS (SwiftUI + AVAudioEngine) build for the big screen:
-  pick an intention with the remote and let a session play across the room,
-  especially strong for **sleep** and ambient wind-down. The earlier "poor control
-  surface" worry doesn't hold for this use case — you choose once and let it run, so
-  minimal input is a feature, not a limit. Like the Watch it can't reuse the
-  Capacitor/Web-Audio app, so it's a net-new native build (real depth, not a port),
-  sharing the catalog and brand. A platform-breadth cousin to Android; weigh the two
-  by appetite. Down the list, but on it.
+- **tvOS app** — ✅ **pulled forward to 1.5 (2026-10-07); no longer parked.** A native
+  tvOS (SwiftUI + AVAudioEngine) build for the big screen: pick a soundscape with the
+  remote and let a session play across the room, especially strong for **sleep** and
+  ambient wind-down. V1 is built in `native/tvos/`; see "The plan" above and the
+  folder's README.
 - **ElevenMind iPad layout pass** — its own aurora/glass large-screen design.
 - **Exploration** — multi-day programs / journeys, a second script/voice provider
   for resilience (Anthropic + ElevenLabs are single points of failure today),

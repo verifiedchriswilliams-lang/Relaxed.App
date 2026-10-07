@@ -170,6 +170,20 @@ no phone tap to unlock Web Audio, so the native audio session must resume it
 the "r" stem mark on the face. Protocol + Xcode setup for both are in
 [`native/watch/README.md`](../native/watch/README.md).
 
+## 7.5 Apple TV app (native, 1.5)
+
+The second net-new native platform. `native/tvos/` holds a **native tvOS SwiftUI** app
+(tvOS, like watchOS, has no WKWebView, so the Capacitor/Web-Audio app can't run there).
+**V1 is ambient:** pick a soundscape + a length with the Siri Remote, then a full-screen
+luminous breathing orb (the same 6s/2.5s/6s cadence as the phone) with the soundscape
+line art, while the bed loops through `AVAudioEngine`. Each bed plays at its measured
+`normGain` loudness (mirrored from `lib/audio/levels.ts`), streamed from the same Vercel
+Blob store the web uses — so `Config.blobBase` in `native/tvos/Catalog.swift` must be set
+to `NEXT_PUBLIC_BLOB_BASE_URL` before sound works. V1 ships the 15 free beds; **guided AI
+voice and premium/IAP are deferred to tvOS v2** (the voice mix/ducking + StoreKit ports,
+the same staging the Watch used). Added as a separate tvOS target in the Xcode project on
+the Mac — full setup in [`native/tvos/README.md`](../native/tvos/README.md).
+
 ## 8. Known native gotchas
 
 - **Launch-screen cache:** iOS aggressively caches the launch image; to verify a

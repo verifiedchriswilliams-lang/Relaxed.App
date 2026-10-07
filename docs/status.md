@@ -45,6 +45,17 @@ _As of 2026-10-07._
   push to `main`.
 - **Web "download" strip** shipped (2026-10-07) and is live, with an `appstore_click`
   event for conversion.
+- **1.5 = Apple TV (tvOS) — V1 built (2026-10-07), not yet in Xcode/submitted.** A
+  net-new native tvOS (SwiftUI + `AVAudioEngine`) app: pick a soundscape + length with
+  the remote, then a full-screen breathing orb with the soundscape line art while the bed
+  loops. Reuses the breath cadence, brand, motifs, and the measured `normGain` loudness.
+  **V1 = the 15 free beds, ambient only;** guided AI voice + premium/IAP deferred to tvOS
+  v2 (the voice mix/ducking port, same reason the watch shipped silent first). Source +
+  full Xcode target setup in [`native/tvos/`](../native/tvos/README.md). **Built blind
+  (no Mac/Xcode in the cloud), so it needs the usual add-target + build pass on the Mac**;
+  one required step before sound works: set `Config.blobBase` in `Catalog.swift` to the
+  Blob base URL. This reprioritizes the roadmap (tvOS pulled forward to 1.5; personalization
+  loop + Live Activity shift back one) — see [roadmap.md](./roadmap.md).
 
 ## Known issues
 
@@ -101,8 +112,10 @@ _As of 2026-10-07._
   opens Apple's sheet.
 - **Apple Watch is live** — post the "Apple Watch is here" LinkedIn follow-up (teased
   "more next week" in the 2026-10-01 post).
-- **1.5 candidates** (see [roadmap.md](./roadmap.md)): local personalization loop
-  ("make another like this"), or Live Activity. Not yet chosen.
+- **1.5 = Apple TV** (chosen 2026-10-07). V1 built (`native/tvos/`); next is the Mac
+  Xcode pass (add the tvOS target, set `Config.blobBase`, build in the simulator), then
+  iterate. Personalization loop + Live Activity shift to 1.6 / 1.7 (see
+  [roadmap.md](./roadmap.md)).
 
 ## Housekeeping
 
