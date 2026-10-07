@@ -28,11 +28,12 @@ _As of 2026-10-04._
 
 - Nothing in Apple review. 1.4.1 shipped (released 2026-10-04, expedited); the web
   continues to deploy continuously on push to `main`.
-- **More Apple Watch (next native build) — in development.** Two features: (1) a
-  **watch-face widget** (source done, `native/watch/widget/`; needs a new Widget
-  Extension target `relaxed Watch Widget` in Xcode, see native/watch/README), and (2) **start a
-  session from the watch** (planned; design has an audio-gesture nuance to resolve
-  on the phone side). Not yet built into Xcode or submitted.
+- **More Apple Watch (next native build) — in development.** Two features: (1) the
+  **watch-face widget** — ✅ built, the `relaxed Watch Widget` Widget Extension target
+  is in Xcode, compiles, and the "r" renders cleanly in the preview (accessoryCircular
+  verified); ships in the next watch build. And (2) **start a session from the watch**
+  — planned next (design has an audio-gesture nuance to resolve on the phone side).
+  Neither is submitted yet; both will ride the next watch build.
 - **Web "download" strip** shipped (2026-10-07) and is live, with an `appstore_click`
   event for conversion.
 
