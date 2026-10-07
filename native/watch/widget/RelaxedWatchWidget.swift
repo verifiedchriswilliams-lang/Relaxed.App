@@ -89,6 +89,10 @@ struct RelaxedWatchWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "RelaxedWatchWidget", provider: RelaxedProvider()) { _ in
             RelaxedWatchWidgetView()
+                // watchOS/iOS 17+ wants every widget to declare its background. The
+                // watch face (and the circular family's own AccessoryWidgetBackground)
+                // provide the real backdrop, so the container background is clear.
+                .containerBackground(for: .widget) { Color.clear }
         }
         .configurationDisplayName("relaxed")
         .description("Open relaxed for a quick breather.")
