@@ -12,7 +12,7 @@ _As of 2026-10-07._
 
 | Version | State | What it is |
 |---|---|---|
-| **1.4.2** | **Uploaded** (build 15, 2026-10-07) — preparing for submission | More Apple Watch: start a session from the wrist (four-intention launcher) + a watch-face widget, plus the setup-screen layout polish. In App Store Connect, needs "What's New" + Submit for Review. |
+| **1.4.2** | **Waiting for Review** (build 15, submitted 2026-10-07) | More Apple Watch: start a session from the wrist (four-intention launcher) + a watch-face widget, plus the setup-screen layout polish. |
 | **1.4.1** | **Released** (live) | Maintenance build (14): watch-remote motif fix, in-app offer-code redemption, watch line-art polish. |
 | **1.4** | **Released** (live) | Apple Watch build (standalone pacer + phone↔watch remote + soundscape line art). The native watchOS companion is live on the App Store. |
 | **1.3** | **Released** (Ready for Distribution) | The live IAP build. Makes the **$4.99 premium unlock** available in production. |
@@ -27,19 +27,20 @@ _As of 2026-10-07._
 
 ## In flight
 
-- **1.4.2 uploaded to App Store Connect** (build 15, 2026-10-07) — **not yet submitted.**
-  Two features: (1) the **watch-face widget** (`relaxed Watch Widget` Widget Extension,
-  the "r" on the face as a one-tap launcher), and (2) **start a session from the watch** —
-  the setup screen is now a launcher: the "relaxed" wordmark, a four-intention picker
-  (meditate/sleep/flow/relax) that **starts on the phone** with the phone's own
-  length/voice/soundscape, and a separate **just breathe** pacer (its own length picker)
-  below a divider as the only thing that runs on the watch itself. Tapping an intention
-  sends a `start` command the phone maps to the same `begin()` a phone tap runs.
-  **To finish:** in App Store Connect, attach build 15, paste "What's New", **Submit for
-  Review** (decide on expedited). **QA to do in TestFlight/on hardware:** the four pills
-  need a real paired iPhone to actually start audio — the **audio-gesture** path (a
-  watch-initiated start has no phone tap to unlock Web Audio; `startSession()` calls
-  `unlock()` + `ensureRunning()`) is the thing to confirm.
+- **1.4.2 — Waiting for Review** (build 15, submitted 2026-10-07 14:42; submission ID
+  `94ec6805-32d5-46d5-8f92-dfb744fcfc11`). All three targets (App, relaxed Watch App,
+  relaxed Watch Widget) set to `1.4.2 (15)` and submitted together (the watch app +
+  widget are embedded and ride along with the iOS app). **Not yet expedited** — request
+  it if we want 1.4.1-style same-day. Two features: (1) the **watch-face widget**
+  (`relaxed Watch Widget`, the "r" on the face as a one-tap launcher), and (2) **start a
+  session from the watch** — the setup screen is a launcher: the "relaxed" wordmark, a
+  four-intention picker (meditate/sleep/flow/relax) that **starts on the phone** with the
+  phone's own length/voice/soundscape, and a separate **just breathe** pacer below a
+  divider as the only thing that runs on the watch itself.
+  **QA once it's in TestFlight/on hardware:** the four pills need a real paired iPhone to
+  actually start audio — the **audio-gesture** path (a watch-initiated start has no phone
+  tap to unlock Web Audio; `startSession()` calls `unlock()` + `ensureRunning()`) is the
+  thing to confirm.
 - 1.4.1 released 2026-10-04 (expedited); the web continues to deploy continuously on
   push to `main`.
 - **Web "download" strip** shipped (2026-10-07) and is live, with an `appstore_click`
