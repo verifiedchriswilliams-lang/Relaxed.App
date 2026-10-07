@@ -3,28 +3,6 @@
 
 import SwiftUI
 
-// MARK: - The stem "r" mark.
-
-// One open stroke on the 100x100 grid, matching lib/mark.tsx, the app icon, and the
-// watch-face widget. Drawn in a Canvas so the stroke scales cleanly at any size.
-struct StemMark: View {
-    var body: some View {
-        Canvas { c, size in
-            let s = min(size.width, size.height) / 100.0
-            c.scaleBy(x: s, y: s)
-            var p = Path()
-            p.move(to: CGPoint(x: 40, y: 74))
-            p.addLine(to: CGPoint(x: 40, y: 40))
-            p.addCurve(
-                to: CGPoint(x: 60, y: 26),
-                control1: CGPoint(x: 40, y: 30),
-                control2: CGPoint(x: 49, y: 26)
-            )
-            c.stroke(p, with: .color(Theme.bone), style: StrokeStyle(lineWidth: 13, lineCap: .butt))
-        }
-    }
-}
-
 // MARK: - Setup: launch a session on the phone, or just breathe on the wrist.
 
 // Two clearly separated choices. The primary one is the four-intention picker that
@@ -49,13 +27,11 @@ struct SetupView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 8) {
-                // Header: the stem mark + wordmark.
-                StemMark()
-                    .frame(width: 24, height: 24)
-                    .padding(.top, 2)
+                // Header: the wordmark (the stem mark would just double up here).
                 Text("relaxed")
-                    .font(.system(size: 16, weight: .regular, design: .rounded))
+                    .font(.system(size: 17, weight: .regular, design: .rounded))
                     .foregroundStyle(Theme.bone)
+                    .padding(.top, 2)
 
                 // Primary: start a session on the phone, from the wrist.
                 Text("start on your iPhone")
