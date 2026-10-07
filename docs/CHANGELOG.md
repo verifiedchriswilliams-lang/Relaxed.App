@@ -18,6 +18,30 @@ build carried, not the review timeline.
 
 ## iOS — App Store releases
 
+### 1.4.2 — uploaded 2026-10-07 (build 15, preparing for submission)
+More Apple Watch, over 1.4.1:
+- **Start a session from the watch.** The watch setup screen becomes a launcher: a
+  four-intention picker (`meditate` / `sleep` / `flow` / `relax`) sends a
+  `{ action: "start", intention }` command over WatchConnectivity, and the phone maps
+  it to the same `begin()` a phone tap runs, keeping the phone's current
+  length/voice/soundscape (the paywall gate still applies; a start is ignored unless the
+  phone is on its home screen). Protocol in `lib/watchRemote.ts` (`WatchCommand` now a
+  discriminated union; `onWatchCommand` normalizes the payload), forwarded by
+  `WatchBridgePlugin.emitCommand`, sent by `PhoneLink.start(intention:)`, handled in
+  `app/page.tsx`. Tests in `tests/watchRemote.test.ts`.
+- **Watch-face widget.** A watchOS Widget Extension (`relaxed Watch Widget`,
+  `widget/RelaxedWatchWidget.swift`): the "r" stem mark on the watch face as a one-tap
+  launcher. Self-contained, static timeline, `.never` reload. Families: circular,
+  corner, inline, rectangular.
+- **Setup-screen layout.** The watch setup screen is regrouped: "relaxed" wordmark,
+  then "start on your iPhone" with the four pills, then a divider and "just breathe on
+  your watch" with its own length picker (the on-wrist haptic pacer). The length picker
+  no longer drives the phone launch, so it reads as supporting "just breathe" only.
+- **Known caveat (QA in TestFlight):** a watch-initiated start has no phone gesture to
+  unlock Web Audio; the native audio session must resume it (`startSession()` calls
+  `unlock()` + `ensureRunning()`). Verify the four pills actually start audio on a real
+  paired iPhone.
+
 ### 1.4.1 — released 2026-10-04
 A maintenance update over 1.4 (version 1.4.1, build 14), reviewed under an approved
 expedited request:

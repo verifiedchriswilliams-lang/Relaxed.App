@@ -6,12 +6,13 @@
 > doc is the **now**, and it is updated the moment something changes so no finished
 > work gets re-surfaced as a TODO. Keep it short and current.
 
-_As of 2026-10-04._
+_As of 2026-10-07._
 
 ## App Store state
 
 | Version | State | What it is |
 |---|---|---|
+| **1.4.2** | **Uploaded** (build 15, 2026-10-07) — preparing for submission | More Apple Watch: start a session from the wrist (four-intention launcher) + a watch-face widget, plus the setup-screen layout polish. In App Store Connect, needs "What's New" + Submit for Review. |
 | **1.4.1** | **Released** (live) | Maintenance build (14): watch-remote motif fix, in-app offer-code redemption, watch line-art polish. |
 | **1.4** | **Released** (live) | Apple Watch build (standalone pacer + phone↔watch remote + soundscape line art). The native watchOS companion is live on the App Store. |
 | **1.3** | **Released** (Ready for Distribution) | The live IAP build. Makes the **$4.99 premium unlock** available in production. |
@@ -26,23 +27,21 @@ _As of 2026-10-04._
 
 ## In flight
 
-- Nothing in Apple review. 1.4.1 shipped (released 2026-10-04, expedited); the web
-  continues to deploy continuously on push to `main`.
-- **1.4.2 (next native build) — in development.** Two features, both now built:
-  (1) the **watch-face widget** — the `relaxed Watch Widget` Widget Extension target is
-  in Xcode, compiles, and the "r" renders cleanly in the preview (accessoryCircular
-  verified). (2) **start a session from the watch** — ✅ built: the watch setup screen is
-  now a launcher — the "relaxed" wordmark, a four-intention picker (meditate/sleep/flow/
-  relax) that **starts on the phone** with the phone's own length/voice/soundscape, and a
-  separate **just breathe** pacer (with its own length picker) grouped below a divider as
-  the only thing that runs on the watch itself. Tapping an intention sends a `start`
-  command to the phone, which maps it to the same `begin()` a phone tap runs (web +
-  plugin + watch Swift all wired, tests updated, build + tests + docs green). One
-  **audio-gesture caveat needs device/sim QA**: a watch-initiated start has no phone tap
-  to unlock Web Audio, so the native audio session must resume it (`startSession()` calls
-  `unlock()` + `ensureRunning()`). Neither feature is submitted yet; both ride 1.4.2. Web
-  half deploys with `main`; the watch Swift + plugin changes need the usual Xcode
-  cp-sync on the Mac before archiving.
+- **1.4.2 uploaded to App Store Connect** (build 15, 2026-10-07) — **not yet submitted.**
+  Two features: (1) the **watch-face widget** (`relaxed Watch Widget` Widget Extension,
+  the "r" on the face as a one-tap launcher), and (2) **start a session from the watch** —
+  the setup screen is now a launcher: the "relaxed" wordmark, a four-intention picker
+  (meditate/sleep/flow/relax) that **starts on the phone** with the phone's own
+  length/voice/soundscape, and a separate **just breathe** pacer (its own length picker)
+  below a divider as the only thing that runs on the watch itself. Tapping an intention
+  sends a `start` command the phone maps to the same `begin()` a phone tap runs.
+  **To finish:** in App Store Connect, attach build 15, paste "What's New", **Submit for
+  Review** (decide on expedited). **QA to do in TestFlight/on hardware:** the four pills
+  need a real paired iPhone to actually start audio — the **audio-gesture** path (a
+  watch-initiated start has no phone tap to unlock Web Audio; `startSession()` calls
+  `unlock()` + `ensureRunning()`) is the thing to confirm.
+- 1.4.1 released 2026-10-04 (expedited); the web continues to deploy continuously on
+  push to `main`.
 - **Web "download" strip** shipped (2026-10-07) and is live, with an `appstore_click`
   event for conversion.
 
@@ -106,11 +105,23 @@ _As of 2026-10-04._
 
 ## Housekeeping
 
-- **Local git branch (Chris's Mac).** Xcode shows the working copy on branch
-  **`iap-1.3`**, not `main` (flagged 2026-10-07). It has been fast-forwarded to main's
-  content, so builds are current, but the stale branch label should be tidied: switch
-  the local working copy to `main` (`git checkout main` then confirm it tracks
-  `origin/main`) once the current watch work is integrated. Low risk; cosmetic/local.
+- **Local git state (Chris's Mac) — bigger than first thought (updated 2026-10-07).**
+  The working copy is on branch **`iap-1.3`**, sitting exactly at `origin/main`
+  (`2064405`) with no local-only commits, so builds/archives are current (1.4.2 built
+  and uploaded from it). Two things to clean up **after 1.4.2 is submitted**, done
+  deliberately, not rushed:
+  1. **Stale staged `ios/` cruft.** `git status` shows a *partial, inconsistent* set of
+     generated `ios/` files **staged** (`A`/`AM`) but never committed (e.g.
+     `ExtendedRuntime.swift` staged while `Views.swift` next to it is untracked). Clear
+     it with `git reset` (unstages only — no files deleted, Xcode unaffected).
+  2. **`.gitignore` vs reality contradiction.** The root `.gitignore` comment says the
+     `ios/` project **"should be committed EXCEPT"** Pods/build/public — but `main` does
+     **not** track `ios/`, and every doc (CLAUDE.md, ios-native.md, repository-map.md)
+     plus the whole `cp native/... ios/...` sync workflow assumes `ios/` is **not**
+     committed. Decide which is true (practice says *not committed*) and fix the
+     `.gitignore` comment to match, so this stops confusing us.
+  3. Then switch the working copy to `main` (`git checkout main`; confirm it tracks
+     `origin/main`) and delete the stale `iap-1.3` label.
 
 ---
 
