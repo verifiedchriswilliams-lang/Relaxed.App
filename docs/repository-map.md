@@ -113,6 +113,9 @@ relaxed.app/
   - `ExtendedRuntime.swift` — the mindfulness extended-runtime session.
   - `PhoneLink.swift` — the `WCSession` client.
   - `SoundMotif.swift` — the SwiftUI `Canvas` soundscape motifs.
+  - `complication/RelaxedComplication.swift` — a watchOS **Widget Extension**: the
+    "r" stem mark on the watch face that launches the app (its own separate target;
+    self-contained).
 
   Added as a watch target in the Xcode project on the Mac. Not a web wrapper — see
   [ios-native.md](./ios-native.md) and the folder's README.

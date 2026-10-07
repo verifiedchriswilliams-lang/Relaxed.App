@@ -28,6 +28,13 @@ _As of 2026-10-04._
 
 - Nothing in Apple review. 1.4.1 shipped (released 2026-10-04, expedited); the web
   continues to deploy continuously on push to `main`.
+- **More Apple Watch (next native build) — in development.** Two features: (1) a
+  **watch-face complication** (source done, `native/watch/complication/`; needs a new
+  Widget Extension target in Xcode, see native/watch/README), and (2) **start a
+  session from the watch** (planned; design has an audio-gesture nuance to resolve
+  on the phone side). Not yet built into Xcode or submitted.
+- **Web "download" strip** shipped (2026-10-07) and is live, with an `appstore_click`
+  event for conversion.
 
 ## Known issues
 
