@@ -160,10 +160,10 @@ deferred.
 
 **1.4.2 also adds start-from-watch and a watch-face widget.** The watch setup screen
 becomes a launcher: a four-intention picker (`meditate`/`sleep`/`flow`/`relax`) sends a
-`{ action: "start", intention, minutes }` command up the same WatchConnectivity path,
-and the phone maps it to the same `begin()` a tap on the phone runs (length clamped to
-≥ 5 min and snapped to an offered dose; voice/soundscape keep the person's choices; the
-paywall gate still applies). One caveat needs device/sim QA: a watch-initiated start has
+`{ action: "start", intention }` command up the same WatchConnectivity path, and the
+phone maps it to the same `begin()` a tap on the phone runs, keeping the phone's own
+current length/voice/soundscape (the wrist's length picker is for the on-watch
+"just breathe" pacer only; the paywall gate still applies). One caveat needs device/sim QA: a watch-initiated start has
 no phone tap to unlock Web Audio, so the native audio session must resume it
 (`startSession()` calls `unlock()` + `ensureRunning()`). The watch-face widget
 (`widget/RelaxedWatchWidget.swift`, a watchOS Widget Extension) is a one-tap launcher of

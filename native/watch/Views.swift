@@ -3,8 +3,35 @@
 
 import SwiftUI
 
+// MARK: - The stem "r" mark.
+
+// One open stroke on the 100x100 grid, matching lib/mark.tsx, the app icon, and the
+// watch-face widget. Drawn in a Canvas so the stroke scales cleanly at any size.
+struct StemMark: View {
+    var body: some View {
+        Canvas { c, size in
+            let s = min(size.width, size.height) / 100.0
+            c.scaleBy(x: s, y: s)
+            var p = Path()
+            p.move(to: CGPoint(x: 40, y: 74))
+            p.addLine(to: CGPoint(x: 40, y: 40))
+            p.addCurve(
+                to: CGPoint(x: 60, y: 26),
+                control1: CGPoint(x: 40, y: 30),
+                control2: CGPoint(x: 49, y: 26)
+            )
+            c.stroke(p, with: .color(Theme.bone), style: StrokeStyle(lineWidth: 13, lineCap: .butt))
+        }
+    }
+}
+
 // MARK: - Setup: launch a session on the phone, or just breathe on the wrist.
 
+// Two clearly separated choices. The primary one is the four-intention picker that
+// *starts a session on the phone* (where the voice + soundscape live); it uses the
+// phone's own length, so no timer here. Below a divider, the secondary "just breathe"
+// is the silent on-wrist haptic pacer, and the length picker belongs to *it* — the
+// only thing the watch runs on its own.
 struct SetupView: View {
     @EnvironmentObject var engine: SessionEngine
     @EnvironmentObject var phone: PhoneLink
@@ -21,34 +48,27 @@ struct SetupView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 10) {
+            VStack(spacing: 8) {
+                // Header: the stem mark + wordmark.
+                StemMark()
+                    .frame(width: 24, height: 24)
+                    .padding(.top, 2)
                 Text("relaxed")
-                    .font(.system(size: 17, weight: .regular, design: .rounded))
+                    .font(.system(size: 16, weight: .regular, design: .rounded))
                     .foregroundStyle(Theme.bone)
 
-                // Digital Crown picks the length (shared by the on-phone launch and
-                // the local pacer).
-                Picker(selection: $engine.minutes) {
-                    ForEach(engine.choices, id: \.self) { m in
-                        Text("\(m) min").tag(m)
-                    }
-                } label: {
-                    EmptyView()
-                }
-                .labelsHidden()
-                .frame(height: 54)
-
-                // Start a session on the phone, from the wrist.
+                // Primary: start a session on the phone, from the wrist.
                 Text("start on your iPhone")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.boneDim)
+                    .padding(.top, 2)
                 VStack(spacing: 6) {
                     ForEach(0..<2, id: \.self) { row in
                         HStack(spacing: 6) {
                             ForEach(0..<2, id: \.self) { col in
                                 let item = intentions[row * 2 + col]
                                 Button {
-                                    phone.start(intention: item.id, minutes: engine.minutes)
+                                    phone.start(intention: item.id)
                                 } label: {
                                     Text(item.label)
                                         .font(.system(size: 14, weight: .medium))
@@ -62,7 +82,24 @@ struct SetupView: View {
                     }
                 }
 
-                // Or just breathe on the wrist (the standalone haptic pacer).
+                // Secondary: the silent haptic pacer that runs on the wrist itself,
+                // with its own length. Grouped together, below a divider, so the timer
+                // clearly supports *this* and nothing above it.
+                Divider()
+                    .background(Theme.hair)
+                    .padding(.vertical, 6)
+                Text("just breathe on your watch")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.boneDim)
+                Picker(selection: $engine.minutes) {
+                    ForEach(engine.choices, id: \.self) { m in
+                        Text("\(m) min").tag(m)
+                    }
+                } label: {
+                    EmptyView()
+                }
+                .labelsHidden()
+                .frame(height: 50)
                 Button {
                     engine.begin()
                 } label: {

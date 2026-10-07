@@ -120,7 +120,7 @@ describe("watchRemote with a native bridge", () => {
     expect(remove).toHaveBeenCalledTimes(1);
   });
 
-  it("routes a watch 'start' with a normalized intention + minutes", () => {
+  it("routes a watch 'start' with a normalized intention (minutes optional)", () => {
     let cb: ((data: any) => void) | undefined;
     setBridge({
       updateState: vi.fn(),
@@ -131,14 +131,18 @@ describe("watchRemote with a native bridge", () => {
     });
     const handler = vi.fn();
     onWatchCommand(handler);
-    cb?.({ action: "start", intention: "sleep", minutes: 10 });
-    // A malformed start still resolves to safe defaults (meditation, 10 min).
+    // The watch sends only the intention; no minutes rides along.
+    cb?.({ action: "start", intention: "sleep" });
+    // A missing/blank intention falls back to meditation.
     cb?.({ action: "start" });
+    // A length is passed through only when finite and positive; 0 is dropped.
+    cb?.({ action: "start", intention: "flow", minutes: 10 });
     cb?.({ action: "start", intention: "", minutes: 0 });
     expect(handler.mock.calls.map((c) => c[0])).toEqual([
-      { action: "start", intention: "sleep", minutes: 10 },
-      { action: "start", intention: "meditation", minutes: 10 },
-      { action: "start", intention: "meditation", minutes: 10 },
+      { action: "start", intention: "sleep" },
+      { action: "start", intention: "meditation" },
+      { action: "start", intention: "flow", minutes: 10 },
+      { action: "start", intention: "meditation" },
     ]);
   });
 });

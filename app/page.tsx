@@ -529,7 +529,7 @@ export default function Home() {
   // Start-from-watch (1.4.2): the wrist's four-intention picker launches a session
   // on the phone. Registered once (in the watch-command effect) but calls through
   // this ref so it always runs the latest closure, same pattern as mediaActionRef.
-  const watchStartRef = useRef((_intention: string, _minutes: number) => {});
+  const watchStartRef = useRef((_intention: string, _minutes?: number) => {});
   const endTimerRef = useRef<number | null>(null);
   const completeTimerRef = useRef<number | null>(null);
   const tickRef = useRef<number | null>(null);
@@ -800,15 +800,19 @@ export default function Home() {
   // wrist's chosen intention + length to state, then arms the pending-start effect
   // which calls begin() once that state has landed. Ignored unless we're on the
   // home/setup screen, so the wrist can't yank a running session into a new one.
-  watchStartRef.current = (intention: string, minutes: number) => {
+  watchStartRef.current = (intention: string, minutes?: number) => {
     if (screen !== "setup") return;
     const ctx = (getContext(intention)?.id ?? "meditation") as ContextId;
-    // The watch offers short lengths (1/3/5/10); guided sessions start at 5 min, so
-    // clamp up and snap to the nearest offered dose at or below the request.
-    const mins = Math.max(5, Math.round(minutes));
-    const dose = ([...DURATIONS].reverse().find((d) => d <= mins) ?? 5) as DurationChoice;
     setContext(ctx);
-    setDuration(dose);
+    // The watch sends only the intention; the session keeps the phone's current
+    // length, voice, and soundscape (the wrist is a launcher, not a composer). If a
+    // length is ever sent, honor it: clamp to the 5-min guided floor and snap to the
+    // nearest offered dose at or below it.
+    if (typeof minutes === "number" && Number.isFinite(minutes) && minutes > 0) {
+      const mins = Math.max(5, Math.round(minutes));
+      const dose = ([...DURATIONS].reverse().find((d) => d <= mins) ?? 5) as DurationChoice;
+      setDuration(dose);
+    }
     haptic("light");
     setPendingWatchStart(true);
   };

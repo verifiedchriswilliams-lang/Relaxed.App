@@ -111,7 +111,7 @@ export function clearWatchState(): void {
 // a length in minutes for the phone to begin.
 export type WatchCommand =
   | { action: "play" | "pause" | "stop" }
-  | { action: "start"; intention: string; minutes: number };
+  | { action: "start"; intention: string; minutes?: number };
 
 // Subscribe to commands the watch sends. Returns an unsubscribe function. Safe no-op
 // (returns a no-op unsubscriber) without the plugin. The handler should route the
@@ -129,13 +129,17 @@ export function onWatchCommand(handler: (cmd: WatchCommand) => void): () => void
         handler({ action: a });
       } else if (a === "start") {
         // Normalize the payload here so the web handler can trust it: a string
-        // intention and a finite, positive minute count (the phone clamps/snaps
-        // these to a real intention and an offered dose).
+        // intention (the wrist's four-intention picker). The watch sends only the
+        // intention — the phone uses its own current length — but if a length ever
+        // rides along, pass it through only when it's a finite, positive number.
         const intention =
           typeof data?.intention === "string" && data.intention ? data.intention : "meditation";
         const n = Number(data?.minutes);
-        const minutes = Number.isFinite(n) && n > 0 ? n : 10;
-        handler({ action: "start", intention, minutes });
+        handler(
+          Number.isFinite(n) && n > 0
+            ? { action: "start", intention, minutes: n }
+            : { action: "start", intention }
+        );
       }
     });
   } catch {

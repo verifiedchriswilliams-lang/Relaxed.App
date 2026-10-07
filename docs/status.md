@@ -32,9 +32,12 @@ _As of 2026-10-04._
   (1) the **watch-face widget** — the `relaxed Watch Widget` Widget Extension target is
   in Xcode, compiles, and the "r" renders cleanly in the preview (accessoryCircular
   verified). (2) **start a session from the watch** — ✅ built: the watch setup screen is
-  now a launcher with a four-intention picker (meditate/sleep/flow/relax) that sends a
-  `start` command to the phone, which maps it to the same `begin()` a phone tap runs
-  (web + plugin + watch Swift all wired, tests updated, build + tests + docs green). One
+  now a launcher — stem mark + wordmark, a four-intention picker (meditate/sleep/flow/
+  relax) that **starts on the phone** with the phone's own length/voice/soundscape, and a
+  separate **just breathe** pacer (with its own length picker) grouped below a divider as
+  the only thing that runs on the watch itself. Tapping an intention sends a `start`
+  command to the phone, which maps it to the same `begin()` a phone tap runs (web +
+  plugin + watch Swift all wired, tests updated, build + tests + docs green). One
   **audio-gesture caveat needs device/sim QA**: a watch-initiated start has no phone tap
   to unlock Web Audio, so the native audio session must resume it (`startSession()` calls
   `unlock()` + `ensureRunning()`). Neither feature is submitted yet; both ride 1.4.2. Web

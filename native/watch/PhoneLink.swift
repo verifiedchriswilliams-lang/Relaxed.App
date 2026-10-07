@@ -38,10 +38,12 @@ final class PhoneLink: NSObject, ObservableObject, WCSessionDelegate {
     }
 
     // Start a new session on the phone from the wrist's four-intention picker
-    // (1.4.2): the chosen intention ("meditation"/"sleep"/"flow"/"relax") and a
-    // length in minutes. The phone clamps/snaps the length to an offered dose.
-    func start(intention: String, minutes: Int) {
-        send(["action": "start", "intention": intention, "minutes": minutes])
+    // (1.4.2): just the chosen intention ("meditation"/"sleep"/"flow"/"relax"). The
+    // session's length, voice, and soundscape stay the phone's current choices — the
+    // watch is a launcher, not a composer. (The length picker here is for the on-wrist
+    // "just breathe" pacer only.)
+    func start(intention: String) {
+        send(["action": "start", "intention": intention])
     }
 
     // Send a message to the phone. Prefer a live message when reachable; fall back

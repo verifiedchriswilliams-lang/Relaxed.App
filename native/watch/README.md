@@ -206,7 +206,7 @@ own breath clock locally while `playing`, so nothing per-frame crosses the link.
 |---|---|
 | Phone → Watch (state) | `{ active, playing, title, soundscape, motif, remaining, total, breathPos, breathTs }` |
 | Watch → Phone (transport) | `{ action: "play" \| "pause" \| "stop" }` |
-| Watch → Phone (launch, 1.4.2) | `{ action: "start", intention, minutes }` |
+| Watch → Phone (launch, 1.4.2) | `{ action: "start", intention }` |
 
 `motif` is the soundscape **id** (e.g. `rain`), which `SoundMotif.swift` maps to the
 line-art drawing; `soundscape` is the human-readable name for the label line.
@@ -236,28 +236,35 @@ fall, flash, swirl, shimmer), best tuned with eyes on a real watch.
 
 ## Start a session from the watch (1.4.2)
 
-The watch's setup screen is now a **launcher**, not just the standalone pacer. It
-shows the length picker, a **four-intention picker** (`meditate` / `sleep` / `flow` /
-`relax`, matching the phone's home tiles), and a secondary **just breathe** button for
-the on-wrist haptic pacer. Tapping an intention sends a `start` command up to the
-phone; the phone begins that session and pushes its state back, and the watch flips to
-`RemoteView` (the mirror) on its own.
+The watch's setup screen is now a **launcher**, laid out as two clearly separated
+choices (stem mark + wordmark on top):
+
+- **Primary — "start on your iPhone":** a **four-intention picker** (`meditate` /
+  `sleep` / `flow` / `relax`, matching the phone's home tiles). Tapping one sends a
+  `start` command up to the phone; the phone begins that session **with its own current
+  length, voice, and soundscape** (the wrist is a launcher, not a composer), pushes its
+  state back, and the watch flips to `RemoteView` (the mirror) on its own.
+- **Secondary — "just breathe on your watch":** the length picker **and** the
+  `just breathe` button, grouped below a divider. This is the only thing that runs *on
+  the watch itself* (the silent haptic pacer), so the length picker belongs to it — not
+  to the phone launch above it.
 
 **How it's wired** (same WatchConnectivity path as the remote):
 
-- **Watch** (`PhoneLink.start(intention:minutes:)`, called from `SetupView`): sends
-  `{ action: "start", intention, minutes }`. `intention` is a context id
-  (`meditation`/`sleep`/`flow`/`relax`); `minutes` is the picker's current length.
-- **Phone plugin** (`WatchBridgePlugin.emitCommand`): forwards `intention` + `minutes`
-  on the `command` event alongside the existing transport actions.
+- **Watch** (`PhoneLink.start(intention:)`, called from `SetupView`): sends
+  `{ action: "start", intention }` — a context id (`meditation`/`sleep`/`flow`/`relax`).
+  No length: the phone's current duration applies.
+- **Phone plugin** (`WatchBridgePlugin.emitCommand`): forwards `intention` on the
+  `command` event alongside the existing transport actions (it still tolerates a
+  `minutes` field if one is ever sent).
 - **Web** (`lib/watchRemote.ts` → `app/page.tsx`): `onWatchCommand` normalizes the
-  payload (a real intention, a finite positive length) and the page maps it to the
-  same **`begin()`** a tap on the phone runs. The length is clamped to ≥ 5 min (guided
-  sessions start at 5) and snapped to the nearest offered dose; voice + soundscape keep
-  the person's current choices. `begin()` still runs the **paywall gate**, so if those
-  defaults happen to be premium-locked the phone shows the unlock sheet (the graceful
-  fallback) instead of starting. A watch `start` is ignored unless the phone is on the
-  home/setup screen, so the wrist can't yank a running session into a new one.
+  payload (a real intention) and the page maps it to the same **`begin()`** a tap on the
+  phone runs, keeping the phone's current length/voice/soundscape. (If a length is ever
+  sent it's honored: clamped to ≥ 5 min and snapped to the nearest offered dose.)
+  `begin()` still runs the **paywall gate**, so if the current choices happen to be
+  premium-locked the phone shows the unlock sheet (the graceful fallback) instead of
+  starting. A watch `start` is ignored unless the phone is on the home/setup screen, so
+  the wrist can't yank a running session into a new one.
 
 > **Audio-gesture caveat (needs device/sim QA):** a phone tap normally unlocks Web
 > Audio; a watch-initiated start has no phone gesture. In the native app the audio
