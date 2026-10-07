@@ -24,7 +24,7 @@ The files here are the whole app:
 | File | What it is |
 |---|---|
 | `RelaxedWatchApp.swift` | `@main` App + the 3-screen router (`RootView`) |
-| `Views.swift` | `SetupView` (pick length), `SessionView` (orb + controls), `DoneView` |
+| `Views.swift` | `SetupView` (length + four-intention launcher + local pacer), `SessionView` (orb + controls), `RemoteView` (phone mirror), `DoneView` |
 | `SessionEngine.swift` | The state machine: breath clock, haptics, timer, Health logging |
 | `Theme.swift` | Brand colors (Ink/Bone) + the breath cadence (mirrors `lib/breath.ts`) |
 | `HealthStore.swift` | HealthKit auth + write Mindful Minutes |
@@ -165,8 +165,8 @@ changes you make in Xcode.
 Turns the watch into a live **mirror + remote** for a session playing on the
 phone: the watch shows what's playing, the countdown, and a breathing orb, and its
 play / pause / stop drive the phone. The phone still composes and plays the session
-(intention, voice, soundscape stay on the phone). Starting a brand-new session from
-the watch is **not** in 1.4.1.
+(voice, soundscape stay on the phone). Starting a brand-new session from the watch
+arrived later — see **Start a session from the watch (1.4.2)** below.
 
 **How it's wired** (WatchConnectivity, no special entitlement needed):
 
@@ -205,7 +205,8 @@ own breath clock locally while `playing`, so nothing per-frame crosses the link.
 | Direction | Payload |
 |---|---|
 | Phone → Watch (state) | `{ active, playing, title, soundscape, motif, remaining, total, breathPos, breathTs }` |
-| Watch → Phone (command) | `{ action: "play" \| "pause" \| "stop" }` |
+| Watch → Phone (transport) | `{ action: "play" \| "pause" \| "stop" }` |
+| Watch → Phone (launch, 1.4.2) | `{ action: "start", intention, minutes }` |
 
 `motif` is the soundscape **id** (e.g. `rain`), which `SoundMotif.swift` maps to the
 line-art drawing; `soundscape` is the human-readable name for the label line.
@@ -232,6 +233,39 @@ same `t`, so the waves **drift** and the campfire embers / ambient (pad) rings
 **pulse** on the phone's clock instead of the watch free-running its own. Still
 deferred: the finer per-element web motions (spin, sway, chime, bob, ripple, pluck,
 fall, flash, swirl, shimmer), best tuned with eyes on a real watch.
+
+## Start a session from the watch (1.4.2)
+
+The watch's setup screen is now a **launcher**, not just the standalone pacer. It
+shows the length picker, a **four-intention picker** (`meditate` / `sleep` / `flow` /
+`relax`, matching the phone's home tiles), and a secondary **just breathe** button for
+the on-wrist haptic pacer. Tapping an intention sends a `start` command up to the
+phone; the phone begins that session and pushes its state back, and the watch flips to
+`RemoteView` (the mirror) on its own.
+
+**How it's wired** (same WatchConnectivity path as the remote):
+
+- **Watch** (`PhoneLink.start(intention:minutes:)`, called from `SetupView`): sends
+  `{ action: "start", intention, minutes }`. `intention` is a context id
+  (`meditation`/`sleep`/`flow`/`relax`); `minutes` is the picker's current length.
+- **Phone plugin** (`WatchBridgePlugin.emitCommand`): forwards `intention` + `minutes`
+  on the `command` event alongside the existing transport actions.
+- **Web** (`lib/watchRemote.ts` → `app/page.tsx`): `onWatchCommand` normalizes the
+  payload (a real intention, a finite positive length) and the page maps it to the
+  same **`begin()`** a tap on the phone runs. The length is clamped to ≥ 5 min (guided
+  sessions start at 5) and snapped to the nearest offered dose; voice + soundscape keep
+  the person's current choices. `begin()` still runs the **paywall gate**, so if those
+  defaults happen to be premium-locked the phone shows the unlock sheet (the graceful
+  fallback) instead of starting. A watch `start` is ignored unless the phone is on the
+  home/setup screen, so the wrist can't yank a running session into a new one.
+
+> **Audio-gesture caveat (needs device/sim QA):** a phone tap normally unlocks Web
+> Audio; a watch-initiated start has no phone gesture. In the native app the audio
+> session is already active (background-audio capability) and `startSession()` calls
+> `unlock()` + `ensureRunning()`, so playback should resume without a tap — but this
+> is the one part of the flow that genuinely needs verifying on a paired watch + phone
+> (or the simulator pair), since WatchConnectivity and the native audio session don't
+> exist on the web.
 
 ## Watch-face widget
 

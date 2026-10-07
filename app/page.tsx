@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   CONTEXTS,
+  DURATIONS,
   DURATION_STOPS,
   INFINITE,
   isInfinite,
@@ -467,6 +468,10 @@ export default function Home() {
   // an effect once the restored choices have applied to state (so the timer's
   // totalSecs and the engine params match the session being replayed).
   const [pendingReplay, setPendingReplay] = useState<RecentSession | null>(null);
+  // Start-from-watch waiting to begin(). Set by the watch "start" handler after it
+  // has applied the chosen intention + duration to state; consumed by an effect so
+  // begin() runs with the fresh context/duration (and its own paywall gate).
+  const [pendingWatchStart, setPendingWatchStart] = useState(false);
   // Daily practice reminder (on-device local notification): the stored pref and
   // whether the little settings sheet is open.
   const [reminder, setReminder] = useState<ReminderPref>({
@@ -521,6 +526,10 @@ export default function Home() {
   // Lock-screen (MediaSession) controls call into the latest play/pause via this
   // ref, so the handlers we register once never go stale.
   const mediaActionRef = useRef({ play: () => {}, pause: () => {}, stop: () => {} });
+  // Start-from-watch (1.4.2): the wrist's four-intention picker launches a session
+  // on the phone. Registered once (in the watch-command effect) but calls through
+  // this ref so it always runs the latest closure, same pattern as mediaActionRef.
+  const watchStartRef = useRef((_intention: string, _minutes: number) => {});
   const endTimerRef = useRef<number | null>(null);
   const completeTimerRef = useRef<number | null>(null);
   const tickRef = useRef<number | null>(null);
@@ -787,6 +796,34 @@ export default function Home() {
     stop: () => end(),
   };
 
+  // Keep the watch "start" launcher pointed at the latest closure. It applies the
+  // wrist's chosen intention + length to state, then arms the pending-start effect
+  // which calls begin() once that state has landed. Ignored unless we're on the
+  // home/setup screen, so the wrist can't yank a running session into a new one.
+  watchStartRef.current = (intention: string, minutes: number) => {
+    if (screen !== "setup") return;
+    const ctx = (getContext(intention)?.id ?? "meditation") as ContextId;
+    // The watch offers short lengths (1/3/5/10); guided sessions start at 5 min, so
+    // clamp up and snap to the nearest offered dose at or below the request.
+    const mins = Math.max(5, Math.round(minutes));
+    const dose = ([...DURATIONS].reverse().find((d) => d <= mins) ?? 5) as DurationChoice;
+    setContext(ctx);
+    setDuration(dose);
+    haptic("light");
+    setPendingWatchStart(true);
+  };
+
+  // Consume a pending watch start: once the intention + duration have applied to
+  // state, run begin() (which gates the paywall itself — the graceful fallback if
+  // the person's current voice/soundscape defaults happen to be premium-locked).
+  useEffect(() => {
+    if (!pendingWatchStart) return;
+    setPendingWatchStart(false);
+    if (screen !== "setup") return;
+    void begin();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingWatchStart, context, duration, screen]);
+
   // Lock screen / Control Center "Now Playing" card. Set the metadata + working
   // controls when a session is on the player, and clear it when we leave.
   useEffect(() => {
@@ -842,10 +879,14 @@ export default function Home() {
   // the handler reads mediaActionRef.current so it always hits the latest closure.
   useEffect(() => {
     const off = onWatchCommand((cmd) => {
+      if (cmd.action === "start") {
+        watchStartRef.current(cmd.intention, cmd.minutes);
+        return;
+      }
       const m = mediaActionRef.current;
-      if (cmd === "play") m.play();
-      else if (cmd === "pause") m.pause();
-      else if (cmd === "stop") m.stop();
+      if (cmd.action === "play") m.play();
+      else if (cmd.action === "pause") m.pause();
+      else if (cmd.action === "stop") m.stop();
     });
     return off;
     // eslint-disable-next-line react-hooks/exhaustive-deps

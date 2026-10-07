@@ -112,8 +112,33 @@ describe("watchRemote with a native bridge", () => {
     cb?.({ action: "pause" });
     cb?.({ action: "bogus" }); // ignored
     cb?.({ action: "stop" });
-    expect(handler.mock.calls.map((c) => c[0])).toEqual(["pause", "stop"]);
+    expect(handler.mock.calls.map((c) => c[0])).toEqual([
+      { action: "pause" },
+      { action: "stop" },
+    ]);
     off();
     expect(remove).toHaveBeenCalledTimes(1);
+  });
+
+  it("routes a watch 'start' with a normalized intention + minutes", () => {
+    let cb: ((data: any) => void) | undefined;
+    setBridge({
+      updateState: vi.fn(),
+      addListener: (_evt: string, fn: (data: any) => void) => {
+        cb = fn;
+        return { remove: vi.fn() };
+      },
+    });
+    const handler = vi.fn();
+    onWatchCommand(handler);
+    cb?.({ action: "start", intention: "sleep", minutes: 10 });
+    // A malformed start still resolves to safe defaults (meditation, 10 min).
+    cb?.({ action: "start" });
+    cb?.({ action: "start", intention: "", minutes: 0 });
+    expect(handler.mock.calls.map((c) => c[0])).toEqual([
+      { action: "start", intention: "sleep", minutes: 10 },
+      { action: "start", intention: "meditation", minutes: 10 },
+      { action: "start", intention: "meditation", minutes: 10 },
+    ]);
   });
 });

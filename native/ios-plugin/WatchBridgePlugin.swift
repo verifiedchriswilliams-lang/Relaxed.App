@@ -8,10 +8,13 @@ import WatchConnectivity
 //   updateState({active, playing, title, soundscape, motif, remaining, total,
 //                breathPos, breathTs})
 //       -> pushed to the watch as the latest state
-// and the plugin emits a "command" event ({ action: "play" | "pause" | "stop" })
-// whenever the watch sends one, which the web routes to the same play/pause/stop
-// the lock screen uses. Everything is best-effort: if there's no paired watch or
-// the session isn't active, updateState simply no-ops after caching the latest.
+// and the plugin emits a "command" event whenever the watch sends one:
+//   { action: "play" | "pause" | "stop" }                         (transport)
+//   { action: "start", intention: String, minutes: Int }          (launch, 1.4.2)
+// which the web routes to the same play/pause/stop the lock screen uses, or to
+// begin() for a watch-launched session. Everything is best-effort: if there's no
+// paired watch or the session isn't active, updateState simply no-ops after
+// caching the latest.
 @objc(WatchBridgePlugin)
 public class WatchBridgePlugin: CAPPlugin, WCSessionDelegate {
 
@@ -69,8 +72,15 @@ public class WatchBridgePlugin: CAPPlugin, WCSessionDelegate {
 
     private func emitCommand(_ payload: [String: Any]) {
         guard let action = payload["action"] as? String else { return }
+        var data: [String: Any] = ["action": action]
+        // A watch-launched session carries its intention + length; forward them so
+        // the web can begin() the right session (see lib/watchRemote.ts).
+        if action == "start" {
+            if let intention = payload["intention"] as? String { data["intention"] = intention }
+            if let minutes = payload["minutes"] as? Int { data["minutes"] = minutes }
+        }
         DispatchQueue.main.async {
-            self.notifyListeners("command", data: ["action": action])
+            self.notifyListeners("command", data: data)
         }
     }
 

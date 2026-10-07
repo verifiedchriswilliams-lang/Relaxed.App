@@ -146,7 +146,7 @@ WatchConnectivity (no entitlement needed). The web side (`lib/watchRemote.ts`) i
 guarded no-op until a native build includes the `WatchBridge` plugin
 (`native/ios-plugin/WatchBridgePlugin.*`); the watch side is `PhoneLink.swift` +
 `RemoteView`. The phone still composes and plays every session; starting a new one
-from the wrist is not in 1.4.1.
+from the wrist arrived in 1.4.2 (below).
 
 **1.4.2 adds the soundscape line art on the wrist.** `SoundMotif.swift` ports the
 per-soundscape motifs from `lib/soundMotifs.tsx` to a SwiftUI `Canvas` (same
@@ -157,6 +157,18 @@ it so the remote shows the correct per-soundscape art.) 1.4.1 also added the wat
 line-art polish: the ring + motif breathe in phase with the phone (a breath anchor over
 the link), with wave drift and ember/ring pulse. Finer per-element motions remain
 deferred.
+
+**1.4.2 also adds start-from-watch and a watch-face widget.** The watch setup screen
+becomes a launcher: a four-intention picker (`meditate`/`sleep`/`flow`/`relax`) sends a
+`{ action: "start", intention, minutes }` command up the same WatchConnectivity path,
+and the phone maps it to the same `begin()` a tap on the phone runs (length clamped to
+≥ 5 min and snapped to an offered dose; voice/soundscape keep the person's choices; the
+paywall gate still applies). One caveat needs device/sim QA: a watch-initiated start has
+no phone tap to unlock Web Audio, so the native audio session must resume it
+(`startSession()` calls `unlock()` + `ensureRunning()`). The watch-face widget
+(`widget/RelaxedWatchWidget.swift`, a watchOS Widget Extension) is a one-tap launcher of
+the "r" stem mark on the face. Protocol + Xcode setup for both are in
+[`native/watch/README.md`](../native/watch/README.md).
 
 ## 8. Known native gotchas
 

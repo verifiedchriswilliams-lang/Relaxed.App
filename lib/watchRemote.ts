@@ -105,12 +105,19 @@ export function clearWatchState(): void {
   }
 }
 
-export type WatchCommand = "play" | "pause" | "stop";
+// A command sent up from the wrist. The transport controls (play/pause/stop) mirror
+// a session already on the phone; `start` is the wrist *launching* a new session —
+// the four-intention picker on the watch (1.4.2) — carrying the chosen intention and
+// a length in minutes for the phone to begin.
+export type WatchCommand =
+  | { action: "play" | "pause" | "stop" }
+  | { action: "start"; intention: string; minutes: number };
 
-// Subscribe to commands the watch sends (the wrist's play/pause/stop). Returns an
-// unsubscribe function. Safe no-op (returns a no-op unsubscriber) without the
-// plugin. The handler should route to the same play/pause/stop the lock-screen
-// controls use, so the wrist and the lock screen stay in lockstep.
+// Subscribe to commands the watch sends. Returns an unsubscribe function. Safe no-op
+// (returns a no-op unsubscriber) without the plugin. The handler should route the
+// transport commands to the same play/pause/stop the lock-screen controls use, and
+// `start` to the same begin() a tap on the phone would, so the wrist, the lock
+// screen, and the in-app controls stay in lockstep.
 export function onWatchCommand(handler: (cmd: WatchCommand) => void): () => void {
   const wb = watchBridge();
   if (!wb || typeof wb.addListener !== "function") return () => {};
@@ -118,7 +125,18 @@ export function onWatchCommand(handler: (cmd: WatchCommand) => void): () => void
   try {
     handle = wb.addListener("command", (data: any) => {
       const a = data?.action;
-      if (a === "play" || a === "pause" || a === "stop") handler(a);
+      if (a === "play" || a === "pause" || a === "stop") {
+        handler({ action: a });
+      } else if (a === "start") {
+        // Normalize the payload here so the web handler can trust it: a string
+        // intention and a finite, positive minute count (the phone clamps/snaps
+        // these to a real intention and an offered dose).
+        const intention =
+          typeof data?.intention === "string" && data.intention ? data.intention : "meditation";
+        const n = Number(data?.minutes);
+        const minutes = Number.isFinite(n) && n > 0 ? n : 10;
+        handler({ action: "start", intention, minutes });
+      }
     });
   } catch {
     return () => {};

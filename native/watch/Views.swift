@@ -3,40 +3,80 @@
 
 import SwiftUI
 
-// MARK: - Setup: choose a length, then begin.
+// MARK: - Setup: launch a session on the phone, or just breathe on the wrist.
 
 struct SetupView: View {
     @EnvironmentObject var engine: SessionEngine
+    @EnvironmentObject var phone: PhoneLink
+
+    // The four intentions the wrist can launch on the phone (1.4.2). Labels match
+    // the phone's home tiles; ids match lib/contexts.ts (the "meditate" tile is the
+    // "meditation" context).
+    private let intentions: [(label: String, id: String)] = [
+        ("meditate", "meditation"),
+        ("sleep", "sleep"),
+        ("flow", "flow"),
+        ("relax", "relax"),
+    ]
 
     var body: some View {
-        VStack(spacing: 8) {
-            Text("relaxed")
-                .font(.system(size: 17, weight: .regular, design: .rounded))
-                .foregroundStyle(Theme.bone)
+        ScrollView {
+            VStack(spacing: 10) {
+                Text("relaxed")
+                    .font(.system(size: 17, weight: .regular, design: .rounded))
+                    .foregroundStyle(Theme.bone)
 
-            // Digital Crown picks the length.
-            Picker(selection: $engine.minutes) {
-                ForEach(engine.choices, id: \.self) { m in
-                    Text("\(m) min").tag(m)
+                // Digital Crown picks the length (shared by the on-phone launch and
+                // the local pacer).
+                Picker(selection: $engine.minutes) {
+                    ForEach(engine.choices, id: \.self) { m in
+                        Text("\(m) min").tag(m)
+                    }
+                } label: {
+                    EmptyView()
                 }
-            } label: {
-                EmptyView()
-            }
-            .labelsHidden()
-            .frame(height: 64)
+                .labelsHidden()
+                .frame(height: 54)
 
-            Button {
-                engine.begin()
-            } label: {
-                Text("begin")
-                    .font(.system(size: 16, weight: .medium))
-                    .frame(maxWidth: .infinity)
+                // Start a session on the phone, from the wrist.
+                Text("start on your iPhone")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.boneDim)
+                VStack(spacing: 6) {
+                    ForEach(0..<2, id: \.self) { row in
+                        HStack(spacing: 6) {
+                            ForEach(0..<2, id: \.self) { col in
+                                let item = intentions[row * 2 + col]
+                                Button {
+                                    phone.start(intention: item.id, minutes: engine.minutes)
+                                } label: {
+                                    Text(item.label)
+                                        .font(.system(size: 14, weight: .medium))
+                                        .frame(maxWidth: .infinity)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .tint(Theme.bone)
+                                .foregroundStyle(Theme.ink)
+                            }
+                        }
+                    }
+                }
+
+                // Or just breathe on the wrist (the standalone haptic pacer).
+                Button {
+                    engine.begin()
+                } label: {
+                    Text("just breathe")
+                        .font(.system(size: 14, weight: .medium))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .tint(Theme.hair)
+                .foregroundStyle(Theme.bone)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.bone)
-            .foregroundStyle(Theme.ink)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 4)
         }
-        .padding(.horizontal, 6)
     }
 }
 

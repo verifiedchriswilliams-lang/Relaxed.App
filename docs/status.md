@@ -28,12 +28,18 @@ _As of 2026-10-04._
 
 - Nothing in Apple review. 1.4.1 shipped (released 2026-10-04, expedited); the web
   continues to deploy continuously on push to `main`.
-- **More Apple Watch (next native build) — in development.** Two features: (1) the
-  **watch-face widget** — ✅ built, the `relaxed Watch Widget` Widget Extension target
-  is in Xcode, compiles, and the "r" renders cleanly in the preview (accessoryCircular
-  verified); ships in the next watch build. And (2) **start a session from the watch**
-  — planned next (design has an audio-gesture nuance to resolve on the phone side).
-  Neither is submitted yet; both will ride the next watch build.
+- **1.4.2 (next native build) — in development.** Two features, both now built:
+  (1) the **watch-face widget** — the `relaxed Watch Widget` Widget Extension target is
+  in Xcode, compiles, and the "r" renders cleanly in the preview (accessoryCircular
+  verified). (2) **start a session from the watch** — ✅ built: the watch setup screen is
+  now a launcher with a four-intention picker (meditate/sleep/flow/relax) that sends a
+  `start` command to the phone, which maps it to the same `begin()` a phone tap runs
+  (web + plugin + watch Swift all wired, tests updated, build + tests + docs green). One
+  **audio-gesture caveat needs device/sim QA**: a watch-initiated start has no phone tap
+  to unlock Web Audio, so the native audio session must resume it (`startSession()` calls
+  `unlock()` + `ensureRunning()`). Neither feature is submitted yet; both ride 1.4.2. Web
+  half deploys with `main`; the watch Swift + plugin changes need the usual Xcode
+  cp-sync on the Mac before archiving.
 - **Web "download" strip** shipped (2026-10-07) and is live, with an `appstore_click`
   event for conversion.
 

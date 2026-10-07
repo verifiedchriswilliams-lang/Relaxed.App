@@ -31,12 +31,24 @@ final class PhoneLink: NSObject, ObservableObject, WCSessionDelegate {
         s.activate()
     }
 
-    // Send a command to the phone. Prefer a live message when reachable; fall back
-    // to application context (delivered when the phone next wakes) otherwise.
+    // Send a transport command to the phone (play/pause/stop) — mirrors a session
+    // already on the phone.
     func send(_ action: String) {
+        send(["action": action])
+    }
+
+    // Start a new session on the phone from the wrist's four-intention picker
+    // (1.4.2): the chosen intention ("meditation"/"sleep"/"flow"/"relax") and a
+    // length in minutes. The phone clamps/snaps the length to an offered dose.
+    func start(intention: String, minutes: Int) {
+        send(["action": "start", "intention": intention, "minutes": minutes])
+    }
+
+    // Send a message to the phone. Prefer a live message when reachable; fall back
+    // to application context (delivered when the phone next wakes) otherwise.
+    func send(_ msg: [String: Any]) {
         guard WCSession.isSupported() else { return }
         let s = WCSession.default
-        let msg = ["action": action]
         if s.isReachable {
             s.sendMessage(msg, replyHandler: nil, errorHandler: { _ in
                 try? s.updateApplicationContext(msg)
