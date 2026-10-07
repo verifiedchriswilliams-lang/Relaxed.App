@@ -24,13 +24,12 @@ next-env.d.ts
 /*.mp3
 /*.flac
 
-# Capacitor iOS. The ios/ project is generated on a Mac by `npx cap add ios`
-# and should be committed EXCEPT the parts below (CocoaPods, build output, and
-# the web assets Capacitor copies in on each sync).
-/ios/App/Pods/
-/ios/App/App/public/
-/ios/App/build/
-/ios/DerivedData/
+# Capacitor iOS. The ios/ project is generated on a Mac by `npx cap add ios` and
+# is NOT committed: it's rebuilt / re-added on the Mac, and the app-local plugin +
+# watch sources that ARE the source of truth live in native/ (dragged/copied into
+# the generated project — see native/watch/README.md and docs/ios-native.md). So
+# ignore the whole generated project; nothing under ios/ is tracked.
+/ios/
 *.xcuserstate
 xcuserdata/
 
