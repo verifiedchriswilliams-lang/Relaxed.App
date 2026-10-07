@@ -94,6 +94,14 @@ _As of 2026-10-04._
 - **1.5 candidates** (see [roadmap.md](./roadmap.md)): local personalization loop
   ("make another like this"), or Live Activity. Not yet chosen.
 
+## Housekeeping
+
+- **Local git branch (Chris's Mac).** Xcode shows the working copy on branch
+  **`iap-1.3`**, not `main` (flagged 2026-10-07). It has been fast-forwarded to main's
+  content, so builds are current, but the stale branch label should be tidied: switch
+  the local working copy to `main` (`git checkout main` then confirm it tracks
+  `origin/main`) once the current watch work is integrated. Low risk; cosmetic/local.
+
 ---
 
 _Maintenance: update the table and the in-flight list whenever App Store state,
