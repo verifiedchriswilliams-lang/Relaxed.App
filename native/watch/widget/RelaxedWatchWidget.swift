@@ -9,7 +9,7 @@
 // Theme.swift or the watch app's sources.
 //
 // Xcode: this belongs to a *Widget Extension* target, NOT the watch app target.
-// See native/watch/README.md ("Complication") for the target setup.
+// See native/watch/README.md ("Watch-face widget") for the target setup.
 
 import WidgetKit
 import SwiftUI
@@ -52,7 +52,7 @@ struct RelaxedProvider: TimelineProvider {
     }
 }
 
-struct RelaxedComplicationView: View {
+struct RelaxedWatchWidgetView: View {
     @Environment(\.widgetFamily) private var family
 
     var body: some View {
@@ -85,10 +85,10 @@ struct RelaxedComplicationView: View {
 }
 
 @main
-struct RelaxedComplication: Widget {
+struct RelaxedWatchWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "RelaxedComplication", provider: RelaxedProvider()) { _ in
-            RelaxedComplicationView()
+        StaticConfiguration(kind: "RelaxedWatchWidget", provider: RelaxedProvider()) { _ in
+            RelaxedWatchWidgetView()
         }
         .configurationDisplayName("relaxed")
         .description("Open relaxed for a quick breather.")
@@ -102,7 +102,7 @@ struct RelaxedComplication: Widget {
 }
 
 #Preview(as: .accessoryCircular) {
-    RelaxedComplication()
+    RelaxedWatchWidget()
 } timeline: {
     RelaxedEntry(date: .now)
 }
