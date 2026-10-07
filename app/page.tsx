@@ -41,6 +41,7 @@ import {
   setPlaybackState,
   clearNowPlaying,
   notificationsAvailable,
+  isNativeApp,
 } from "@/lib/native";
 import { pushWatchState, clearWatchState, onWatchCommand } from "@/lib/watchRemote";
 import {
@@ -90,6 +91,12 @@ import { breathAt, BREATH_CYCLE } from "@/lib/breath";
 // Which visual world are we in? relaxed swaps the aurora + coloured discs for
 // the flat, no-accent "stem" identity; ElevenMind keeps its night sky.
 const IS_RELAXED = BRAND.id === "relaxed";
+
+// relaxed.app on the App Store. The "download" strip on the web landing points here
+// (shown only in a browser, never inside the native app). Dismissal is remembered.
+const APPSTORE_URL = "https://apps.apple.com/us/app/relaxed-app/id6807080633";
+const BANNER_DISMISS_KEY = "relaxed.appbanner.v1";
+
 import GUIDES from "@/lib/voices.json";
 
 // Wordmark: the bar glyph, then the brand name in two weights
@@ -414,6 +421,9 @@ export default function Home() {
   const [paywallBusy, setPaywallBusy] = useState(false);
   // Whether the native in-app offer-code redemption sheet exists (1.4.1+ shell).
   const [redeemAvailable, setRedeemAvailable] = useState(false);
+  // "download on the App Store" strip: allowed when this is the relaxed web build,
+  // not the native app, and not previously dismissed. Only rendered on the landing.
+  const [bannerOk, setBannerOk] = useState(false);
   // True between opening the redemption sheet and the unlock landing, so the
   // out-of-band entitlement flip can be attributed to a redeemed code.
   const redeemStartedRef = useRef(false);
@@ -572,6 +582,29 @@ export default function Home() {
       setPaywallOpen(false);
     }
   }, [entitled, paywallOpen]);
+
+  // Show the "download on the App Store" strip only on the relaxed web build, in a
+  // real browser (never inside the native app, where it would nag an installed
+  // user), and only if it hasn't been dismissed. Set on mount so SSR renders no
+  // banner and there's no hydration flash.
+  useEffect(() => {
+    if (!IS_RELAXED || isNativeApp()) return;
+    try {
+      if (localStorage.getItem(BANNER_DISMISS_KEY) === "1") return;
+    } catch {
+      /* storage blocked: still fine to show the banner */
+    }
+    setBannerOk(true);
+  }, []);
+
+  function dismissBanner() {
+    setBannerOk(false);
+    try {
+      localStorage.setItem(BANNER_DISMISS_KEY, "1");
+    } catch {
+      /* best-effort: it'll just reappear next visit */
+    }
+  }
 
   // Reveal the premium voices section whenever a premium voice is the current
   // selection (restored as the saved default, or just picked) so the choice stays
@@ -1619,6 +1652,9 @@ export default function Home() {
         : "Slowly, through the mouth";
 
   const moodOn = trayOpen || screen === "player" || screen === "complete";
+  // The download strip lives on the landing only (not during generate/play/close/
+  // history, which are immersive and use strict heights).
+  const showBanner = bannerOk && screen === "setup";
 
   // ---- Screens ----
   let content: React.ReactNode;
@@ -2273,6 +2309,26 @@ export default function Home() {
 
   return (
     <>
+      {showBanner && (
+        <div className="appbanner" role="region" aria-label="Get the relaxed app">
+          <a
+            className="appbanner-link"
+            href={APPSTORE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            download relaxed on the App Store
+            <span className="appbanner-arrow" aria-hidden="true">↗</span>
+          </a>
+          <button
+            className="appbanner-x"
+            aria-label="Dismiss"
+            onClick={dismissBanner}
+          >
+            ×
+          </button>
+        </div>
+      )}
       {!IS_RELAXED && (
         <>
           <div className="photo-sky" />
@@ -2286,7 +2342,7 @@ export default function Home() {
       {/* key={screen} remounts the screen subtree on every transition so the
           calm fade-in (relaxed's rx-screen-in) re-fires; audio/state live in
           refs and hooks on the parent, so this only re-animates the view. */}
-      <div className="app" key={screen}>
+      <div className={`app${showBanner ? " has-appbanner" : ""}`} key={screen}>
         {content}
       </div>
 

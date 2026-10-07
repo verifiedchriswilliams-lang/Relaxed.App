@@ -146,6 +146,13 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-10-07 — "Download on the App Store" strip (relaxed web landing)
+- A quiet, dismissible top strip on the relaxed **web** landing (`screen === "setup"`)
+  linking to the App Store, so social traffic can install the app. relaxed-only
+  (`[data-brand="relaxed"]`), **hidden inside the native app** (`isNativeApp()`), and
+  remembered once dismissed (`relaxed.appbanner.v1`). Reflow-safe: `.app.has-appbanner`
+  gives back the strip's height so the full-screen layout never scrolls.
+
 ### 2026-09-29 — Fix: safe-area header, settled with the `max()` pattern
 - **The top chrome now uses `max(26px, safe-area-inset)` instead of
   `26px + safe-area-inset`.** The shipped build draws edge-to-edge, so the page

@@ -681,3 +681,70 @@
 @media (prefers-reduced-motion: reduce) {
   [data-brand="relaxed"] .pmotif * { animation: none !important; }
 }
+
+/* ---------------------------------------------------------- download banner */
+/* A quiet "download on the App Store" strip across the top of the web landing.
+   relaxed-only, shown by app/page.tsx in a browser (never inside the native app)
+   and only on the setup (landing) screen. It sits in normal flow above `.app`;
+   `.app.has-appbanner` gives back the banner's height so the full-screen layout
+   never grows into a scroll. */
+:root[data-brand="relaxed"] {
+  --appbanner-h: 44px;
+}
+[data-brand="relaxed"] .appbanner {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--appbanner-h);
+  padding: 0 44px;
+  background: #1a1813;
+  border-bottom: 1px solid rgba(239, 235, 227, 0.09);
+  font-size: 14px;
+  letter-spacing: 0.2px;
+}
+[data-brand="relaxed"] .appbanner-link {
+  color: var(--ink-0);
+  text-decoration: none;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+[data-brand="relaxed"] .appbanner-link:hover {
+  color: #fff;
+}
+[data-brand="relaxed"] .appbanner-arrow {
+  opacity: 0.55;
+  font-size: 12px;
+}
+[data-brand="relaxed"] .appbanner-x {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: rgba(239, 235, 227, 0.45);
+  font-size: 20px;
+  line-height: 1;
+}
+[data-brand="relaxed"] .appbanner-x:hover {
+  color: rgba(239, 235, 227, 0.8);
+}
+[data-brand="relaxed"] .app.has-appbanner {
+  min-height: calc(100vh - var(--appbanner-h));
+  min-height: calc(100dvh - var(--appbanner-h));
+}
+@media (max-width: 380px) {
+  [data-brand="relaxed"] .appbanner {
+    font-size: 13px;
+    padding: 0 40px;
+  }
+}

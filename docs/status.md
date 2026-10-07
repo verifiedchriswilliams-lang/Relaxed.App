@@ -69,7 +69,11 @@ _As of 2026-10-04._
   give honest feedback, and **DM for a free promo code rather than pay**. 1.4 (Apple
   Watch) teased as "more next week." Link: https://lnkd.in/gYZKTF7y
 - Assets produced: LinkedIn banner (1584×396), a phone+watch App Store hero image,
-  App Store Apple Watch screenshots.
+  App Store Apple Watch screenshots, and "now on Apple Watch" social graphics (square
+  1080×1080, portrait 1080×1350, landscape 1200×630).
+- **Web:** a quiet, dismissible "download on the App Store" strip on the relaxed web
+  landing (→ `apps.apple.com/.../id6807080633`) to convert social traffic to installs.
+  relaxed web only; hidden inside the native app.
 
 ## Next up
 

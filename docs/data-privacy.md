@@ -27,6 +27,7 @@
 | `relaxed.reminder.v1` | Daily-reminder pref `{ enabled, hour, minute }` | Non-personal; the local time for the on-device notification. The notification is scheduled by the OS, never sent to a server. |
 | `em_variant_seq` | Per-intention script-variant counter | Non-personal; ensures repeats vary. |
 | `relaxed.recentHint.v1` | One-time flag: the recent/history entry has been introduced | Non-personal; a single `"1"`. |
+| `relaxed.appbanner.v1` | One-time flag: the web "download on the App Store" strip was dismissed | Non-personal; a single `"1"`. relaxed web only; never set inside the native app. |
 
 Everything above is readable only by the site's own origin, is never sent to any
 server, and is cleared if the user clears site data or deletes the app. There is

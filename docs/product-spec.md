@@ -91,6 +91,12 @@ stateDiagram-v2
   "Hello again"), always as "___, {name}". This carries the returning-user warmth
   inline; there is no separate welcome-back sheet (an earlier "how are you
   arriving?" check-in was removed as unintuitive clutter).
+- **Web "download" strip (relaxed web only).** On the web landing, a quiet,
+  dismissible top strip links to the App Store so visitors can install the app. It is
+  relaxed-only, shown only in a browser (hidden inside the native app, where it would
+  nag an already-installed user), remembered once dismissed, and appears on the setup
+  screen only (never during a session). The layout gives back the strip's height so
+  the full-screen page never scrolls.
 
 ### 3b. Options tray (onboarding as ritual)
 
