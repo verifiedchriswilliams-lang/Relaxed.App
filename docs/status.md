@@ -32,7 +32,7 @@ _As of 2026-10-04._
   (1) the **watch-face widget** — the `relaxed Watch Widget` Widget Extension target is
   in Xcode, compiles, and the "r" renders cleanly in the preview (accessoryCircular
   verified). (2) **start a session from the watch** — ✅ built: the watch setup screen is
-  now a launcher — stem mark + wordmark, a four-intention picker (meditate/sleep/flow/
+  now a launcher — the "relaxed" wordmark, a four-intention picker (meditate/sleep/flow/
   relax) that **starts on the phone** with the phone's own length/voice/soundscape, and a
   separate **just breathe** pacer (with its own length picker) grouped below a divider as
   the only thing that runs on the watch itself. Tapping an intention sends a `start`

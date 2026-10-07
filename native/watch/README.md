@@ -237,7 +237,7 @@ fall, flash, swirl, shimmer), best tuned with eyes on a real watch.
 ## Start a session from the watch (1.4.2)
 
 The watch's setup screen is now a **launcher**, laid out as two clearly separated
-choices (stem mark + wordmark on top):
+choices (the "relaxed" wordmark on top):
 
 - **Primary — "start on your iPhone":** a **four-intention picker** (`meditate` /
   `sleep` / `flow` / `relax`, matching the phone's home tiles). Tapping one sends a
