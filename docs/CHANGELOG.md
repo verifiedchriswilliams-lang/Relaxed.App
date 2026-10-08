@@ -18,8 +18,8 @@ build carried, not the review timeline.
 
 ## iOS — App Store releases
 
-### 1.4.2 — uploaded 2026-10-07 (build 15, preparing for submission)
-More Apple Watch, over 1.4.1:
+### 1.4.2 — released 2026-10-08 (build 15)
+More Apple Watch, over 1.4.1 (submitted 2026-10-07, approved and launched 2026-10-08):
 - **Start a session from the watch.** The watch setup screen becomes a launcher: a
   four-intention picker (`meditate` / `sleep` / `flow` / `relax`) sends a
   `{ action: "start", intention }` command over WatchConnectivity, and the phone maps

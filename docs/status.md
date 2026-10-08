@@ -6,43 +6,37 @@
 > doc is the **now**, and it is updated the moment something changes so no finished
 > work gets re-surfaced as a TODO. Keep it short and current.
 
-_As of 2026-10-07._
+_As of 2026-10-08._
 
 ## App Store state
 
 | Version | State | What it is |
 |---|---|---|
-| **1.4.2** | **Waiting for Review** (build 15, submitted 2026-10-07) | More Apple Watch: start a session from the wrist (four-intention launcher) + a watch-face widget, plus the setup-screen layout polish. |
-| **1.4.1** | **Released** (live) | Maintenance build (14): watch-remote motif fix, in-app offer-code redemption, watch line-art polish. |
+| **1.4.2** | **Released** (live) | More Apple Watch: start a session from the wrist (four-intention launcher) + a watch-face widget, plus the setup-screen layout polish. Approved and launched 2026-10-08. |
+| **1.4.1** | **Released** | Maintenance build (14): watch-remote motif fix, in-app offer-code redemption, watch line-art polish. |
 | **1.4** | **Released** (live) | Apple Watch build (standalone pacer + phone↔watch remote + soundscape line art). The native watchOS companion is live on the App Store. |
 | **1.3** | **Released** (Ready for Distribution) | The live IAP build. Makes the **$4.99 premium unlock** available in production. |
 
 ## Live in production
 
 - **Web** (`relaxed.app`): continuous deploy on push to `main` (Vercel).
-- **iOS**: **1.4.1** is the live App Store build (Apple Watch app + in-app code
-  redemption); premium IAP (`app.relaxed.premium`, Apple ID 6815434042) active and approved.
+- **iOS**: **1.4.2** is the live App Store build (Apple Watch app + in-app code
+  redemption + start-a-session-from-the-watch + the watch-face widget); premium IAP
+  (`app.relaxed.premium`, Apple ID 6815434042) active and approved.
 - **Premium unlock** (one-time $4.99): 9 soundscapes + 10 voices + infinite sessions.
 - **Availability**: 47 countries.
 
 ## In flight
 
-- **1.4.2 — Waiting for Review** (build 15, submitted 2026-10-07 14:42; submission ID
-  `94ec6805-32d5-46d5-8f92-dfb744fcfc11`). All three targets (App, relaxed Watch App,
-  relaxed Watch Widget) set to `1.4.2 (15)` and submitted together (the watch app +
-  widget are embedded and ride along with the iOS app). **Not yet expedited** — request
-  it if we want 1.4.1-style same-day. Two features: (1) the **watch-face widget**
-  (`relaxed Watch Widget`, the "r" on the face as a one-tap launcher), and (2) **start a
-  session from the watch** — the setup screen is a launcher: the "relaxed" wordmark, a
-  four-intention picker (meditate/sleep/flow/relax) that **starts on the phone** with the
-  phone's own length/voice/soundscape, and a separate **just breathe** pacer below a
-  divider as the only thing that runs on the watch itself.
-  **QA once it's in TestFlight/on hardware:** the four pills need a real paired iPhone to
-  actually start audio — the **audio-gesture** path (a watch-initiated start has no phone
-  tap to unlock Web Audio; `startSession()` calls `unlock()` + `ensureRunning()`) is the
-  thing to confirm.
-- 1.4.1 released 2026-10-04 (expedited); the web continues to deploy continuously on
-  push to `main`.
+- Nothing in Apple review. **1.4.2 approved and launched 2026-10-08** (start-from-watch +
+  watch-face widget + setup-screen layout). 1.4.1 released 2026-10-04 (expedited). The web
+  continues to deploy continuously on push to `main`.
+- **Worth a real-world spot-check now that 1.4.2 is live** (on your iPhone + a paired
+  watch, or the sim pair): tap an intention on the watch → the phone should start that
+  session and actually play audio. That's the one **audio-gesture** path we couldn't
+  verify pre-release (a watch-initiated start has no phone tap to unlock Web Audio;
+  `startSession()` calls `unlock()` + `ensureRunning()`). If it doesn't start audio, that's
+  the first thing to look at.
 - **Web "download" strip** shipped (2026-10-07) and is live, with an `appstore_click`
   event for conversion.
 - **1.5 = Apple TV (tvOS) — V1 built (2026-10-07), not yet in Xcode/submitted.** A
@@ -110,8 +104,11 @@ _As of 2026-10-07._
   switch the friends message to the in-app "Redeem a code" flow now that 1.4.1 is live.
 - **Spot-check 1.4.1 on your iPhone**: the paywall's "Redeem a code" button appears and
   opens Apple's sheet.
-- **Apple Watch is live** — post the "Apple Watch is here" LinkedIn follow-up (teased
-  "more next week" in the 2026-10-01 post).
+- **"Start from your wrist" LinkedIn post** — 1.4.2 is live (2026-10-08), so the drafted
+  post (announce start-a-session-from-the-watch + the watch-face widget) is ready to go.
+  Copy is drafted; optionally pair with a watch-focused graphic.
+- **Spot-check start-from-watch on hardware** now that 1.4.2 is live (see In flight): tap
+  an intention on the watch and confirm the phone actually starts audio.
 - **1.5 = Apple TV** (chosen 2026-10-07). V1 built (`native/tvos/`); next is the Mac
   Xcode pass (add the tvOS target, set `Config.blobBase`, build in the simulator), then
   iterate. Personalization loop + Live Activity shift to 1.6 / 1.7 (see
