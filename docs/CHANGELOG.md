@@ -180,6 +180,8 @@ The native bridge and player hardening.
   transcript" link and "tap to hide" header are removed. The side buttons stay equal
   width, so the play button stays centred. The panel is more compact (a ~5-line body,
   `8em`, tied to the font) with air above it so it no longer crowds the buttons.
+- **End is a square (■ "stop") on relaxed**, so the control row is three equal-width
+  icons (stop / pause / ≡) and the play circle stays centred. ElevenMind keeps "End".
 - All relaxed-scoped (`[data-brand="relaxed"]` + `IS_RELAXED`); ElevenMind keeps the
   shared centred layout and the ≡ toggle.
 

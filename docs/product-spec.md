@@ -143,7 +143,9 @@ screen and go straight to the player.
   when the transcript opens or closes); only the controls + transcript shift up or
   down. The transcript has a single toggle, the three-lines (≡) button in the controls
   row (active when the panel is open; no separate "show transcript" link or "tap to
-  hide"), and a compact ~5-line panel. ElevenMind keeps the shared centred layout. (Scoped
+  hide"), and a compact ~5-line panel. The controls are three equal-width icons,
+  **■ stop (End) · ❚❚ play/pause · ≡ transcript**, so the play circle stays centred.
+  ElevenMind keeps the shared centred layout and the "End" text. (Scoped
   in `app/relaxed.css`; see [design-system.md](./design-system.md).)
 - The session timer is wall-clock based, so it stays correct across the screen
   locking or the app backgrounding.

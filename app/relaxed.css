@@ -474,6 +474,15 @@
 [data-brand="relaxed"] .cbtn.on {
   background: var(--rx-line-strong);
 }
+/* End is a square (media "stop"), so it pairs with the play/pause + ≡ icons and the
+   side buttons stay equal width (keeping the play button centred). */
+[data-brand="relaxed"] .cbtn .stop {
+  display: block;
+  width: 15px;
+  height: 15px;
+  border-radius: 3px;
+  background: var(--ink-0);
+}
 
 /* The identity's breath: 4s in / 1s hold / 5s out / 1s rest feel, gentle
    scale + opacity. Kept separate from ElevenMind's 14.5s "breathe". */

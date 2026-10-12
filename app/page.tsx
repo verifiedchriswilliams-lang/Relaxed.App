@@ -1828,7 +1828,10 @@ export default function Home() {
         <div className="player-bottom">
           <div className="controls">
             <button className="cbtn" onClick={end} aria-label="End session">
-              End
+              {/* relaxed: a square (media "stop") so End pairs with the play/pause +
+                  ≡ icons and the side buttons stay equal width (play stays centred).
+                  ElevenMind keeps the "End" text. */}
+              {IS_RELAXED ? <span className="stop" /> : "End"}
             </button>
             <button
               className="cbtn play"
