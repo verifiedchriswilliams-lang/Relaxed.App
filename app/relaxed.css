@@ -462,9 +462,13 @@
   padding: 12px 16px;
 }
 [data-brand="relaxed"] .transcript .body {
-  max-height: 20vh;
-  padding-top: 6vh;
-  padding-bottom: 9vh;
+  /* A true ~5-line window (body is 15px / 1.6 line-height, so 5 lines ≈ 8em), tied
+     to the font so it scales. The padding is scroll room for centring the active
+     line, kept just under half the window so the first/last lines can still reach
+     the middle. */
+  max-height: 8em;
+  padding-top: 3em;
+  padding-bottom: 4em;
 }
 /* The transcript toggle reads as active while the panel is open. */
 [data-brand="relaxed"] .cbtn.on {

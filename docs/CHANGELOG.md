@@ -178,7 +178,8 @@ The native bridge and player hardening.
 - **One transcript control:** the three-lines (≡) toggle is replaced by a single
   `transcript` pill in the controls row (active state when open), and the separate "show
   transcript" link and "tap to hide" header are removed. The panel is more compact (a
-  shorter body) with air above it so it no longer crowds the buttons.
+  ~5-line body, `8em`, tied to the font) with air above it so it no longer crowds the
+  buttons.
 - All relaxed-scoped (`[data-brand="relaxed"]` + `IS_RELAXED`); ElevenMind keeps the
   shared centred layout and the ≡ toggle.
 
