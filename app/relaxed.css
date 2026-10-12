@@ -123,22 +123,29 @@
 [data-brand="relaxed"] .done-orb::before {
   animation: rx-breathe var(--rx-breath, 14.5s) var(--rx-ease-breath) infinite;
 }
-/* Player glow breathes off the shared --pb clock (page.tsx), locked to the ring
-   and the cue words. --pb: 0 = exhaled, 1 = inhaled. A warm-bone light-bloom behind
-   the ring, inspired by the watch's luminous orb: faint but present, swelling and
-   brightening as the breath fills and receding on the exhale (so it reads as light
-   rising out of the Ink, not a coloured disc). It sits wider than the ring, so it's
-   exposed around the ring at the bottom of the exhale. */
+/* Player glow, behind the orb. Inspired by the watch's luminous orb: a warm-bone
+   light that reads as coming from BEHIND the orb and spilling out around it, not a
+   wash over the motif. Two things make it sit behind: the orb is isolated into its
+   own stacking context and the glow is a negative-z layer, so the ring + motif paint
+   on top. And the glow is a soft halo, clear through the centre (where the motif
+   sits, so the line art stays crisp) and brightest just behind the orb's body, fading
+   outward. It breathes off the shared --pb clock (0 = exhaled, 1 = inhaled): mostly
+   steady, brightening a touch as the breath fills. */
+[data-brand="relaxed"] .play-orb {
+  isolation: isolate;
+}
 [data-brand="relaxed"] .play-orb::before {
-  inset: -58%;
+  z-index: -1;
+  inset: -52%;
   background: radial-gradient(
     closest-side,
-    rgba(239, 231, 214, 0.24),
-    rgba(239, 231, 214, 0.1) 44%,
-    transparent 72%
+    transparent 34%,
+    rgba(239, 231, 214, 0.2) 50%,
+    rgba(239, 231, 214, 0.06) 66%,
+    transparent 80%
   );
-  transform: scale(calc(0.9 + 0.22 * var(--pb, 0)));
-  opacity: calc(0.6 + 0.4 * var(--pb, 0));
+  transform: scale(calc(0.95 + 0.12 * var(--pb, 0)));
+  opacity: calc(0.72 + 0.28 * var(--pb, 0));
 }
 [data-brand="relaxed"] .gen-glyph,
 [data-brand="relaxed"] .play-orb .disc,

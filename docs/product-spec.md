@@ -145,9 +145,10 @@ screen and go straight to the player.
   row (active when the panel is open; no separate "show transcript" link or "tap to
   hide"), and a compact ~5-line panel. The controls are three equal-width icons,
   **■ stop (End) · ❚❚ play/pause · ≡ transcript**, so the play circle stays centred.
-  ElevenMind keeps the shared centred layout and the "End" text. A soft warm
-  light-bloom sits behind the orb and breathes with the cue (swells + brightens on the
-  inhale, recedes on the exhale), mirroring the watch's luminous orb. (Scoped
+  ElevenMind keeps the shared centred layout and the "End" text. A soft warm backlight
+  sits behind the orb (in its own layer, below the ring + motif) and blooms from behind
+  the orb's body, clear through the centre so the motif stays crisp, breathing gently
+  with the cue, mirroring the watch's luminous orb. (Scoped
   in `app/relaxed.css`; see [design-system.md](./design-system.md).)
 - The session timer is wall-clock based, so it stays correct across the screen
   locking or the app backgrounding.

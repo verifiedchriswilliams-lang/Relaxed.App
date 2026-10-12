@@ -182,10 +182,13 @@ The native bridge and player hardening.
   `8em`, tied to the font) with air above it so it no longer crowds the buttons.
 - **End is a square (■ "stop") on relaxed**, so the control row is three equal-width
   icons (stop / pause / ≡) and the play circle stays centred. ElevenMind keeps "End".
-- **A soft breathing glow behind the orb** (relaxed): the faint `--rx-bloom` behind the
-  ring is now a warmer, more present light-bloom that swells and brightens on the inhale
-  and recedes on the exhale (off the shared `--pb` clock), mirroring the watch's luminous
-  orb, so the ring reads as light rising out of the Ink rather than a flat circle.
+- **A soft breathing glow behind the orb** (relaxed): a warm-bone backlight that sits in
+  its own layer truly behind the orb (the orb is isolated into its own stacking context
+  and the glow is a negative-z `::before`, so the ring + motif paint on top). It's shaped
+  as a halo, clear through the centre where the motif sits (so the line art stays crisp)
+  and brightest just behind the orb's body, spilling outward, so the orb reads as backlit
+  rather than flat. Breathes off the shared `--pb` clock (mostly steady, brightening a
+  touch on the inhale), mirroring the watch's luminous orb.
 - All relaxed-scoped (`[data-brand="relaxed"]` + `IS_RELAXED`); ElevenMind keeps the
   shared centred layout and the ≡ toggle.
 
