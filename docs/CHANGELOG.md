@@ -175,11 +175,11 @@ The native bridge and player hardening.
   longer floats up and down as the transcript opens/closes; only the controls and the
   transcript panel move. (`.player-center` anchored to the top at a fixed offset,
   relaxed-only; the flexible space lives below the cue.)
-- **One transcript control:** the three-lines (≡) toggle is replaced by a single
-  `transcript` pill in the controls row (active state when open), and the separate "show
-  transcript" link and "tap to hide" header are removed. The panel is more compact (a
-  ~5-line body, `8em`, tied to the font) with air above it so it no longer crowds the
-  buttons.
+- **One transcript control:** the three-lines (≡) toggle stays as the single control in
+  the controls row (with an active fill when the panel is open), and the separate "show
+  transcript" link and "tap to hide" header are removed. The side buttons stay equal
+  width, so the play button stays centred. The panel is more compact (a ~5-line body,
+  `8em`, tied to the font) with air above it so it no longer crowds the buttons.
 - All relaxed-scoped (`[data-brand="relaxed"]` + `IS_RELAXED`); ElevenMind keeps the
   shared centred layout and the ≡ toggle.
 

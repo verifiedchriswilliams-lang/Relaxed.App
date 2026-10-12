@@ -1850,18 +1850,15 @@ export default function Home() {
               aria-label="Toggle transcript"
               aria-pressed={showTranscript}
             >
-              {/* relaxed: one labelled transcript toggle in the controls row (no
-                  separate "show transcript" link / "tap to hide"). ElevenMind keeps
-                  the three-lines icon + its text affordances. */}
-              {IS_RELAXED ? (
-                "Transcript"
-              ) : (
-                <span className="lines">
-                  <i />
-                  <i />
-                  <i />
-                </span>
-              )}
+              {/* The three-lines icon (both brands). On relaxed it's the single
+                  transcript toggle (no "show transcript" link / "tap to hide"); the
+                  `on` fill shows when the panel is open. Keeping it icon-only keeps
+                  the side buttons equal width, so the play stays centred. */}
+              <span className="lines">
+                <i />
+                <i />
+                <i />
+              </span>
             </button>
           </div>
 
