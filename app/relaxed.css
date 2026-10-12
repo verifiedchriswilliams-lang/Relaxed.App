@@ -124,10 +124,21 @@
   animation: rx-breathe var(--rx-breath, 14.5s) var(--rx-ease-breath) infinite;
 }
 /* Player glow breathes off the shared --pb clock (page.tsx), locked to the ring
-   and the cue words. --pb: 0 = exhaled, 1 = inhaled. */
+   and the cue words. --pb: 0 = exhaled, 1 = inhaled. A warm-bone light-bloom behind
+   the ring, inspired by the watch's luminous orb: faint but present, swelling and
+   brightening as the breath fills and receding on the exhale (so it reads as light
+   rising out of the Ink, not a coloured disc). It sits wider than the ring, so it's
+   exposed around the ring at the bottom of the exhale. */
 [data-brand="relaxed"] .play-orb::before {
-  transform: scale(calc(0.9 + 0.2 * var(--pb, 0)));
-  opacity: calc(0.68 + 0.32 * var(--pb, 0));
+  inset: -58%;
+  background: radial-gradient(
+    closest-side,
+    rgba(239, 231, 214, 0.24),
+    rgba(239, 231, 214, 0.1) 44%,
+    transparent 72%
+  );
+  transform: scale(calc(0.9 + 0.22 * var(--pb, 0)));
+  opacity: calc(0.6 + 0.4 * var(--pb, 0));
 }
 [data-brand="relaxed"] .gen-glyph,
 [data-brand="relaxed"] .play-orb .disc,
