@@ -139,6 +139,12 @@ screen and go straight to the player.
 - A breathing orb synced to the breath cue ("Breathe in / Hold / Breathe out"),
   a per-soundscape line motif in the ring, a karaoke-style transcript that
   highlights the active line, and play/pause/end controls.
+- **relaxed player layout:** the orb is pinned at a fixed height (it does not move
+  when the transcript opens or closes); only the controls + transcript shift up or
+  down. The transcript has a single toggle, the `transcript` pill in the controls row
+  (no separate "show transcript" link or "tap to hide"), and a compact panel.
+  ElevenMind keeps the shared centred layout and the three-lines (≡) toggle. (Scoped
+  in `app/relaxed.css`; see [design-system.md](./design-system.md).)
 - The session timer is wall-clock based, so it stays correct across the screen
   locking or the app backgrounding.
 - **Endless (∞) sessions** count up (`0:02 / ∞`) instead of down and never

@@ -1825,7 +1825,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div>
+        <div className="player-bottom">
           <div className="controls">
             <button className="cbtn" onClick={end} aria-label="End session">
               End
@@ -1845,26 +1845,36 @@ export default function Home() {
               )}
             </button>
             <button
-              className="cbtn"
+              className={`cbtn${IS_RELAXED && showTranscript ? " on" : ""}`}
               onClick={() => setShowTranscript((v) => !v)}
               aria-label="Toggle transcript"
+              aria-pressed={showTranscript}
             >
-              <span className="lines">
-                <i />
-                <i />
-                <i />
-              </span>
+              {/* relaxed: one labelled transcript toggle in the controls row (no
+                  separate "show transcript" link / "tap to hide"). ElevenMind keeps
+                  the three-lines icon + its text affordances. */}
+              {IS_RELAXED ? (
+                "Transcript"
+              ) : (
+                <span className="lines">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+              )}
             </button>
           </div>
 
           {showTranscript && (isPreview || script) && (
             <div className="transcript">
-              <div className="thead">
-                <div className="label">Transcript</div>
-                <button onClick={() => setShowTranscript(false)}>
-                  Tap to hide
-                </button>
-              </div>
+              {!IS_RELAXED && (
+                <div className="thead">
+                  <div className="label">Transcript</div>
+                  <button onClick={() => setShowTranscript(false)}>
+                    Tap to hide
+                  </button>
+                </div>
+              )}
               {note && <div className="preview">{note}</div>}
               <div className="body" ref={transcriptRef}>
                 {transcriptLines(script).map((ln, i) => (
@@ -1881,7 +1891,7 @@ export default function Home() {
               </div>
             </div>
           )}
-          {!showTranscript && (
+          {!showTranscript && !IS_RELAXED && (
             <button
               className="show-transcript"
               onClick={() => setShowTranscript(true)}

@@ -170,6 +170,18 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-10-12 — relaxed player layout: a fixed orb + a single, compact transcript
+- The breathing orb is now **pinned at a fixed height** on the relaxed player, so it no
+  longer floats up and down as the transcript opens/closes; only the controls and the
+  transcript panel move. (`.player-center` anchored to the top at a fixed offset,
+  relaxed-only; the flexible space lives below the cue.)
+- **One transcript control:** the three-lines (≡) toggle is replaced by a single
+  `transcript` pill in the controls row (active state when open), and the separate "show
+  transcript" link and "tap to hide" header are removed. The panel is more compact (a
+  shorter body) with air above it so it no longer crowds the buttons.
+- All relaxed-scoped (`[data-brand="relaxed"]` + `IS_RELAXED`); ElevenMind keeps the
+  shared centred layout and the ≡ toggle.
+
 ### 2026-10-07 — "Download on the App Store" strip (relaxed web landing)
 - A quiet, dismissible top strip on the relaxed **web** landing (`screen === "setup"`)
   linking to the App Store, so social traffic can install the app. relaxed-only

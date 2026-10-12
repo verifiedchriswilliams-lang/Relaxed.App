@@ -436,6 +436,41 @@
   background: var(--glass);
 }
 
+/* ---- player layout: a fixed orb; the controls + transcript move, not the orb ---
+   The shared layout centres the orb in the flex space, so opening the transcript
+   (it grows from the bottom) floats the orb up and down. Pin it instead: anchor the
+   orb + cue to the TOP of the player area at a fixed offset, so the flexible space
+   lives BELOW the cue. Opening the transcript then only lifts the controls; the orb
+   stays put. The transcript is kept compact so it never crowds the controls.
+   (relaxed only — ElevenMind keeps the shared centred layout + the ≡ toggle.) */
+[data-brand="relaxed"] .player-center {
+  justify-content: flex-start;
+  /* Fixed orb height: a touch above centre, between the old closed (~46%) and
+     open (~31%) orb positions. Tunable with this one value. */
+  padding-top: clamp(72px, 15vh, 160px);
+}
+[data-brand="relaxed"] .player-bottom {
+  /* Keep the controls (and, when open, the transcript) off the screen edge in both
+     states, now that relaxed has no "show transcript" line beneath them. */
+  padding-bottom: max(20px, 2.5vh);
+}
+[data-brand="relaxed"] .transcript {
+  /* Air above the panel so it stops crowding the controls, and a more compact body
+     (fewer lines on screen). */
+  margin-top: 16px;
+  margin-bottom: 0;
+  padding: 12px 16px;
+}
+[data-brand="relaxed"] .transcript .body {
+  max-height: 20vh;
+  padding-top: 6vh;
+  padding-bottom: 9vh;
+}
+/* The transcript toggle reads as active while the panel is open. */
+[data-brand="relaxed"] .cbtn.on {
+  background: var(--rx-line-strong);
+}
+
 /* The identity's breath: 4s in / 1s hold / 5s out / 1s rest feel, gentle
    scale + opacity. Kept separate from ElevenMind's 14.5s "breathe". */
 @keyframes rx-breathe {
