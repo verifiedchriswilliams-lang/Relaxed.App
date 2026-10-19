@@ -100,6 +100,14 @@ _As of 2026-10-08._
 
 ## Next up
 
+- **⚠️ Accept the revised Apple Developer Program License Agreement by 2026-11-13.**
+  Admin action only (sign in to the Apple Developer account → accept the new terms). No
+  code/product change: the revised sections (3.2 security terms; 3.3.8(j) Live Assistance
+  API; 3.3.8(k) App Replacement Entitlement; 6.4 HomeView widgets / CarPlay; Schedule 2/3
+  Group Purchases / Volume Purchasing for *subscriptions*; Schedule 2/3 tax-info reporting)
+  don't touch relaxed (one-time IAP, no subscriptions, no external links, no CarPlay/
+  HomeView yet). **Missing the deadline revokes access to App Store Connect, Certificates/
+  Identifiers/Profiles, and the API** — which would block the next submission (tvOS 1.5).
 - **App Review Guidelines (2026-10-19 revision) — assessed; tracking compliant.** The
   only code action was gating the dev query flags (`?devUnlock`/`?devGate`) out of
   production for **2.5.19** (done, shipped 2026-10-19). **1.2** (AI content): covered
