@@ -94,6 +94,39 @@ safety is a product-safety concern, not just a moderation one.
   escalation/resources surface. Tracked in
   [risks-tech-debt.md](./risks-tech-debt.md).
 
+## 3b. App Review Guidelines compliance (2026-10 update)
+<a id="app-review-2026-10"></a>
+
+Assessment of Apple's 2026-10-19 App Review Guidelines revision against relaxed, for
+the next submission:
+
+- **2.5.19 — Hidden / dormant / undocumented features (new; formerly under 2.3.1).**
+  *Action taken.* Two dev-only query flags (`?devUnlock=1/0` and `?devGate=1`) that
+  altered functionality in the shipped code are now **gated to dev/preview hosts only**
+  (`devFlagsEnabled()` in `lib/entitlement.ts`: localhost / `*.vercel.app`). They are
+  inert on `relaxed.app` and in the native app's WKWebView (what Apple reviews), so
+  there is no undocumented toggle and no URL that bypasses the StoreKit purchase. The
+  web-shell is a disclosed hybrid serving the same meditation functionality to everyone;
+  no features are hidden during review and switched on afterward.
+- **1.2 — User-Generated Content (now explicitly names "AI content creation apps").**
+  "Make Your Own" generates a guided script from a short typed phrase. The output is
+  **private and on-device, never shared, posted, or visible to other users**, so the
+  UGC-sharing requirements (filter posted content, report mechanism, block abusive
+  users) do not apply. The safeguards that do apply are in place: generation is
+  constrained to grounded, secular mindfulness (`SCRIPT_SYSTEM_PROMPT`) with a
+  crisis/self-harm clause and no medical claims (§3), the phrase is capped (70 chars),
+  the model refuses objectionable requests, and contact info is published in-app
+  (`support@relaxed.app`). Review-note stance: content is private, not a shared service;
+  generation is guard-railed. Optional strengthening: a dedicated input-moderation pass
+  (tracked in [risks-tech-debt.md](./risks-tech-debt.md)).
+- **2.3.14 — Creative assets (new).** Informational. If we use the App Store
+  creative-asset slots (product-page header art, etc.), they must pertain to the app, be
+  all-audiences appropriate, and carry **no pricing ("$4.99") and no unverifiable
+  claims**. No code impact.
+- **3.1.1(a) — External purchase links / music-streaming entitlements.** Not
+  applicable: relaxed uses standard StoreKit IAP with no external purchase links.
+- **5 — Human trafficking / child exploitation.** Not applicable.
+
 ## 4. Dependency posture
 
 - Small dependency tree (see [third-party-ip.md](./third-party-ip.md)): Next/React,

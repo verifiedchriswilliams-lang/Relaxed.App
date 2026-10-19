@@ -100,6 +100,13 @@ _As of 2026-10-08._
 
 ## Next up
 
+- **App Review Guidelines (2026-10-19 revision) — assessed; tracking compliant.** The
+  only code action was gating the dev query flags (`?devUnlock`/`?devGate`) out of
+  production for **2.5.19** (done, shipped 2026-10-19). **1.2** (AI content): covered
+  (private/on-device, guard-railed generation, published contact) with a review-note
+  stance. **2.3.14** (creative assets): keep pricing/claims out of any App Store
+  marketing art. **3.1.1(a)** and **5**: not applicable. Full assessment in
+  [security.md](./security.md#app-review-2026-10).
 - **Finish the universal custom offer code** in App Store Connect (if not already), and
   switch the friends message to the in-app "Redeem a code" flow now that 1.4.1 is live.
 - **Spot-check 1.4.1 on your iPhone**: the paywall's "Redeem a code" button appears and

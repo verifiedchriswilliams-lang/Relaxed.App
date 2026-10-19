@@ -131,11 +131,27 @@ export function isNativePurchaseAvailable(): boolean {
   return hasNativePremium() || devGateForced();
 }
 
+// Whether the query-flag dev overrides below are allowed at all. They must be
+// INERT in what Apple reviews and ships: the production site (relaxed.app) and the
+// native app (its WKWebView loads relaxed.app), so there are no hidden/dormant or
+// undocumented feature toggles in the shipped build (App Review Guideline 2.5.19) and
+// no URL that bypasses the StoreKit purchase. They're allowed only on localhost and
+// Vercel preview hosts, where they're used to screenshot the locked/unlocked UI.
+function devFlagsEnabled(): boolean {
+  try {
+    const h = location.hostname;
+    return h === "localhost" || h === "127.0.0.1" || h.endsWith(".vercel.app");
+  } catch {
+    return false;
+  }
+}
+
 // Dev-only: ?devGate=1 forces the paywall "active" in a browser (no native
-// plugin) so the locked UI can be tested/screenshotted. Never true in a real
-// build unless the flag is present.
+// plugin) so the locked UI can be tested/screenshotted. Inert in production / the
+// native app (see devFlagsEnabled).
 export function devGateForced(): boolean {
   try {
+    if (!devFlagsEnabled()) return false;
     return new URLSearchParams(location.search).get("devGate") === "1";
   } catch {
     return false;
@@ -220,10 +236,12 @@ export async function redeemCode(): Promise<boolean> {
 }
 
 // Dev-only: a query flag (?devUnlock=1 / ?devUnlock=0) to preview the unlocked
-// UI without StoreKit. Never a user-facing control; ignored unless the flag is
-// present. Returns true if it changed the entitlement.
+// UI without StoreKit. Never a user-facing control; inert in production / the native
+// app (see devFlagsEnabled), so it can't be used to bypass the purchase. Returns true
+// if it changed the entitlement.
 export function applyDevUnlockFlag(): boolean {
   try {
+    if (!devFlagsEnabled()) return false;
     const v = new URLSearchParams(location.search).get("devUnlock");
     if (v === "1") {
       setEntitled(true);

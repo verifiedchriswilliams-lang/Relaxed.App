@@ -170,6 +170,14 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-10-19 — Gate the dev query flags out of production (App Review 2.5.19)
+- The dev-only overrides `?devUnlock=1/0` (preview the unlocked UI) and `?devGate=1`
+  (force the paywall) are now **inert on `relaxed.app` and in the native app**, allowed
+  only on localhost / Vercel preview hosts (`devFlagsEnabled()` in `lib/entitlement.ts`).
+  Removes an undocumented feature / purchase-bypass URL from the shipped build ahead of
+  the next submission (Guideline 2.5.19). Full guideline assessment in
+  [security.md](./security.md#app-review-2026-10).
+
 ### 2026-10-12 — relaxed player layout: a fixed orb + a single, compact transcript
 - The breathing orb is now **pinned at a fixed height** on the relaxed player, so it no
   longer floats up and down as the transcript opens/closes; only the controls and the
