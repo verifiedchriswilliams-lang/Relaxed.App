@@ -502,6 +502,74 @@
   background: var(--ink-0);
 }
 
+/* ---- voiced welcome (Phase 1 onboarding) -------------------------------- */
+/* A first-launch "hello": the stem mark with its breathing glow, a warm line, and a
+   tap target that unlocks audio and lets the orb speak. Full-screen over the home,
+   dismissed on tap. The orb reuses the composing orb (.gen-orb + .gen-glyph). */
+[data-brand="relaxed"] .hello {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  padding: 24px;
+  background: var(--night-0);
+  border: 0;
+  cursor: pointer;
+  color: var(--ink-0);
+  font-family: inherit;
+  animation: rx-screen-in 0.9s var(--rx-ease-soft) both;
+}
+[data-brand="relaxed"] .hello .hello-copy {
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--ink-0);
+}
+[data-brand="relaxed"] .hello .hello-hint {
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  color: var(--ink-2);
+  min-height: 16px;
+  animation: hello-hint 3s ease-in-out infinite;
+}
+/* A warmer, more present glow behind the welcome "r" than the faint composing bloom,
+   so it reads as a glowing orb. It still breathes on the shared rx-breathe clock. */
+[data-brand="relaxed"] .hello .gen-orb::before {
+  inset: -55%;
+  background: radial-gradient(
+    closest-side,
+    rgba(239, 231, 214, 0.22),
+    rgba(239, 231, 214, 0.08) 48%,
+    transparent 74%
+  );
+}
+/* While the orb is speaking, let the glow breathe a touch faster for presence. */
+[data-brand="relaxed"] .hello.speaking .gen-orb::before {
+  animation-duration: 3s;
+}
+@keyframes hello-hint {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-brand="relaxed"] .hello {
+    animation: none;
+  }
+  [data-brand="relaxed"] .hello .hello-hint {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
 /* The identity's breath: 4s in / 1s hold / 5s out / 1s rest feel, gentle
    scale + opacity. Kept separate from ElevenMind's 14.5s "breathe". */
 @keyframes rx-breathe {

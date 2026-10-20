@@ -82,6 +82,39 @@ Watch) has shipped; these keep the momentum.
 > tvOS V1 is built and staged in `native/tvos/` — see its
 > [README](../native/tvos/README.md) and [status.md](./status.md).
 
+### Voiced, conversational onboarding (building now — likely the next big native release)
+
+The emerging flagship. Instead of a form, the app **greets you by voice**: the loader "r"
+resolves into a glowing orb that speaks ("Welcome to relaxed. What should we call you?"),
+and over time you can **answer out loud** instead of typing. It's the single most on-brand
+feature we could build — relaxed *is* voice — and a real differentiator and portfolio
+piece (native on-device speech + conversational design + the no-backend privacy stance).
+
+Decisions made (2026-10-20): **speech recognition stays on-device** via the iOS `Speech`
+framework (a native plugin, like StoreKit/WatchBridge), to protect the no-accounts /
+nothing-leaves-the-device posture — so voice *input* is iPhone-first, not web. Voice is
+always **optional**: every spoken step keeps its tap/type path (mic denied, noisy rooms,
+accessibility, App Review in a silent office). The crux is the listening half (WKWebView
+can't do Web Speech reliably → native plugin); the speaking half (ElevenLabs TTS) we
+already own.
+
+Phases (reordered so the name — the first greeting moment, asked once and saved — comes
+before the rest):
+
+- **Phase 1 — the voiced greeting (shipping now, web-continuous).** The orb speaks the
+  welcome; the person still taps/types. All the warmth, zero speech-recognition risk,
+  works everywhere. Live today for first-time relaxed visitors (see
+  [CHANGELOG](./CHANGELOG.md)); voice is best-effort via `/api/tts` (optional pre-cache
+  of the fixed line for instant playback is a follow-up).
+- **Phase 2 — name by voice.** On-device `SFSpeechRecognizer`, with the confirm-and-edit
+  loop (names are the error-prone case: "Chris" vs "Kris"), keeping the editable name
+  chip at the top.
+- **Phase 3 — intention, duration, then hand-holding through voice + soundscape.** Small,
+  forgiving vocabularies first (duration, intention), with tap fallback throughout.
+
+The full thing (Phases 2–3) needs the native Speech plugin, so it lands as a native
+release — a strong **1.6** headline candidate (currently the personalization loop).
+
 1. **1.5 — Apple TV (native, ambient V1).** *Effort: M. Net-new native platform, real
    depth, strong for sleep / ambient wind-down in the living room.* A native tvOS
    (SwiftUI + `AVAudioEngine`) app: pick a soundscape + a length with the remote, then a

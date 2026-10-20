@@ -404,6 +404,12 @@ export default function Home() {
   // disappear mid-typing.
   const [nameCommitted, setNameCommitted] = useState(false);
   const [editingName, setEditingName] = useState(false);
+  // Voiced onboarding, Phase 1 (relaxed): a first-launch "hello" where the orb speaks
+  // a warm welcome, then hands off to the (typed) name field. Shown once to new users;
+  // the voice is best-effort (silent if TTS isn't reachable), and audio unlocks on the
+  // tap that dismisses it. Speech input for the answers is a later phase.
+  const [hello, setHello] = useState(false);
+  const [helloSpeaking, setHelloSpeaking] = useState(false);
   const [context, setContext] = useState<ContextId>("meditation");
   const [duration, setDuration] = useState<DurationChoice>(10);
   const [voice, setVoice] = useState<VoiceChoice>("female");
@@ -665,6 +671,40 @@ export default function Home() {
     });
   }
 
+  // Speak one line via the TTS route and play it through the engine. Best-effort:
+  // silent if there's no key, no network, or playback is blocked. Used by the voiced
+  // welcome (Phase 1 of the voiced onboarding).
+  async function sayLine(text: string) {
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, voice: "female", accent }),
+      });
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      await engineRef.current.preview(url, { gain: 1.2, offset: 0, fadeIn: 0.05 });
+      window.setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch {
+      /* best-effort: stay silent */
+    }
+  }
+
+  // Dismiss the voiced welcome: unlock audio within the tap (so the greeting can
+  // sound), speak the welcome, then hand off to the name field. The hand-off is on a
+  // fixed timer so a slow or absent voice never leaves the orb stuck on screen.
+  function beginHello() {
+    engineRef.current.unlock();
+    engineRef.current.ensureRunning();
+    setHelloSpeaking(true);
+    void sayLine("Welcome to relaxed. What should we call you?");
+    window.setTimeout(() => {
+      setHello(false);
+      setHelloSpeaking(false);
+    }, 2200);
+  }
+
   // Silence any audition the moment the tray closes (scrim tap, begin, etc.).
   useEffect(() => {
     if (!trayOpen) engineRef.current.stopPreview();
@@ -700,6 +740,7 @@ export default function Home() {
     bedLocked(soundscape) || voiceLocked(voice) || infiniteLocked;
 
   useEffect(() => {
+    let hadName = false;
     try {
       const raw = localStorage.getItem(PREFS_KEY);
       if (raw) {
@@ -707,6 +748,7 @@ export default function Home() {
         if (p.name) {
           setName(p.name);
           setNameCommitted(true); // returning user: greeting, not the name field
+          hadName = true;
         }
         if (p.voice) setVoice(p.voice);
         if (p.accent) setAccent(p.accent);
@@ -730,6 +772,9 @@ export default function Home() {
     syncReminder();
     // Only surface the reminder UI where a notification can actually be scheduled.
     setRemindable(notificationsAvailable());
+    // Phase 1 voiced onboarding (relaxed): first-time visitors open with the "hello"
+    // overlay where the orb speaks a welcome before the (typed) name field.
+    if (!hadName && IS_RELAXED) setHello(true);
   }, []);
 
   // The first time the recent/history entry appears (once there's history, e.g.
@@ -2401,6 +2446,23 @@ export default function Home() {
       <div className={`app${showBanner ? " has-appbanner" : ""}`} key={screen}>
         {content}
       </div>
+
+      {/* Voiced welcome (Phase 1), relaxed, first launch only: the stem mark with its
+          breathing glow speaks a warm hello, then hands off to the name field. The tap
+          both unlocks audio and lets the orb speak. */}
+      {IS_RELAXED && hello && screen === "setup" && (
+        <button
+          className={`hello${helloSpeaking ? " speaking" : ""}`}
+          onClick={beginHello}
+          aria-label="Begin"
+        >
+          <div className="gen-orb hello-orb">
+            <StemGlyph size={104} className="gen-glyph" />
+          </div>
+          <div className="hello-copy">welcome to relaxed</div>
+          <div className="hello-hint">{helloSpeaking ? "" : "tap to begin"}</div>
+        </button>
+      )}
 
       {/* Options tray (setup only) */}
       {screen === "setup" && (

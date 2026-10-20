@@ -28,6 +28,15 @@ _As of 2026-10-08._
 
 ## In flight
 
+- **Voiced onboarding — Phase 1 shipped (2026-10-20, web-continuous).** First-time
+  relaxed visitors open with a voiced "hello": the glowing "r" orb speaks the welcome,
+  then hands off to the typed name field (best-effort via `/api/tts`; new users only).
+  First step of the **voiced, conversational onboarding** flagship. Decision: speech
+  *input* stays **on-device** (iOS `Speech` framework, a native plugin) and is always
+  optional — that's Phase 2 (name by voice) and Phase 3 (intention/duration/voice/
+  soundscape), which land as a native release (strong 1.6 candidate). See
+  [roadmap.md](./roadmap.md). Tunables on Phase 1: copy, voice gain, hand-off timing;
+  follow-up: pre-cache the fixed welcome line for instant playback.
 - Nothing in Apple review. **1.4.2 approved and launched 2026-10-08** (start-from-watch +
   watch-face widget + setup-screen layout). 1.4.1 released 2026-10-04 (expedited). The web
   continues to deploy continuously on push to `main`.

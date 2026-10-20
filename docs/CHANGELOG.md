@@ -170,6 +170,17 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-10-20 — Voiced welcome (voiced onboarding, Phase 1) — relaxed
+- First-time relaxed visitors now open with a **voiced "hello"**: the stem "r" in a warm
+  glowing orb, which (on the tap that unlocks audio) **speaks** a welcome,
+  "Welcome to relaxed. What should we call you?", then hands off to the (typed) name
+  field. New users only (cold start, no saved name); returning users and ElevenMind are
+  unchanged. The voice is best-effort via `/api/tts` in a default warm voice (silent if
+  no key / offline / blocked), so the flow never breaks. First step of the voiced,
+  conversational onboarding (on-device speech *input* comes in later phases — see
+  [roadmap.md](./roadmap.md)). Tunables: the line copy, the voice gain, and the hand-off
+  timing. Follow-up: pre-cache the fixed welcome line for instant playback.
+
 ### 2026-10-19 — Gate the dev query flags out of production (App Review 2.5.19)
 - The dev-only overrides `?devUnlock=1/0` (preview the unlocked UI) and `?devGate=1`
   (force the paywall) are now **inert on `relaxed.app` and in the native app**, allowed
