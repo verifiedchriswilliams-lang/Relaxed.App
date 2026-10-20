@@ -69,8 +69,12 @@ stateDiagram-v2
   glowing orb over the Ink, "welcome to relaxed", and a "tap to begin". The tap unlocks
   audio and the orb **speaks** the welcome ("Welcome to relaxed. What should we call
   you?", best-effort via `/api/tts` in a default voice), then hands off to the name
-  field. New users only; returning users and ElevenMind go straight to the header below.
-  Speech *input* (answering out loud) is a later phase; see [roadmap.md](./roadmap.md).
+  field. Then, where voice input is available (the on-device `SpeechInput` plugin, or the
+  browser's speech API on the web), a second step asks "what should we call you?" with a
+  **mic to say your name** ("or type instead" fallback); the recognized name becomes the
+  editable name chip (confirm-and-edit). New users only; returning users and ElevenMind
+  go straight to the header below. Intention/duration/voice/soundscape by voice are a
+  later phase; see [roadmap.md](./roadmap.md).
 - **Header (the name is an editable part of the headline, never a standing box).**
   Both brands share this: first run shows "what should we call you?" with a name
   field; once a name is set (or remembered), the header becomes the greeting with

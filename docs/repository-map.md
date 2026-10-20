@@ -69,6 +69,7 @@ relaxed.app/
 | `lib/analytics.ts` | Anonymous first-party events (`ev`) | [data-privacy](./data-privacy.md) |
 | `lib/native.ts` | Capacitor bridge: haptics + MediaSession + local notifications; safe web no-ops | [ios-native](./ios-native.md) |
 | `lib/watchRemote.ts` | Web side of the Apple Watch remote: dedupe + push session state / clear, and `onWatchCommand`, bridged to the `WatchBridge` Capacitor plugin; a no-op without the plugin (tests in `tests/watchRemote.test.ts`) | [ios-native](./ios-native.md) |
+| `lib/speech.ts` | Voice input for the voiced onboarding: `speechAvailable`, `listenOnce` (on-device `SpeechInput` plugin, else the browser Web Speech API, else none), `parseSpokenName` (tests in `tests/speech.test.ts`) | [ios-native](./ios-native.md), [data-privacy](./data-privacy.md) |
 | `lib/voices.json` | Voice guide names used by the preview builder | [audio-engine](./audio-engine.md) |
 
 ## `scripts/` — maintenance tooling
@@ -99,6 +100,8 @@ relaxed.app/
   - `PremiumPlugin.swift` / `.m` — the StoreKit 2 plugin for the premium IAP.
   - `WatchBridgePlugin.swift` / `.m` — the `WatchBridge` plugin, the phone side of
     the Apple Watch remote (WatchConnectivity, 1.4.1).
+  - `SpeechInputPlugin.swift` / `.m` — the `SpeechInput` plugin: on-device speech
+    input (iOS `Speech` framework) for the voiced onboarding (name by voice, Phase 2).
   - `Premium.storekit` — a StoreKit test config, plus the folder's READMEs.
 - `native/watch/` — the **native watchOS (SwiftUI) companion**: a standalone haptic
   breathing pacer that logs Mindful Minutes to Health (V1), the phone-mirroring

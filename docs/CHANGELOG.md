@@ -170,6 +170,18 @@ The native bridge and player hardening.
 
 ## Web — continuous (Vercel)
 
+### 2026-10-20 — Name by voice (voiced onboarding, Phase 2) — relaxed
+- The voiced welcome gains a second step: after the welcome, if voice input is available,
+  the orb asks "what should we call you?" with a **mic** to **say your name** (plus an
+  "or type instead" fallback). The recognized name becomes the editable name chip (the
+  confirm-and-edit loop; "Chris" vs "Kris"). Voice input goes through `lib/speech.ts`,
+  which prefers the **on-device** `SpeechInput` native plugin (nothing leaves the phone)
+  and falls back to the browser's Web Speech API on the web, and reports unavailable
+  elsewhere — so the live app (no plugin yet) and iOS Safari safely keep the typed path.
+  The name step only appears where recognition actually works (`isPluginAvailable` /
+  Web Speech present). Native on-device path: drop `SpeechInputPlugin.swift/.m` into
+  Xcode + the two Info.plist usage strings (see `native/ios-plugin/README.md`).
+
 ### 2026-10-20 — Voiced welcome (voiced onboarding, Phase 1) — relaxed
 - First-time relaxed visitors now open with a **voiced "hello"**: the stem "r" in a warm
   glowing orb, which (on the tap that unlocks audio) **speaks** a welcome,

@@ -21,5 +21,9 @@ class MainViewController: CAPBridgeViewController {
         // Apple Watch remote (1.4.1). Requires WatchBridgePlugin.swift/.m to be in
         // the App target; remove this line if you haven't added them yet.
         bridge?.registerPluginInstance(WatchBridgePlugin())
+        // On-device speech input for the voiced onboarding (Phase 2). Requires
+        // SpeechInputPlugin.swift/.m in the App target + the two usage strings in
+        // Info.plist (see native/ios-plugin/README.md); remove this line if not added.
+        bridge?.registerPluginInstance(SpeechInputPlugin())
     }
 }

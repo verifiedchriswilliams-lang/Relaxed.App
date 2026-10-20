@@ -140,3 +140,40 @@ The web side (`lib/watchRemote.ts`) is already shipped and dormant until this
 plugin exists. WatchConnectivity needs no entitlement or Info.plist key. Full
 architecture and the watch-side files are documented in
 [`../watch/README.md`](../watch/README.md#phone--watch-remote-141).
+
+## SpeechInput plugin (voiced onboarding, Phase 2)
+
+On-device speech input for the voiced onboarding — the person can **say their name**
+instead of typing it.
+
+- `SpeechInputPlugin.swift` — a Capacitor plugin `SpeechInput` wrapping the iOS
+  `Speech` framework + `AVAudioEngine`: `listen({ locale })` captures one short
+  utterance and resolves `{ transcript }`, recognized **on device**
+  (`requiresOnDeviceRecognition` when supported) so nothing leaves the phone.
+- `SpeechInputPlugin.m` — the `CAP_PLUGIN` macro registering it as `SpeechInput`.
+- `MainViewController.swift` now also registers `SpeechInputPlugin()` (add both
+  Swift/.m files to the App target, or remove that line until you do).
+
+**Xcode steps (on the Mac):**
+
+1. Add `SpeechInputPlugin.swift` + `SpeechInputPlugin.m` to the **App** target (drag
+   them in with the other app-local plugins; the usual
+   `cp native/ios-plugin/*.swift native/ios-plugin/*.m "ios/App/App/"` sync, then add
+   to the target if not already a member), and confirm `MainViewController.swift` is
+   the current copy (it now registers `SpeechInputPlugin()`).
+2. **Info.plist — two usage strings are REQUIRED** or the permission prompts never
+   appear and recognition silently fails:
+   - `NSMicrophoneUsageDescription` → e.g. *"relaxed uses the microphone only when you
+     choose to say your name, so you can set up by voice. You can always type instead."*
+   - `NSSpeechRecognitionUsageDescription` → e.g. *"relaxed turns your spoken name into
+     text on your device to greet you by name. Nothing is sent to a server."*
+   (As with the Health strings, these live as `INFOPLIST_KEY_*` build settings when
+   `GENERATE_INFOPLIST_FILE = YES`; set them via the target's Info tab.)
+3. No capability needs toggling; the `Speech` + `AVFoundation` frameworks link
+   automatically from the `import`s.
+
+The web side (`lib/speech.ts`) is already shipped and detects the plugin reliably
+(`isPluginAvailable("SpeechInput")`), so until the plugin is in the build the onboarding
+simply keeps the typed path (and uses the browser's Web Speech API on the web). The
+decision + phases are in [roadmap.md](../../docs/roadmap.md) and
+[data-privacy.md](../../docs/data-privacy.md).

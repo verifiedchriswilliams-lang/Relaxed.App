@@ -106,9 +106,13 @@ before the rest):
   works everywhere. Live today for first-time relaxed visitors (see
   [CHANGELOG](./CHANGELOG.md)); voice is best-effort via `/api/tts` (optional pre-cache
   of the fixed line for instant playback is a follow-up).
-- **Phase 2 — name by voice.** On-device `SFSpeechRecognizer`, with the confirm-and-edit
-  loop (names are the error-prone case: "Chris" vs "Kris"), keeping the editable name
-  chip at the top.
+- **Phase 2 — name by voice (built 2026-10-20).** The welcome's second step: a mic to
+  say your name, recognized **on device** (the `SpeechInput` plugin, iOS `Speech`
+  framework) with a "type instead" fallback, set as the editable name chip (the
+  confirm-and-edit loop, since names are the error-prone case: "Chris" vs "Kris"). Web
+  side (`lib/speech.ts`) is live and testable in Chrome via the browser's speech API;
+  the on-device native path needs the plugin dropped into Xcode (see
+  [native/ios-plugin/README.md](../native/ios-plugin/README.md)).
 - **Phase 3 — intention, duration, then hand-holding through voice + soundscape.** Small,
   forgiving vocabularies first (duration, intention), with tap fallback throughout.
 

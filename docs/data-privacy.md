@@ -28,11 +28,24 @@
 | `em_variant_seq` | Per-intention script-variant counter | Non-personal; ensures repeats vary. |
 | `relaxed.recentHint.v1` | One-time flag: the recent/history entry has been introduced | Non-personal; a single `"1"`. |
 | `relaxed.appbanner.v1` | One-time flag: the web "download on the App Store" strip was dismissed | Non-personal; a single `"1"`. relaxed web only; never set inside the native app. |
+| `relaxed.hello.v1` | One-time flag: the voiced welcome (onboarding) has been shown | Non-personal; a single `"1"`, so the first-run greeting never replays. relaxed only. |
 
 Everything above is readable only by the site's own origin, is never sent to any
 server, and is cleared if the user clears site data or deletes the app. There is
 no server-side copy and therefore no cross-device sync (a deliberate Phase 2
 tradeoff).
+
+### Voice onboarding (microphone)
+
+The voiced onboarding uses the microphone only when the person taps the mic to answer by
+voice (it is always optional; typing works throughout). **Recognition is on-device** in
+the native app (the iOS `Speech` framework, `requiresOnDeviceRecognition`), so the audio
+never leaves the phone. On the **web**, where there is no on-device option, it uses the
+browser's own Web Speech API (which may send audio to the browser vendor's service) — a
+web-only behavior; the native app, which is the focus, stays on-device. relaxed keeps
+only the **recognized name text** (the same `relaxed.…` prefs as a typed name), never the
+audio. The spoken greeting itself is a short fixed line voiced through the existing
+`/api/tts` (ElevenLabs), same as any other line.
 
 ## 3. Data flows — what leaves the device
 

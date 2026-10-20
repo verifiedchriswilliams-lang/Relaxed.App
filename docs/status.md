@@ -28,15 +28,18 @@ _As of 2026-10-08._
 
 ## In flight
 
-- **Voiced onboarding — Phase 1 shipped (2026-10-20, web-continuous).** First-time
+- **Voiced onboarding — Phases 1 + 2 shipped (2026-10-20, web-continuous).** First-time
   relaxed visitors open with a voiced "hello": the glowing "r" orb speaks the welcome,
-  then hands off to the typed name field (best-effort via `/api/tts`; new users only).
-  First step of the **voiced, conversational onboarding** flagship. Decision: speech
-  *input* stays **on-device** (iOS `Speech` framework, a native plugin) and is always
-  optional — that's Phase 2 (name by voice) and Phase 3 (intention/duration/voice/
-  soundscape), which land as a native release (strong 1.6 candidate). See
-  [roadmap.md](./roadmap.md). Tunables on Phase 1: copy, voice gain, hand-off timing;
-  follow-up: pre-cache the fixed welcome line for instant playback.
+  then (Phase 2) asks the name with a **mic to say it** ("or type instead" fallback),
+  recognized **on device** (the `SpeechInput` native plugin) or via the browser's speech
+  API on the web, set as the editable name chip. First steps of the **voiced,
+  conversational onboarding** flagship. **Testable now in Chrome** on relaxed.app
+  (browser speech); the **on-device iOS path needs the `SpeechInput` plugin dropped into
+  Xcode** + two Info.plist usage strings (see
+  [native/ios-plugin/README.md](../native/ios-plugin/README.md)). The live app (no plugin
+  yet) + iOS Safari safely keep the typed path. Next: Phase 3 (intention/duration/voice/
+  soundscape by voice), a native release — strong 1.6 candidate (see
+  [roadmap.md](./roadmap.md)). Phase-1 follow-up: pre-cache the fixed welcome line.
 - Nothing in Apple review. **1.4.2 approved and launched 2026-10-08** (start-from-watch +
   watch-face widget + setup-screen layout). 1.4.1 released 2026-10-04 (expedited). The web
   continues to deploy continuously on push to `main`.
