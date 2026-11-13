@@ -28,18 +28,17 @@ _As of 2026-10-08._
 
 ## In flight
 
-- **Voiced onboarding — Phases 1 + 2 shipped (2026-10-20, web-continuous).** First-time
-  relaxed visitors open with a voiced "hello": the glowing "r" orb speaks the welcome,
-  then (Phase 2) asks the name with a **mic to say it** ("or type instead" fallback),
-  recognized **on device** (the `SpeechInput` native plugin) or via the browser's speech
-  API on the web, set as the editable name chip. First steps of the **voiced,
-  conversational onboarding** flagship. **Testable now in Chrome** on relaxed.app
-  (browser speech); the **on-device iOS path needs the `SpeechInput` plugin dropped into
-  Xcode** + two Info.plist usage strings (see
-  [native/ios-plugin/README.md](../native/ios-plugin/README.md)). The live app (no plugin
-  yet) + iOS Safari safely keep the typed path. Next: Phase 3 (intention/duration/voice/
-  soundscape by voice), a native release — strong 1.6 candidate (see
-  [roadmap.md](./roadmap.md)). Phase-1 follow-up: pre-cache the fixed welcome line.
+- **Voiced onboarding — DISABLED on production (2026-11-13), pending a better first run.**
+  Phases 1 + 2 (voiced "hello": the glowing "r" speaks the welcome, then asks the name by
+  **mic**, "or type instead") were shipped 2026-10-20 but the first-run experience wasn't
+  good enough to sit in front of every new visitor, so it's now **gated off behind a kill
+  switch** (`VOICED_HELLO_ENABLED = false` in `app/page.tsx`). The flow stays in the code,
+  not triggered. Recognition design unchanged (on-device `SpeechInput` plugin, or the
+  browser speech API; typing always available). **Re-enable only after** the first-run moment
+  is redesigned — this is tied to the in-progress **liquid-glass / living orb** work (branch
+  `liquid-glass-orb`, not merged) that is meant to replace the static-glyph welcome. Then:
+  Phase 3 (intention/duration/voice/soundscape by voice), a native release — 1.6 candidate
+  (see [roadmap.md](./roadmap.md)).
 - Nothing in Apple review. **1.4.2 approved and launched 2026-10-08** (start-from-watch +
   watch-face widget + setup-screen layout). 1.4.1 released 2026-10-04 (expedited). The web
   continues to deploy continuously on push to `main`.

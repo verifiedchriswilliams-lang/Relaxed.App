@@ -101,6 +101,10 @@ const BANNER_DISMISS_KEY = "relaxed.appbanner.v1";
 // The voiced welcome (onboarding) is a once-ever first-run moment, independent of
 // whether prefs are saved, so it never nags on every launch.
 const HELLO_SEEN_KEY = "relaxed.hello.v1";
+// Kill switch for the voiced first-run welcome. Off in production: the first-run
+// experience isn't good enough to put in front of every new visitor yet. The flow
+// stays in the code (gated here) until it's polished and re-enabled deliberately.
+const VOICED_HELLO_ENABLED = false;
 
 import GUIDES from "@/lib/voices.json";
 
@@ -827,7 +831,7 @@ export default function Home() {
     } catch {
       /* ignore */
     }
-    if (!hadName && IS_RELAXED && !seenHello) setHello(true);
+    if (VOICED_HELLO_ENABLED && !hadName && IS_RELAXED && !seenHello) setHello(true);
     // Whether the name can be answered by voice (Phase 2): on-device plugin, or the
     // browser's speech API on the web. Drives the mic step; typing is always available.
     setCanSpeak(speechAvailable());
