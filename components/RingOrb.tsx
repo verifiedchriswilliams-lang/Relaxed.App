@@ -21,10 +21,17 @@ export interface RingOrbProps {
   mode?: OrbMode;
   /** The app's own voice output level, 0..1. Only used while mode === "speaking". */
   level?: number;
+  /** Optional per-frame level source (e.g. engine.voiceLevel()), read in the render
+   *  loop so the orb tracks the live voice at 60fps without React re-renders.
+   *  Takes precedence over `level` while speaking. */
+  levelSource?: () => number;
   /** Resting warmth when quiet: 1 = most ivory/angelic, lower = warmer. */
   angelicQuiet?: number;
   /** Honour reduced-motion (slower, gentler). Defaults to the OS setting. */
   reduced?: boolean;
+  /** When false, the orb holds at t=0 (its clock is paused). Flip to true at the
+   *  video->orb handoff so the live orb starts from the video's last frame. Default true. */
+  running?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -83,15 +90,17 @@ const FRAG = `
 export default function RingOrb({
   mode = "idle",
   level = 0,
+  levelSource,
   angelicQuiet = 0.8,
   reduced,
+  running = true,
   className,
   style,
 }: RingOrbProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   // Latest props, read inside the animation loop without re-initialising WebGL.
-  const live = useRef({ mode, level, angelicQuiet, reduced });
-  live.current = { mode, level, angelicQuiet, reduced };
+  const live = useRef({ mode, level, levelSource, angelicQuiet, reduced, running });
+  live.current = { mode, level, levelSource, angelicQuiet, reduced, running };
 
   useEffect(() => {
     const host = hostRef.current;
@@ -156,13 +165,22 @@ export default function RingOrb({
     ro.observe(host);
 
     const sm = { env: 0 };
-    const t0 = performance.now();
+    let runStart: number | null = null;
     let raf = 0;
     const frame = () => {
       const p = live.current;
       const red = p.reduced ?? prefersReduced;
-      const t = (performance.now() - t0) / 1000;
-      const raw = p.mode === "speaking" ? Math.max(0, Math.min(1, p.level)) : 0;
+      const nowp = performance.now();
+      // Clock holds at 0 until `running` flips true (the video->orb handoff), so the
+      // live orb begins exactly at the frame the video ended on.
+      if (p.running) {
+        if (runStart === null) runStart = nowp;
+      } else {
+        runStart = null;
+      }
+      const t = runStart !== null ? (nowp - runStart) / 1000 : 0;
+      const lvl = p.levelSource ? p.levelSource() : p.level;
+      const raw = p.mode === "speaking" ? Math.max(0, Math.min(1, lvl)) : 0;
       const target = red ? Math.min(raw, 0.3) : raw;
       sm.env += (target - sm.env) * 0.12;
       const rest = p.angelicQuiet;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   CONTEXTS,
   DURATIONS,
@@ -98,6 +99,10 @@ const IS_RELAXED = BRAND.id === "relaxed";
 // (shown only in a browser, never inside the native app). Dismissal is remembered.
 const APPSTORE_URL = "https://apps.apple.com/us/app/relaxed-app/id6807080633";
 const BANNER_DISMISS_KEY = "relaxed.appbanner.v1";
+// The voiced first-run overlay (orb + intro video + voice input). Lazy so three.js and
+// the video load only when the overlay actually shows (first run, relaxed) and never bloat
+// the main bundle or the ElevenMind build.
+const VoicedHello = dynamic(() => import("@/components/VoicedHello"), { ssr: false });
 // The voiced welcome (onboarding) is a once-ever first-run moment, independent of
 // whether prefs are saved, so it never nags on every launch.
 const HELLO_SEEN_KEY = "relaxed.hello.v1";
@@ -2507,46 +2512,20 @@ export default function Home() {
         {content}
       </div>
 
-      {/* Voiced welcome (Phase 1), relaxed, first launch only: the stem mark with its
-          breathing glow speaks a warm hello, then hands off to the name field. The tap
-          both unlocks audio and lets the orb speak. */}
+      {/* Voiced first run (relaxed, first launch only): the load video resolves into the
+          living orb, one touch wakes it to speak the welcome, then it listens for the name
+          (typed fallback). The orb reacts only to the app's own voice, never the mic. */}
       {IS_RELAXED && hello && screen === "setup" && (
-        <div className={`hello${helloSpeaking || helloListening ? " speaking" : ""}`}>
-          {helloStep === "welcome" ? (
-            <button className="hello-tap" onClick={beginHello} aria-label="Begin">
-              <div className="gen-orb hello-orb">
-                <StemGlyph size={104} className="gen-glyph" />
-              </div>
-              <div className="hello-copy">welcome to relaxed</div>
-              <div className="hello-hint">{helloSpeaking ? "" : "tap to begin"}</div>
-            </button>
-          ) : (
-            <div className="hello-name">
-              <div className="gen-orb hello-orb">
-                <StemGlyph size={104} className="gen-glyph" />
-              </div>
-              <div className="hello-copy">what should we call you?</div>
-              <button
-                className={`mic${helloListening ? " on" : ""}`}
-                onClick={listenName}
-                disabled={helloListening}
-                aria-label="Say your name"
-              >
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect x="9" y="3" width="6" height="11" rx="3" />
-                  <path d="M5 11a7 7 0 0 0 14 0" />
-                  <path d="M12 18v3" />
-                </svg>
-              </button>
-              <div className="hello-hint">
-                {helloListening ? "listening…" : "tap and say your name"}
-              </div>
-              <button className="hello-type" onClick={endHello}>
-                or type instead
-              </button>
-            </div>
-          )}
-        </div>
+        <VoicedHello
+          step={helloStep}
+          speaking={helloSpeaking}
+          listening={helloListening}
+          canSpeak={canSpeak}
+          onBegin={beginHello}
+          onListen={listenName}
+          onType={endHello}
+          voiceLevel={() => engineRef.current.voiceLevel()}
+        />
       )}
 
       {/* Options tray (setup only) */}

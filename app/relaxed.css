@@ -502,43 +502,68 @@
   background: var(--ink-0);
 }
 
-/* ---- voiced welcome (onboarding) ---------------------------------------- */
-/* A first-launch "hello" over the home: the stem mark with its breathing glow speaks a
-   welcome ("welcome" step), then invites the name by voice or type ("name" step). The
-   orb reuses the composing orb (.gen-orb + .gen-glyph). relaxed only. */
-[data-brand="relaxed"] .hello {
+/* ---- voiced first run (onboarding) -------------------------------------- */
+/* A first-launch experience over the home: the load video (public/orb/intro.mp4)
+   resolves the stem into the living orb, then one touch wakes it to speak the welcome
+   ("welcome" step) and it invites the name by voice or type ("name" step). The orb is
+   the <RingOrb> WebGL component; it reacts only to the app's own voice. relaxed only. */
+[data-brand="relaxed"] .vhello {
   position: fixed;
   inset: 0;
   z-index: 60;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
   background: var(--night-0);
   color: var(--ink-0);
-  animation: rx-screen-in 0.9s var(--rx-ease-soft) both;
+  overflow: hidden;
 }
-/* Each step is a centred column; the welcome step is one big tap target (a button). */
-[data-brand="relaxed"] .hello-tap,
-[data-brand="relaxed"] .hello-name {
+/* The load video sits above the orb and is removed from the DOM once it ends (handoff). */
+[data-brand="relaxed"] .vhello-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: var(--night-0);
+  z-index: 2;
+}
+/* Copy + controls, centred below the orb; fade in only after the intro hands off. */
+[data-brand="relaxed"] .vhello-ui {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(12vh + env(safe-area-inset-bottom, 0px));
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  padding: 0 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.7s var(--rx-ease-soft) 0.15s;
+}
+[data-brand="relaxed"] .vhello-ui.ready {
+  opacity: 1;
+  pointer-events: auto;
+}
+[data-brand="relaxed"] .vhello-tap,
+[data-brand="relaxed"] .vhello-name {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
-}
-[data-brand="relaxed"] .hello-tap {
+  gap: 20px;
   background: none;
   border: 0;
   color: inherit;
   font: inherit;
+  text-align: center;
   cursor: pointer;
+  padding: 0;
 }
-[data-brand="relaxed"] .hello .hello-copy {
+[data-brand="relaxed"] .vhello-copy {
   font-size: 22px;
   font-weight: 400;
   color: var(--ink-0);
+  text-transform: lowercase;
 }
-[data-brand="relaxed"] .hello .hello-hint {
+[data-brand="relaxed"] .vhello-hint {
   font-size: 13px;
   letter-spacing: 0.08em;
   text-transform: lowercase;
@@ -547,7 +572,7 @@
   animation: hello-hint 3s ease-in-out infinite;
 }
 /* The mic: a calm Bone-ringed circle; fills + pulses while listening. */
-[data-brand="relaxed"] .hello .mic {
+[data-brand="relaxed"] .vhello-mic {
   width: 72px;
   height: 72px;
   border-radius: 50%;
@@ -560,15 +585,15 @@
   cursor: pointer;
   transition: background var(--t-ui) var(--ease-ui);
 }
-[data-brand="relaxed"] .hello .mic:hover {
+[data-brand="relaxed"] .vhello-mic:hover {
   background: var(--rx-hover);
 }
-[data-brand="relaxed"] .hello .mic.on {
+[data-brand="relaxed"] .vhello-mic.on {
   background: var(--ink-0);
   color: var(--rx-invert-fg);
   animation: mic-pulse 1.6s ease-in-out infinite;
 }
-[data-brand="relaxed"] .hello .hello-type {
+[data-brand="relaxed"] .vhello-type {
   background: none;
   border: 0;
   color: var(--ink-2);
@@ -577,22 +602,6 @@
   text-transform: lowercase;
   cursor: pointer;
   padding: 6px 10px;
-  margin-top: -6px;
-}
-/* A warmer, more present glow behind the welcome "r" than the faint composing bloom,
-   so it reads as a glowing orb. It still breathes on the shared rx-breathe clock. */
-[data-brand="relaxed"] .hello .gen-orb::before {
-  inset: -55%;
-  background: radial-gradient(
-    closest-side,
-    rgba(239, 231, 214, 0.22),
-    rgba(239, 231, 214, 0.08) 48%,
-    transparent 74%
-  );
-}
-/* While the orb is speaking or listening, let the glow breathe a touch faster. */
-[data-brand="relaxed"] .hello.speaking .gen-orb::before {
-  animation-duration: 3s;
 }
 @keyframes hello-hint {
   0%,
@@ -613,14 +622,11 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  [data-brand="relaxed"] .hello {
-    animation: none;
-  }
-  [data-brand="relaxed"] .hello .hello-hint {
+  [data-brand="relaxed"] .vhello-hint {
     animation: none;
     opacity: 0.7;
   }
-  [data-brand="relaxed"] .hello .mic.on {
+  [data-brand="relaxed"] .vhello-mic.on {
     animation: none;
   }
 }

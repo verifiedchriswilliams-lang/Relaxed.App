@@ -64,17 +64,23 @@ stateDiagram-v2
 
 ### 3a. Setup (home)
 
-- **Voiced welcome (relaxed, first launch only — voiced onboarding Phase 1).** A
-  brand-new visitor opens on a full-screen "hello": the stem "r" in a warm, breathing
-  glowing orb over the Ink, "welcome to relaxed", and a "tap to begin". The tap unlocks
-  audio and the orb **speaks** the welcome ("Welcome to relaxed. What should we call
-  you?", best-effort via `/api/tts` in a default voice), then hands off to the name
-  field. Then, where voice input is available (the on-device `SpeechInput` plugin, or the
-  browser's speech API on the web), a second step asks "what should we call you?" with a
-  **mic to say your name** ("or type instead" fallback); the recognized name becomes the
-  editable name chip (confirm-and-edit). New users only; returning users and ElevenMind
-  go straight to the header below. Intention/duration/voice/soundscape by voice are a
-  later phase; see [roadmap.md](./roadmap.md).
+- **Voiced welcome (relaxed, first launch only — voiced onboarding).** A brand-new
+  visitor opens on a full-screen first run (`components/VoicedHello.tsx`, gated by
+  `VOICED_HELLO_ENABLED`, currently off in production). On open, a **load video**
+  (`public/orb/intro.mp4`) plays the stem "r" resolving into the living **Ring Orb**
+  (`components/RingOrb.tsx`, a WebGL component), then hands off seamlessly to the live
+  orb; below it, "welcome to relaxed" and "touch to begin". The tap unlocks audio and the
+  orb **speaks** the welcome ("Welcome to relaxed. What should we call you?", best-effort
+  via `/api/tts` in a default voice). Then, where voice input is available (the on-device
+  `SpeechInput` plugin, or the browser's speech API on the web), a second step asks "what
+  should we call you?" with a **mic to say your name** ("or type instead" fallback); the
+  recognized name becomes the editable name chip (confirm-and-edit). The orb is always
+  gently alive (constant flow + orbital drift) and, while the app speaks, its brightness,
+  warmth (ivory→gold) and two ribbon rings respond to the **app's own voice level**
+  (`engine.voiceLevel()`) — never the microphone. New users only; returning users and
+  ElevenMind go straight to the header below. The orb can be previewed in isolation at the
+  dev route `/ring-orb`. Intention/duration/voice/soundscape by voice are a later phase;
+  see [roadmap.md](./roadmap.md).
 - **Header (the name is an editable part of the headline, never a standing box).**
   Both brands share this: first run shows "what should we call you?" with a name
   field; once a name is set (or remembered), the header becomes the greeting with

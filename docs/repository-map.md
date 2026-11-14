@@ -32,12 +32,20 @@ relaxed.app/
 | `app/globals.css` | CSS | Base (ElevenMind) design system + all shared component styles. |
 | `app/relaxed.css` | CSS | relaxed brand token overrides + relaxed-only structure (scoped `[data-brand="relaxed"]`). |
 | `app/privacy/page.tsx` | Server | The privacy policy page (App Store requirement). |
+| `app/ring-orb/page.tsx` | Client component | Isolated **dev route** to preview the voice orb (mode / level / sim / warmth). Not linked from the app. |
 | `app/api/generate/route.ts` | Node route | Preset session assembly + cache-first voicing. |
 | `app/api/custom-script/route.ts` | Node route | Live bespoke script via Claude. |
 | `app/api/tts/route.ts` | Node route | One line → MP3 (custom streaming). |
 | `app/icon.tsx`, `app/apple-icon.tsx` | Edge image | Brand-aware favicon / home-screen icon. |
 | `app/opengraph-image.tsx`, `app/twitter-image.tsx` | Edge image | Brand-aware share cards. |
 | `app/artwork/route.tsx` | Edge route | 512² Now-Playing lock-screen artwork (`?c=<category>`). |
+
+## `components/` — React components
+
+| Path | Kind | Purpose |
+|---|---|---|
+| `components/RingOrb.tsx` | Client component | The voice orb: a single authored frame (`public/orb/calm-1.png`) warped in a WebGL (three.js) shader. Always gently alive; `mode`/`level`/`levelSource` drive brightness, warmth and ring-bounce from the **app's own voice** (never the mic). `running` gates its clock for the video handoff. See [audio-engine](./audio-engine.md), [product-spec](./product-spec.md). |
+| `components/VoicedHello.tsx` | Client component | The relaxed voiced first-run overlay: plays the load video (`public/orb/intro.mp4`), hands off to the live `RingOrb`, then the welcome + name-by-voice steps (typed fallback). Imported lazily by `app/page.tsx` behind `VOICED_HELLO_ENABLED`. |
 
 ## `lib/` — logic & content
 
@@ -136,6 +144,9 @@ relaxed.app/
 
   A separate tvOS target in the Xcode project on the Mac — see the folder's README.
 - `public/aurora.jpg` — the ElevenMind night-sky background (relaxed uses none).
+- `public/orb/` — the voice-orb assets: `calm-1.png` (the authored orb frame the
+  `RingOrb` shader warps) and `intro.mp4` (the load video: the stem resolving into the
+  orb, which hands off to the live orb in `VoicedHello`).
 
 ## Where to make common changes
 

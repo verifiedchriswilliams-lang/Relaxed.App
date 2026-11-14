@@ -35,10 +35,17 @@ _As of 2026-10-08._
   switch** (`VOICED_HELLO_ENABLED = false` in `app/page.tsx`). The flow stays in the code,
   not triggered. Recognition design unchanged (on-device `SpeechInput` plugin, or the
   browser speech API; typing always available). **Re-enable only after** the first-run moment
-  is redesigned — this is tied to the in-progress **liquid-glass / living orb** work (branch
-  `liquid-glass-orb`, not merged) that is meant to replace the static-glyph welcome. Then:
-  Phase 3 (intention/duration/voice/soundscape by voice), a native release — 1.6 candidate
-  (see [roadmap.md](./roadmap.md)).
+  is redesigned — that redesign is now in progress on branch **`feat/voiced-onboarding-orb`**
+  (not merged): the static-glyph welcome is replaced by the **living Ring Orb** (`components/
+  RingOrb.tsx`, a WebGL component) plus a **load video** (`public/orb/intro.mp4`, the stem
+  resolving into the orb) that hands off to the live orb, all in `components/VoicedHello.tsx`
+  behind the same `VOICED_HELLO_ENABLED` flag. The orb reacts only to the app's own voice
+  (`engine.voiceLevel()`), never the mic. Preview the orb in isolation at the dev route
+  `/ring-orb`. **On device, voice input still needs** the `SpeechInput` plugin in the Xcode
+  target and the `NSMicrophoneUsageDescription` + `NSSpeechRecognitionUsageDescription`
+  Info.plist strings (else it falls back to typing). Supersedes the earlier `liquid-glass-orb`
+  spike. Then: Phase 3 (intention/duration/voice/soundscape by voice), a native release — 1.6
+  candidate (see [roadmap.md](./roadmap.md)).
 - Nothing in Apple review. **1.4.2 approved and launched 2026-10-08** (start-from-watch +
   watch-face widget + setup-screen layout). 1.4.1 released 2026-10-04 (expedited). The web
   continues to deploy continuously on push to `main`.

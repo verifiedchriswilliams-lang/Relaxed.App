@@ -54,6 +54,11 @@ export class AudioEngine {
   private previewGain: GainNode | null = null;
   private previewToken = 0;
   private previewCache = new Map<string, AudioBuffer>();
+  // Taps the voice (preview) output so the onboarding orb can react to the app's
+  // OWN voice level. Never the microphone. Lives on the preview chain only.
+  private voiceAnalyser: AnalyserNode | null = null;
+  private voiceAnalyserCtx: AudioContext | null = null;
+  private voiceTimeBuf: Uint8Array<ArrayBuffer> | null = null;
 
   // --- Codec-decode fallback (Mac Catalyst / "iPad app on Mac") -------------
   // In the "Designed for iPad on Mac" WKWebView, Web Audio's decodeAudioData
@@ -170,6 +175,37 @@ export class AudioEngine {
       this.ctx = new Ctx();
     }
     return this.ctx;
+  }
+
+  // A shared AnalyserNode on the voice path -> destination. The voice preview gain
+  // connects through it, so audio still reaches the speakers while we can read its
+  // level for the orb. Recreated if the context is torn down and rebuilt.
+  private ensureVoiceAnalyser(ctx: AudioContext): AnalyserNode {
+    if (this.voiceAnalyser && this.voiceAnalyserCtx === ctx) return this.voiceAnalyser;
+    const an = ctx.createAnalyser();
+    an.fftSize = 256;
+    an.smoothingTimeConstant = 0.6;
+    an.connect(ctx.destination);
+    this.voiceAnalyser = an;
+    this.voiceAnalyserCtx = ctx;
+    this.voiceTimeBuf = new Uint8Array(new ArrayBuffer(an.fftSize));
+    return an;
+  }
+
+  // Current app-voice output level, ~0..1 (RMS of the voice path). 0 when nothing
+  // is speaking. Drives the onboarding orb; it is the APP's voice, never the mic.
+  voiceLevel(): number {
+    const an = this.voiceAnalyser;
+    const buf = this.voiceTimeBuf;
+    if (!an || !buf || this.voiceAnalyserCtx !== this.ctx) return 0;
+    an.getByteTimeDomainData(buf);
+    let sum = 0;
+    for (let i = 0; i < buf.length; i++) {
+      const v = (buf[i] - 128) / 128;
+      sum += v * v;
+    }
+    const rms = Math.sqrt(sum / buf.length);
+    return Math.max(0, Math.min(1, rms * 4)); // speech RMS ~0.05-0.25 -> usable 0..1
   }
 
   // By default iOS treats Web Audio as "ambient", which obeys the hardware mute
@@ -943,7 +979,7 @@ export class AudioEngine {
     const src2 = ctx.createBufferSource();
     src2.buffer = buf;
     src2.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(this.ensureVoiceAnalyser(ctx)); // -> analyser -> destination (lets the orb read the app's voice level)
 
     const now = ctx.currentTime;
     const end = now + Math.max(dur, fadeIn + fadeOut);
