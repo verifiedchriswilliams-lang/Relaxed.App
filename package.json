@@ -29,7 +29,8 @@
     "@wasm-audio-decoders/flac": "^0.2.11",
     "next": "14.2.35",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "three": "^0.160.1"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
@@ -37,6 +38,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/three": "^0.160.0",
     "@vercel/blob": "^2.8.0",
     "typescript": "^5",
     "vitest": "^2.1.9"
