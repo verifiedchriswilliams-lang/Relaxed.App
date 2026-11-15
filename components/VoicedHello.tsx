@@ -261,7 +261,7 @@ export default function VoicedHello({
       setStep("nameHeard");
       void say(`Lovely to meet you, ${clean}.`).then(() => {
         setStep("intention");
-        void say("What do you need right now? You can say sleep, flow, relax, breathe, meditate, or something else.");
+        void say("So, what are you hoping for today? Maybe winding down, unwinding, a few minutes to breathe, or something else, just let me know.");
       });
     }
   };
