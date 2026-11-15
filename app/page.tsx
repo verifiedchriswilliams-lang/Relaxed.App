@@ -2526,6 +2526,11 @@ export default function Home() {
           reduced={false}
           voiceLevel={() => engineRef.current.voiceLevel()}
           speak={sayLine}
+          onUnlockAudio={() => {
+            engineRef.current.unlock();
+            engineRef.current.ensureRunning();
+            markHelloSeen();
+          }}
           onPickName={(n) => {
             setName(n);
             setNameCommitted(true);

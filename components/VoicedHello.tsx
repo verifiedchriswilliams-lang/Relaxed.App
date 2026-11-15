@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import RingOrb from "@/components/RingOrb";
+import { StemGlyph } from "@/lib/mark";
 import { CONTEXTS, type ContextId, type VoiceChoice, INFINITE } from "@/lib/contexts";
 import { SOUNDSCAPES, SOUND_CATS } from "@/lib/audio/soundscapes";
 import type { Soundscape, SoundCat, Accent } from "@/lib/audio/types";
@@ -27,6 +28,7 @@ import {
 } from "@/lib/voiceAgent";
 
 type Step =
+  | "load"
   | "intro"
   | "name"
   | "nameHeard"
@@ -54,6 +56,9 @@ export interface VoicedHelloProps {
   voiceLevel: () => number;
   /** Speak a line through the app's TTS (drives the orb). Optional (silent if absent). */
   speak?: (text: string) => Promise<void> | void;
+  /** Called on the "tap to begin" gesture: unlock the audio engine so the orb can sound
+   *  (mobile/WKWebView block audio until a user gesture). */
+  onUnlockAudio?: () => void;
   // Live setters: called as each choice is made so the app's state stays in sync.
   onPickName: (name: string) => void;
   onPickContext: (id: ContextId, customPhrase?: string) => void;
@@ -124,6 +129,7 @@ export default function VoicedHello({
   reduced,
   voiceLevel,
   speak,
+  onUnlockAudio,
   onPickName,
   onPickContext,
   onPickDuration,
@@ -134,8 +140,10 @@ export default function VoicedHello({
   onHistory,
   onExit,
 }: VoicedHelloProps) {
-  const [step, setStep] = useState<Step>(isReturning ? "returning" : "intro");
-  const [introDone, setIntroDone] = useState(isReturning);
+  // Everyone starts on the load screen (the static stem + "tap to begin"). That tap is
+  // the audio-unlock gesture, and it visually continues the native splash.
+  const [step, setStep] = useState<Step>("load");
+  const [introDone, setIntroDone] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   // The ElevenLabs guided agent (when configured). agentActive flips true once it is
@@ -181,9 +189,16 @@ export default function VoicedHello({
     return voiceLevel();
   }, [voiceLevel]);
 
-  // Intro video -> hand off to the orb, then open the conversation.
+  // The "tap to begin" gesture: unlock audio (so the orb can sound), then either play the
+  // stem->orb intro video (new) or go straight to the welcome-back step (returning).
+  const begin = () => {
+    onUnlockAudio?.();
+    setStep(isReturning ? "returning" : "intro");
+  };
+
+  // Intro video (only while on the "intro" step) -> hand off to the orb.
   useEffect(() => {
-    if (isReturning) return;
+    if (step !== "intro") return;
     const v = videoRef.current;
     if (!v) return;
     const done = () => setIntroDone(true);
@@ -196,7 +211,7 @@ export default function VoicedHello({
       v.removeEventListener("error", done);
       window.clearTimeout(safety);
     };
-  }, [isReturning]);
+  }, [step]);
 
   // Once the orb is live, greet and ask the first question (the name). Option A: play the
   // greeting (app TTS, mic off), then connect the agent so it listens for the name. If no
@@ -213,12 +228,12 @@ export default function VoicedHello({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, introDone]);
 
-  // Returning: greet by name.
+  // Returning: greet by name once we land on the welcome-back step (after the tap).
   useEffect(() => {
     if (step !== "returning") return;
     void say(knownName ? `Welcome back, ${knownName}.` : "Welcome back.");
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [step]);
 
   const orbUp = introDone && step !== "intro" && step !== "returning";
   // The orb is always in "speaking" mode: it brightens/warms to the app's own voice
@@ -366,11 +381,20 @@ export default function VoicedHello({
 
   return (
     <div className="vh" role="dialog" aria-label="Welcome to relaxed">
-      {!isReturning && !introDone && (
-        <video ref={videoRef} className="vh-video" src="/orb/intro.mp4" muted playsInline autoPlay preload="auto" />
+      {/* LOAD: the static stem, continuous with the native splash. The tap unlocks audio
+          and kicks off the intro animation (or, for a returning user, the welcome-back). */}
+      {step === "load" && (
+        <button className="vh-load" onClick={begin} aria-label="Tap to begin">
+          <StemGlyph size={120} className="vh-stem" />
+          <span className="vh-tap">tap to begin</span>
+        </button>
       )}
 
-      {(introDone || isReturning) && (
+      {step === "intro" && !introDone && (
+        <video ref={videoRef} className="vh-video" src="/orb/intro.mp4" muted playsInline preload="auto" />
+      )}
+
+      {step !== "load" && step !== "intro" && (
         <div className={`vh-orb${orbUp ? " up" : ""}`}>
           <RingOrb mode={orbMode} levelSource={orbLevel} reduced={reduced} running />
         </div>

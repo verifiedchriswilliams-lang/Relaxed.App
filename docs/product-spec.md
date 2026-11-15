@@ -66,8 +66,10 @@ stateDiagram-v2
 
 - **Voiced welcome (relaxed, first launch only — voiced onboarding).** A brand-new
   visitor opens on a full-screen first run (`components/VoicedHello.tsx`, gated by
-  `VOICED_HELLO_ENABLED`, currently off in production). On open, a **load video**
-  (`public/orb/intro.mp4`) plays the stem "r" resolving into the living **Ring Orb**
+  `VOICED_HELLO_ENABLED`, currently off in production). It opens on a **load screen** (the
+  static stem "r" + "tap to begin", continuous with the native splash); that first **tap
+  unlocks audio** (mobile/WKWebView require a gesture before sound) and starts a **load
+  video** (`public/orb/intro.mp4`) that plays the stem resolving into the living **Ring Orb**
   (`components/RingOrb.tsx`, a WebGL component), then hands off seamlessly to the live orb,
   which **guides the whole setup by voice**: name → intention → time → **soundscape**
   (required) → **voice** (optional) → review → begin, one question at a time, with the
