@@ -36,6 +36,7 @@ relaxed.app/
 | `app/api/generate/route.ts` | Node route | Preset session assembly + cache-first voicing. |
 | `app/api/custom-script/route.ts` | Node route | Live bespoke script via Claude. |
 | `app/api/tts/route.ts` | Node route | One line → MP3 (custom streaming). |
+| `app/api/eleven-token/route.ts` | Node route | Mints a short-lived ElevenLabs agent token / signed URL for a **private** onboarding agent (keeps the API key server-side). Dormant for a public agent. See [voice-agent-spec](./voice-agent-spec.md), [security](./security.md). |
 | `app/icon.tsx`, `app/apple-icon.tsx` | Edge image | Brand-aware favicon / home-screen icon. |
 | `app/opengraph-image.tsx`, `app/twitter-image.tsx` | Edge image | Brand-aware share cards. |
 | `app/artwork/route.tsx` | Edge route | 512² Now-Playing lock-screen artwork (`?c=<category>`). |

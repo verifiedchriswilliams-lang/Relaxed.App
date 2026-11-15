@@ -124,6 +124,7 @@ export const ROUTE_LIMITS: Record<string, number> = {
   "custom-script": envLimit("RL_CUSTOM_PER_MIN", 8),
   tts: envLimit("RL_TTS_PER_MIN", 40),
   generate: envLimit("RL_GENERATE_PER_MIN", 12),
+  "eleven-token": envLimit("RL_ELEVEN_TOKEN_PER_MIN", 20),
 };
 
 // Route glue: enforce the named route's limit for this request. Returns a 429

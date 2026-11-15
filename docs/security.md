@@ -28,6 +28,7 @@ no user-supplied file upload, and no admin surface.
 | `/api/generate` | name, context, duration, voice, accent, variantSeq | Per-IP rate limit; inputs clamped (name ≤60, duration bounded, enums); output audio bounded; bounded TTS concurrency. |
 | `/api/custom-script` | name, phrase, duration, leadSeconds, arrivalText | Per-IP rate limit; inputs clamped (phrase ≤70, arrivalText ≤300, duration 3–30); empty phrase rejected (400). |
 | `/api/tts` | text, voice, accent | Per-IP rate limit; text ≤600; empty rejected (400); `no-store`. |
+| `/api/eleven-token` | (none) | Mints a 15-min ElevenLabs agent token/signed URL server-side so the API key never reaches the client. Per-IP rate limit; `no-store`; 503 if no key. Only used when the agent is private (`NEXT_PUBLIC_ELEVENLABS_AGENT_PRIVATE=1`); dormant for a public agent. |
 
 Notable properties and residual risks:
 
@@ -40,7 +41,7 @@ Notable properties and residual risks:
   now enforce an application-level **per-IP rate limit** (`lib/rateLimit.ts`) on all
   three routes: a fixed-window counter keyed by `x-forwarded-for`, fail-open on
   error, with per-route ceilings tunable via `RL_CUSTOM_PER_MIN` / `RL_TTS_PER_MIN`
-  / `RL_GENERATE_PER_MIN`. It is **best-effort per serverless instance** (in-memory,
+  / `RL_GENERATE_PER_MIN` / `RL_ELEVEN_TOKEN_PER_MIN`. It is **best-effort per serverless instance** (in-memory,
   not shared across instances), so it caps a burst on one warm instance but not a
   fully distributed flood; the durable upgrade is a shared store (Vercel KV /
   Upstash) behind the same interface, and platform bot protection can layer on top.

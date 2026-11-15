@@ -155,12 +155,16 @@ export async function startVoiceAgent(
     },
   };
 
-  // Public agent connects by id; a private agent needs a short-lived token from our
-  // own server route (never the API key in the client).
+  // Public agent connects by id; a private agent (NEXT_PUBLIC_ELEVENLABS_AGENT_PRIVATE=1,
+  // with auth enabled on the agent) needs a short-lived token from our own server route
+  // (never the API key in the client). An explicit endpoint overrides the default route.
+  const endpoint =
+    opts.signedUrlEndpoint ??
+    (process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_PRIVATE === "1" ? "/api/eleven-token" : undefined);
   let auth: Record<string, unknown> = { agentId: id };
-  if (opts.signedUrlEndpoint) {
+  if (endpoint) {
     try {
-      const res = await fetch(opts.signedUrlEndpoint);
+      const res = await fetch(endpoint);
       if (res.ok) {
         const j = (await res.json()) as { signedUrl?: string; conversationToken?: string };
         if (j.conversationToken) auth = { conversationToken: j.conversationToken };

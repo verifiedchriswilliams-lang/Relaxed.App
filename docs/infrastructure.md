@@ -62,6 +62,7 @@ deployment never disturbs the other.
 | `NEXT_PUBLIC_ENABLE_CUSTOM` | Toggle the "Make Your Own" tile |
 | `NEXT_PUBLIC_VOICED_HELLO` | `1` turns the voiced first run on in that environment (local/preview); unset → off (production default). This is the `VOICED_HELLO_ENABLED` gate. |
 | `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` | Overrides the guided-onboarding agent's public id (a working default is baked in). Public id; ships in the browser bundle. |
+| `NEXT_PUBLIC_ELEVENLABS_AGENT_PRIVATE` | `1` when the agent has auth enabled: the client then fetches a short-lived token from `/api/eleven-token` (needs `ELEVENLABS_API_KEY`) instead of connecting by id. Unset → public connect. |
 
 > **Model note.** The production model is **`claude-opus-5`** (the code default;
 > `.env.example` agrees). Vercel has no `ANTHROPIC_MODEL` override set, so the code
