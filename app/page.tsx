@@ -108,10 +108,11 @@ const PlayOrb = dynamic(() => import("@/components/PlayOrb"), { ssr: false });
 // The voiced welcome (onboarding) is a once-ever first-run moment, independent of
 // whether prefs are saved, so it never nags on every launch.
 const HELLO_SEEN_KEY = "relaxed.hello.v1";
-// Kill switch for the voiced first-run welcome. Off in production: the first-run
-// experience isn't good enough to put in front of every new visitor yet. The flow
-// stays in the code (gated here) until it's polished and re-enabled deliberately.
-const VOICED_HELLO_ENABLED = false;
+// Kill switch for the voiced first-run welcome. OFF by default (production), so the flow
+// stays dormant until it's polished and enabled deliberately. Set NEXT_PUBLIC_VOICED_HELLO=1
+// in an environment (local dev or a preview) to turn it on there for testing without
+// touching production.
+const VOICED_HELLO_ENABLED = process.env.NEXT_PUBLIC_VOICED_HELLO === "1";
 
 import GUIDES from "@/lib/voices.json";
 

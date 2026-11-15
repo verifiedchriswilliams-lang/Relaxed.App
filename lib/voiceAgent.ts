@@ -49,9 +49,14 @@ export interface StartVoiceAgentOptions {
   signedUrlEndpoint?: string;
 }
 
+// The configured guided-onboarding agent. Public ids are not secret (they ship in the
+// browser bundle for any NEXT_PUBLIC_* value anyway), so a default is baked in for
+// zero-config testing; an env var overrides it per environment.
+const DEFAULT_AGENT_ID = "agent_4101m7ecnkfnfwmt2bpt1by316zs";
+
 export function agentId(): string | undefined {
-  const id = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID;
-  return id && id.trim() ? id.trim() : undefined;
+  const id = process.env.NEXT_PUBLIC_ELEVENLABS_AGENT_ID?.trim() || DEFAULT_AGENT_ID;
+  return id || undefined;
 }
 
 export function agentConfigured(): boolean {
