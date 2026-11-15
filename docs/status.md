@@ -40,12 +40,24 @@ _As of 2026-10-08._
   RingOrb.tsx`, a WebGL component) plus a **load video** (`public/orb/intro.mp4`, the stem
   resolving into the orb) that hands off to the live orb, all in `components/VoicedHello.tsx`
   behind the same `VOICED_HELLO_ENABLED` flag. The orb reacts only to the app's own voice
-  (`engine.voiceLevel()`), never the mic. Preview the orb in isolation at the dev route
-  `/ring-orb`. **On device, voice input still needs** the `SpeechInput` plugin in the Xcode
-  target and the `NSMicrophoneUsageDescription` + `NSSpeechRecognitionUsageDescription`
-  Info.plist strings (else it falls back to typing). Supersedes the earlier `liquid-glass-orb`
-  spike. Then: Phase 3 (intention/duration/voice/soundscape by voice), a native release — 1.6
-  candidate (see [roadmap.md](./roadmap.md)).
+  (the agent's or the app's TTS, via `engine.voiceLevel()`), never the mic. Preview the orb
+  in isolation at the dev route `/ring-orb`. Supersedes the earlier `liquid-glass-orb` spike.
+  **Full build now on the branch (not merged, flag still off):** the complete guided flow is
+  built out, name → intention → time → **soundscape** → **voice** → review → begin, with the
+  orb floating up once for the settings and back to centre for compose/session/close
+  (`components/VoicedHello.tsx`). It is driven by an **ElevenLabs guided agent**
+  (`lib/voiceAgent.ts`, `@elevenlabs/client`, agent id in `NEXT_PUBLIC_ELEVENLABS_AGENT_ID`;
+  spec in [voice-agent-spec.md](./voice-agent-spec.md)) using mic **Option A**; **tap/type is
+  the guaranteed fallback**, so it works with no agent. The **session screen** uses the living
+  orb with the soundscape motif in a **quieted core** (`components/PlayOrb.tsx`,
+  `public/orb/calm-play.png`), breathing with the clock. **In the agent path the user's voice
+  leaves the device** (processed by ElevenLabs; disclosed in the mic prompt, approved) — see
+  [data-privacy.md](./data-privacy.md). **Still to do before enabling:** build the ElevenLabs
+  agent from the spec and set `NEXT_PUBLIC_ELEVENLABS_AGENT_ID`, render the Option-A greeting
+  clip in the agent's voice, real-device QA (mic, audio-gesture unlock, the `SpeechInput`
+  plugin + `NSMicrophoneUsageDescription`/`NSSpeechRecognitionUsageDescription` Info.plist
+  strings), then Chris's sign-off. A native release would be the 1.6 candidate (see
+  [roadmap.md](./roadmap.md)).
 - Nothing in Apple review. **1.4.2 approved and launched 2026-10-08** (start-from-watch +
   watch-face widget + setup-screen layout). 1.4.1 released 2026-10-04 (expedited). The web
   continues to deploy continuously on push to `main`.

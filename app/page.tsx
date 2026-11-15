@@ -102,6 +102,9 @@ const BANNER_DISMISS_KEY = "relaxed.appbanner.v1";
 // the video load only when the overlay actually shows (first run, relaxed) and never bloat
 // the main bundle or the ElevenMind build.
 const VoicedHello = dynamic(() => import("@/components/VoicedHello"), { ssr: false });
+// The living session orb (quieted core + soundscape motif). relaxed voiced experience
+// only; lazy so three.js stays out of the main bundle, like RingOrb.
+const PlayOrb = dynamic(() => import("@/components/PlayOrb"), { ssr: false });
 // The voiced welcome (onboarding) is a once-ever first-run moment, independent of
 // whether prefs are saved, so it never nags on every launch.
 const HELLO_SEEN_KEY = "relaxed.hello.v1";
@@ -1784,8 +1787,17 @@ export default function Home() {
           <Wordmark />
         </div>
         <div className="generating">
-          <div className="gen-orb">
-            {IS_RELAXED ? (
+          <div className={`gen-orb${IS_RELAXED && VOICED_HELLO_ENABLED ? " gen-orb-live" : ""}`}>
+            {IS_RELAXED && VOICED_HELLO_ENABLED ? (
+              // The living orb settles to centre here (quieted core + soundscape motif),
+              // the same orb that then carries the session.
+              <PlayOrb
+                soundscape={soundscape}
+                mode="speaking"
+                levelSource={() => engineRef.current.voiceLevel()}
+                running
+              />
+            ) : IS_RELAXED ? (
               <StemGlyph size={92} className="gen-glyph" />
             ) : (
               <>
@@ -1875,24 +1887,38 @@ export default function Home() {
         </div>
 
         <div className="player-center">
-          <div className="play-orb" ref={playOrbRef}>
-            <div
-              className={`disc ${playing ? "breathe" : ""}`}
-              style={
-                IS_RELAXED
-                  ? undefined
-                  : ({
-                      background: selected.art,
-                      "--pg": selected.glow,
-                    } as React.CSSProperties)
-              }
-            />
-            <div className="ring" />
-            {/* relaxed: the motif sits OUTSIDE the breathing disc so it stays
-                steady (its own gentle motion) while the ring expands/contracts
-                around it — otherwise it scales with the ring and jitters. */}
-            {IS_RELAXED && <SoundMotif id={soundscape} />}
-          </div>
+          {IS_RELAXED && VOICED_HELLO_ENABLED ? (
+            // Voiced experience: the living orb with the soundscape motif in its quieted
+            // core, breathing with the clock, reacting to the guide's voice.
+            <div className="play-orb play-orb-live" ref={playOrbRef}>
+              <PlayOrb
+                soundscape={soundscape}
+                breathing
+                mode="speaking"
+                levelSource={() => engineRef.current.voiceLevel()}
+                running
+              />
+            </div>
+          ) : (
+            <div className="play-orb" ref={playOrbRef}>
+              <div
+                className={`disc ${playing ? "breathe" : ""}`}
+                style={
+                  IS_RELAXED
+                    ? undefined
+                    : ({
+                        background: selected.art,
+                        "--pg": selected.glow,
+                      } as React.CSSProperties)
+                }
+              />
+              <div className="ring" />
+              {/* relaxed: the motif sits OUTSIDE the breathing disc so it stays
+                  steady (its own gentle motion) while the ring expands/contracts
+                  around it — otherwise it scales with the ring and jitters. */}
+              {IS_RELAXED && <SoundMotif id={soundscape} />}
+            </div>
+          )}
           <div className="breath">
             <div className={`cue ${playing ? "pulse" : ""}`}>{breathCue}</div>
             <div className="sub">{breathSub}</div>
@@ -1981,19 +2007,26 @@ export default function Home() {
     content = (
       <main className="wrap done-wrap">
         <div className="done">
-          <div className="done-orb">
-            <div
-              className="disc"
-              style={
-                IS_RELAXED
-                  ? undefined
-                  : ({
-                      background: selected.art,
-                      "--pg": selected.glow,
-                    } as React.CSSProperties)
-              }
-            />
-            <div className="ring" />
+          <div className={`done-orb${IS_RELAXED && VOICED_HELLO_ENABLED ? " done-orb-live" : ""}`}>
+            {IS_RELAXED && VOICED_HELLO_ENABLED ? (
+              // The orb rests at centre for the quiet close (quieted core, no motif).
+              <PlayOrb mode="idle" running />
+            ) : (
+              <>
+                <div
+                  className="disc"
+                  style={
+                    IS_RELAXED
+                      ? undefined
+                      : ({
+                          background: selected.art,
+                          "--pg": selected.glow,
+                        } as React.CSSProperties)
+                  }
+                />
+                <div className="ring" />
+              </>
+            )}
           </div>
           <div className="done-title">
             Well done{name.trim() ? <>, {name.trim()}</> : ""}.

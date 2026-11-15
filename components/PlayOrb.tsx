@@ -17,12 +17,18 @@ import { SoundMotif } from "@/lib/soundMotifs";
 export interface PlayOrbProps extends Omit<RingOrbProps, "texture"> {
   /** Soundscape id whose motif glows in the core (e.g. "rain"). Omit for a bare core. */
   soundscape?: string;
+  /** When true, the orb scales gently with the breath clock (the page's --pb var); the
+   *  motif stays steady. The breath lives in the orb, not the sound. */
+  breathing?: boolean;
 }
 
-export default function PlayOrb({ soundscape, className, style, ...orb }: PlayOrbProps) {
+export default function PlayOrb({ soundscape, breathing, className, style, ...orb }: PlayOrbProps) {
+  const cls = ["orb-play", breathing ? "breathing" : "", className].filter(Boolean).join(" ");
   return (
-    <div className={className ? `orb-play ${className}` : "orb-play"} style={style}>
-      <RingOrb texture="play" {...orb} />
+    <div className={cls} style={style}>
+      <div className="orb-canvas">
+        <RingOrb texture="play" {...orb} />
+      </div>
       {soundscape ? <SoundMotif id={soundscape} className="core" /> : null}
     </div>
   );

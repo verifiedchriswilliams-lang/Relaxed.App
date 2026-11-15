@@ -68,19 +68,27 @@ stateDiagram-v2
   visitor opens on a full-screen first run (`components/VoicedHello.tsx`, gated by
   `VOICED_HELLO_ENABLED`, currently off in production). On open, a **load video**
   (`public/orb/intro.mp4`) plays the stem "r" resolving into the living **Ring Orb**
-  (`components/RingOrb.tsx`, a WebGL component), then hands off seamlessly to the live
-  orb; below it, "welcome to relaxed" and "touch to begin". The tap unlocks audio and the
-  orb **speaks** the welcome ("Welcome to relaxed. What should we call you?", best-effort
-  via `/api/tts` in a default voice). Then, where voice input is available (the on-device
-  `SpeechInput` plugin, or the browser's speech API on the web), a second step asks "what
-  should we call you?" with a **mic to say your name** ("or type instead" fallback); the
-  recognized name becomes the editable name chip (confirm-and-edit). The orb is always
-  gently alive (constant flow + orbital drift) and, while the app speaks, its brightness,
-  warmth (ivory→gold) and two ribbon rings respond to the **app's own voice level**
-  (`engine.voiceLevel()`) — never the microphone. New users only; returning users and
-  ElevenMind go straight to the header below. The orb can be previewed in isolation at the
-  dev route `/ring-orb`. Intention/duration/voice/soundscape by voice are a later phase;
-  see [roadmap.md](./roadmap.md).
+  (`components/RingOrb.tsx`, a WebGL component), then hands off seamlessly to the live orb,
+  which **guides the whole setup by voice**: name → intention → time → **soundscape**
+  (required) → **voice** (optional) → review → begin, one question at a time, with the
+  content always in the black space below the orb. The orb floats up once (a single smooth
+  move) to make room for the settings, then settles back to centre at compose and stays
+  centred through the session and the close. When the **ElevenLabs guided agent** is
+  configured (`lib/voiceAgent.ts`, `NEXT_PUBLIC_ELEVENLABS_AGENT_ID`; see
+  [voice-agent-spec](./voice-agent-spec.md)) it drives the flow by voice — mic timing is
+  Option A: a pre-rendered greeting plays, then the mic is requested, then the agent
+  connects and listens. **Every step also works by tap and type** (the guaranteed
+  fallback, used when no agent is configured or the mic is declined). A **returning user**
+  opens on a welcome-back step with their last session pre-loaded (repeat, or "something
+  new"), plus a history entry point. The orb is always gently alive (constant flow +
+  orbital drift) and, while a line plays, its brightness, warmth (ivory→gold) and two
+  ribbon rings respond to the **voice level** (the agent's or the app's TTS) — never the
+  microphone. In this experience the **session screen** also uses the living orb: the
+  chosen soundscape's line motif glows in the orb's **quieted core**
+  (`components/PlayOrb.tsx`, `public/orb/calm-play.png`) while the orb breathes with the
+  breath clock; compose and the close use the same centred orb. New users and returning
+  users (ElevenMind goes straight to the header below). The orb can be previewed in
+  isolation at the dev route `/ring-orb`.
 - **Header (the name is an editable part of the headline, never a standing box).**
   Both brands share this: first run shows "what should we call you?" with a name
   field; once a name is set (or remembered), the header becomes the greeting with
