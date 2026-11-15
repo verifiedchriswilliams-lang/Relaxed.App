@@ -19,6 +19,12 @@ import { SOUNDSCAPES, SOUND_CATS } from "@/lib/audio/soundscapes";
 import type { Soundscape, SoundCat, Accent } from "@/lib/audio/types";
 import { PREMIUM_VOICES_FEMALE, PREMIUM_VOICES_MALE } from "@/lib/premiumVoices";
 import GUIDES from "@/lib/voices.json";
+import {
+  agentConfigured,
+  startVoiceAgent,
+  type AgentTools,
+  type VoiceAgentController,
+} from "@/lib/voiceAgent";
 
 type Step =
   | "intro"
@@ -132,6 +138,12 @@ export default function VoicedHello({
   const [introDone, setIntroDone] = useState(isReturning);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
+  // The ElevenLabs guided agent (when configured). agentActive flips true once it is
+  // connected and driving; until then (and if it never connects) the tap/type + app-TTS
+  // fallback runs. agentRef holds the controller for the orb's level + teardown.
+  const agentRef = useRef<VoiceAgentController | null>(null);
+  const agentActive = useRef(false);
+
   // Collected selections (local mirror for display; also pushed to the app via pick*).
   const [name, setName] = useState(knownName);
   const [context, setContext] = useState<ContextId | null>(null);
@@ -149,10 +161,11 @@ export default function VoicedHello({
   const [voiceTab, setVoiceTab] = useState<"her" | "him" | "none">("her");
 
   // Speak a line through the app TTS. The orb reacts on its own via voiceLevel, so this
-  // just needs to fire the audio (best-effort; silent if no speak fn is wired).
+  // just needs to fire the audio (best-effort; silent if no speak fn is wired). Once the
+  // live agent is driving, IT does the talking, so app-TTS lines are suppressed.
   const say = useCallback(
     async (line: string) => {
-      if (!speak) return;
+      if (!speak || agentActive.current) return;
       try {
         await speak(line);
       } catch {
@@ -161,6 +174,12 @@ export default function VoicedHello({
     },
     [speak],
   );
+
+  // The orb's level: the agent's own output while it drives, else the app's TTS.
+  const orbLevel = useCallback(() => {
+    if (agentActive.current && agentRef.current) return agentRef.current.getOutputLevel();
+    return voiceLevel();
+  }, [voiceLevel]);
 
   // Intro video -> hand off to the orb, then open the conversation.
   useEffect(() => {
@@ -179,12 +198,20 @@ export default function VoicedHello({
     };
   }, [isReturning]);
 
-  // Once the orb is live, greet and ask the first question (the name).
+  // Once the orb is live, greet and ask the first question (the name). Option A: play the
+  // greeting (app TTS, mic off), then connect the agent so it listens for the name. If no
+  // agent is configured, this is just the greeting and the tap/type flow takes over.
   useEffect(() => {
     if (step !== "intro" || !introDone) return;
     setStep("name");
-    void say("Welcome to relaxed. We'll make a guided journey, just for you. First, what should we call you?");
-  }, [step, introDone, say]);
+    void (async () => {
+      await say(
+        "Welcome to relaxed. We'll make a guided journey, just for you. First, what should we call you?",
+      );
+      void startAgent();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, introDone]);
 
   // Returning: greet by name.
   useEffect(() => {
@@ -254,6 +281,72 @@ export default function VoicedHello({
     void say("Here's your session.");
   };
 
+  // Map an agent set_voice({selection,name}) to a VoiceOpt and record it.
+  const ALL_VOICE_OPTS: VoiceOpt[] = [...FREE_FEMALE, ...FREE_MALE, ...PREM_FEMALE, ...PREM_MALE];
+  const commitVoiceFromAgent = (selection?: string, voiceName?: string) => {
+    if (selection === "none") return commitVoice(null);
+    if (voiceName) {
+      const byName = ALL_VOICE_OPTS.find(
+        (o) => o.key === voiceName || o.label.toLowerCase() === voiceName.toLowerCase(),
+      );
+      if (byName) return commitVoice(byName);
+    }
+    if (selection === "him") return commitVoice(FREE_MALE[0]);
+    return commitVoice(FREE_FEMALE[0]); // default "her"
+  };
+
+  // Start the guided agent (Option A). The caller has already played the greeting; this
+  // requests the mic and connects with an empty first message so the agent just listens.
+  // If it can't connect (no agent configured, mic denied, error), the tap/type fallback
+  // stays in control. The agent's client tools call the very same commit* handlers, so
+  // voice and tap drive identical state.
+  async function startAgent() {
+    if (!agentConfigured() || agentRef.current) return;
+    const tools: AgentTools = {
+      set_name: ({ name: n }) => {
+        if (n) commitName(n);
+      },
+      set_intention: ({ intention, phrase }) => {
+        if (intention) commitIntention(intention as ContextId, phrase);
+      },
+      set_duration: ({ minutes, open_ended }) =>
+        commitDuration(open_ended ? INFINITE : minutes ?? 10, !!open_ended),
+      set_soundscape: ({ soundscape: s }) => {
+        if (s) commitSoundscape(s as Soundscape);
+      },
+      set_voice: ({ selection, name: vn }) => commitVoiceFromAgent(selection, vn),
+      begin_session: () => onBegin(),
+    };
+    const ctrl = await startVoiceAgent({
+      tools,
+      dynamicVariables: {
+        user_name: knownName,
+        is_returning: isReturning ? "true" : "false",
+        has_premium: hasPremium ? "true" : "false",
+        last_session_summary: lastSession ? `${lastSession.label}, ${lastSession.sub}` : "",
+      },
+      onConnect: () => {
+        agentActive.current = true;
+      },
+      onDisconnect: () => {
+        agentActive.current = false;
+      },
+      onError: () => {
+        agentActive.current = false;
+      },
+    });
+    agentRef.current = ctrl;
+  }
+
+  // End the agent (and release the mic) when the overlay goes away.
+  useEffect(() => {
+    return () => {
+      void agentRef.current?.stop();
+      agentRef.current = null;
+      agentActive.current = false;
+    };
+  }, []);
+
   // Labels for the review sentence.
   const ctxLabel = useMemo(
     () => (context ? CONTEXTS.find((c) => c.id === context)?.label ?? context : ""),
@@ -279,7 +372,7 @@ export default function VoicedHello({
 
       {(introDone || isReturning) && (
         <div className={`vh-orb${orbUp ? " up" : ""}`}>
-          <RingOrb mode={orbMode} levelSource={voiceLevel} reduced={reduced} running />
+          <RingOrb mode={orbMode} levelSource={orbLevel} reduced={reduced} running />
         </div>
       )}
 
@@ -506,7 +599,10 @@ export default function VoicedHello({
               className="vh-ghost"
               onClick={() => {
                 setStep("intention");
-                void say("Let's make something new. What do you need right now?");
+                void (async () => {
+                  await say("Let's make something new. What do you need right now?");
+                  void startAgent();
+                })();
               }}
             >
               something new

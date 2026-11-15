@@ -52,6 +52,7 @@ For live operational state (review status, offer codes, outbound) see [status.md
 | Media storage | Vercel Blob | SDK 2.8.0 | Soundscape beds, cached voice lines, previews. |
 | Client audio | Web Audio API | — | Custom mixer; no audio library. |
 | Onboarding orb | three.js | 0.160.1 | WebGL voice orb (`components/RingOrb.tsx`); dynamically imported, so it stays out of the main bundle. |
+| Voiced onboarding | @elevenlabs/client | ^1.36.1 | The guided conversational agent for the voiced first run (`lib/voiceAgent.ts`); dynamically imported, loads only when a session connects. Behind `VOICED_HELLO_ENABLED`. |
 | iOS shell | Capacitor | 8.5.0 | WKWebView over the hosted site + native plugins. |
 | Analytics | Vercel Web Analytics | 2.0.1 | First-party, cookieless. |
 | Styling | Hand-authored CSS | — | Custom properties; no framework. |

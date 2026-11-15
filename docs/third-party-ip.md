@@ -16,6 +16,7 @@ Runtime (`dependencies`):
 | `@capacitor/core`, `/ios`, `/haptics`, `/splash-screen`, `/status-bar`, `/local-notifications` | 8.x | MIT |
 | `@wasm-audio-decoders/flac` (+ `/common`) | 0.2.x | MIT (bundles libFLAC, BSD) |
 | `three` | 0.160.1 | MIT | WebGL for the onboarding voice orb. |
+| `@elevenlabs/client` | ^1.36.1 | MIT | The guided conversational agent for the voiced first run. Loads only when a session connects; the user's spoken answers are processed by ElevenLabs (see [data-privacy](./data-privacy.md)). |
 | `@vercel/analytics` | 2.0.1 | MPL-2.0 / Apache-2.0 **[confirm]** |
 
 Dev (`devDependencies`):

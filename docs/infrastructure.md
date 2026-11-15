@@ -60,6 +60,7 @@ deployment never disturbs the other.
 | `NEXT_PUBLIC_BRAND` | Selects relaxed vs elevenmind |
 | `NEXT_PUBLIC_BLOB_BASE_URL` | Base origin for hosted audio; unset → serve from `/public` |
 | `NEXT_PUBLIC_ENABLE_CUSTOM` | Toggle the "Make Your Own" tile |
+| `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` | The guided voiced-onboarding agent's public id. Unset → the voiced first run uses its tap/type fallback (no live agent). Behind `VOICED_HELLO_ENABLED`. |
 
 > **Model note.** The production model is **`claude-opus-5`** (the code default;
 > `.env.example` agrees). Vercel has no `ANTHROPIC_MODEL` override set, so the code

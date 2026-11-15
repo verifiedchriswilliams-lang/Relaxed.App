@@ -37,15 +37,26 @@ tradeoff).
 
 ### Voice onboarding (microphone)
 
-The voiced onboarding uses the microphone only when the person taps the mic to answer by
-voice (it is always optional; typing works throughout). **Recognition is on-device** in
-the native app (the iOS `Speech` framework, `requiresOnDeviceRecognition`), so the audio
-never leaves the phone. On the **web**, where there is no on-device option, it uses the
-browser's own Web Speech API (which may send audio to the browser vendor's service) — a
-web-only behavior; the native app, which is the focus, stays on-device. relaxed keeps
-only the **recognized name text** (the same `relaxed.…` prefs as a typed name), never the
-audio. The spoken greeting itself is a short fixed line voiced through the existing
-`/api/tts` (ElevenLabs), same as any other line.
+The voiced onboarding uses the microphone only when the person answers by voice; it is
+**always optional** and typing works throughout every step. There are two paths:
+
+- **Guided agent (voiced first run, behind `VOICED_HELLO_ENABLED`).** When the
+  ElevenLabs conversational agent is configured (`NEXT_PUBLIC_ELEVENLABS_AGENT_ID`) and
+  the person grants the mic, their **spoken answers are streamed to ElevenLabs** (the
+  agent's speech-to-text and the conversation), so in this mode the **voice does leave
+  the device**. This is a deliberate choice for the voice-first setup and is disclosed in
+  the mic prompt; declining the mic (or no agent configured) falls back to tap/type, where
+  nothing audio leaves the device. relaxed still stores only the resulting **choices**
+  (name, intention, time, soundscape, voice) as the usual on-device `relaxed.…` prefs,
+  never audio. See [voice-agent-spec](./voice-agent-spec.md).
+- **On-device name capture (legacy/typed-fallback path, `lib/speech.ts`).** The native
+  app's on-device recognition (iOS `Speech`, `requiresOnDeviceRecognition`) keeps audio
+  on the phone; the web's Web Speech API may send audio to the browser vendor. Only the
+  **recognized name text** is kept, never the audio.
+
+The orb never visualises or records the microphone: it reacts only to the app's own
+voice output (the agent's or the app's TTS). The spoken lines themselves are voiced
+through ElevenLabs, the same as any other line in a session.
 
 ## 3. Data flows — what leaves the device
 

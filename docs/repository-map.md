@@ -79,6 +79,7 @@ relaxed.app/
 | `lib/native.ts` | Capacitor bridge: haptics + MediaSession + local notifications; safe web no-ops | [ios-native](./ios-native.md) |
 | `lib/watchRemote.ts` | Web side of the Apple Watch remote: dedupe + push session state / clear, and `onWatchCommand`, bridged to the `WatchBridge` Capacitor plugin; a no-op without the plugin (tests in `tests/watchRemote.test.ts`) | [ios-native](./ios-native.md) |
 | `lib/speech.ts` | Voice input for the voiced onboarding: `speechAvailable`, `listenOnce` (on-device `SpeechInput` plugin, else the browser Web Speech API, else none), `parseSpokenName` (tests in `tests/speech.test.ts`) | [ios-native](./ios-native.md), [data-privacy](./data-privacy.md) |
+| `lib/voiceAgent.ts` | The ElevenLabs guided-agent layer for the voiced first run: dynamically imports `@elevenlabs/client`, requests the mic (Option A), connects with an empty first message, maps the agent's client tools to the app's setup handlers, and exposes the agent's output level for the orb. Dormant unless `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` is set. | [voice-agent-spec](./voice-agent-spec.md), [data-privacy](./data-privacy.md) |
 | `lib/voices.json` | Voice guide names used by the preview builder | [audio-engine](./audio-engine.md) |
 
 ## `scripts/` — maintenance tooling
