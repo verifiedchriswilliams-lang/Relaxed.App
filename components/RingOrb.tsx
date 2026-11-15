@@ -32,9 +32,19 @@ export interface RingOrbProps {
   /** When false, the orb holds at t=0 (its clock is paused). Flip to true at the
    *  video->orb handoff so the live orb starts from the video's last frame. Default true. */
   running?: boolean;
+  /** Which authored frame to warp. "calm" (default) is the full mandala core;
+   *  "play" is the quieted-core frame (public/orb/calm-play.png) used during a session
+   *  so a per-soundscape motif can sit in the core. Can change at runtime (e.g. the
+   *  compose transition); the texture swaps in place without re-initialising WebGL. */
+  texture?: "calm" | "play";
   className?: string;
   style?: React.CSSProperties;
 }
+
+const TEXTURE_SRC: Record<NonNullable<RingOrbProps["texture"]>, string> = {
+  calm: "/orb/calm-1.png",
+  play: "/orb/calm-play.png",
+};
 
 const ANGELIC_LOUD = 0.4; // warmest (goldiest) at the loudest app peaks
 const INK = new THREE.Vector3(0.0706, 0.0667, 0.0627); // app background (#121110)
@@ -94,13 +104,18 @@ export default function RingOrb({
   angelicQuiet = 0.8,
   reduced,
   running = true,
+  texture = "calm",
   className,
   style,
 }: RingOrbProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   // Latest props, read inside the animation loop without re-initialising WebGL.
-  const live = useRef({ mode, level, levelSource, angelicQuiet, reduced, running });
-  live.current = { mode, level, levelSource, angelicQuiet, reduced, running };
+  const live = useRef({ mode, level, levelSource, angelicQuiet, reduced, running, texture });
+  live.current = { mode, level, levelSource, angelicQuiet, reduced, running, texture };
+  // Refs so a texture change can swap the uniform in place (orb is persistent, the
+  // frame it warps changes at the compose transition) without tearing down WebGL.
+  const matRef = useRef<THREE.ShaderMaterial | null>(null);
+  const loaderRef = useRef<THREE.TextureLoader | null>(null);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -129,7 +144,8 @@ export default function RingOrb({
     const camera = new THREE.Camera();
 
     const loader = new THREE.TextureLoader();
-    const tex = loader.load("/orb/calm-1.png", (t) => {
+    loaderRef.current = loader;
+    const tex = loader.load(TEXTURE_SRC[live.current.texture ?? "calm"], (t) => {
       mat.uniforms.uImgAspect.value = t.image.width / t.image.height;
     });
     tex.colorSpace = THREE.LinearSRGBColorSpace;
@@ -150,6 +166,7 @@ export default function RingOrb({
         uBg: { value: INK.clone() },
       },
     });
+    matRef.current = mat;
     const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), mat);
     scene.add(mesh);
 
@@ -197,13 +214,39 @@ export default function RingOrb({
       cancelAnimationFrame(raf);
       ro.disconnect();
       mesh.geometry.dispose();
+      const liveTex = mat.uniforms.tOrb.value as THREE.Texture | null;
+      if (liveTex) liveTex.dispose();
       mat.dispose();
-      tex.dispose();
+      matRef.current = null;
+      loaderRef.current = null;
       renderer.dispose();
       if (canvas.parentNode) canvas.parentNode.removeChild(canvas);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Swap the warped frame in place when `texture` changes (e.g. calm -> play at the
+  // compose transition). The persistent orb keeps its clock and motion; only the
+  // sampled image changes. No effect on first mount (the initial load above wins).
+  const didMount = useRef(false);
+  useEffect(() => {
+    if (!didMount.current) {
+      didMount.current = true;
+      return;
+    }
+    const mat = matRef.current;
+    const loader = loaderRef.current;
+    if (!mat || !loader) return;
+    const next = loader.load(TEXTURE_SRC[texture ?? "calm"], (t) => {
+      mat.uniforms.uImgAspect.value = t.image.width / t.image.height;
+    });
+    next.colorSpace = THREE.LinearSRGBColorSpace;
+    next.minFilter = THREE.LinearFilter;
+    next.magFilter = THREE.LinearFilter;
+    const prev = mat.uniforms.tOrb.value as THREE.Texture | null;
+    mat.uniforms.tOrb.value = next;
+    if (prev) prev.dispose();
+  }, [texture]);
 
   return (
     <div
