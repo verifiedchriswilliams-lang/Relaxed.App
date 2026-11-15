@@ -857,6 +857,21 @@
   transform: translateX(15px);
   background: var(--ink-0);
 }
+/* persistent escape hatch during the flow */
+[data-brand="relaxed"] .vh-skip {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top));
+  left: 16px;
+  z-index: 5;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: var(--ink-2);
+  background: none;
+  border: 0;
+  padding: 6px 8px;
+  cursor: pointer;
+}
 /* history entry point (returning) */
 [data-brand="relaxed"] .vh-hist {
   position: absolute;

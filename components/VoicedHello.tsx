@@ -430,6 +430,18 @@ export default function VoicedHello({
         </div>
       )}
 
+      {/* Persistent escape hatch: never trap anyone in the flow. Drops to the classic home.
+          Hidden on the load screen (nothing to escape yet) and on the review/returning
+          steps, which carry their own "not now". */}
+      {step !== "load" &&
+        step !== "intro" &&
+        step !== "review" &&
+        step !== "returning" && (
+          <button className="vh-skip" onClick={onExit} aria-label="Skip setup">
+            skip
+          </button>
+        )}
+
       {/* NAME */}
       {step === "name" && (
         <div className="vh-zone">
