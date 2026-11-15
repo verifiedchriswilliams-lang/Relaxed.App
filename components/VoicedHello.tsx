@@ -241,48 +241,74 @@ export default function VoicedHello({
   // never reacts to the mic.
   const orbMode = "speaking" as const;
 
-  // ---- handlers (shared by tap and, later, the voice agent) ----
-  const commitName = (n: string) => {
+  // ---- handlers (shared by tap and the voice agent) ----
+  // `fromAgent` = the agent's own tool call (it already knows + is speaking), so we don't
+  // echo back to it. A tap (fromAgent false) while the agent drives is reported to the
+  // agent via notify() so it acknowledges and advances, keeping voice + UI in lock-step.
+  const agentOn = () => agentActive.current;
+
+  const commitName = (n: string, fromAgent = false) => {
     const clean = n.trim();
     if (!clean) return;
     setName(clean);
     onPickName(clean);
     setTyping(false);
     setDraft("");
-    setStep("nameHeard");
-    void say(`Lovely to meet you, ${clean}.`).then(() => {
-      setStep("intention");
-      void say("What do you need right now? You could sleep, find flow, relax, breathe, or just tell me what's on your mind.");
-    });
+    if (agentOn()) {
+      if (!fromAgent) agentRef.current?.notify(`My name is ${clean}.`);
+      setStep("intention"); // the agent speaks the ack + the next question
+    } else {
+      setStep("nameHeard");
+      void say(`Lovely to meet you, ${clean}.`).then(() => {
+        setStep("intention");
+        void say("What do you need right now? You can say sleep, flow, relax, breathe, or meditate.");
+      });
+    }
   };
 
-  const commitIntention = (id: ContextId, phrase?: string) => {
+  const commitIntention = (id: ContextId, phrase?: string, fromAgent = false) => {
     setContext(id);
     onPickContext(id, phrase);
     setTyping(false);
     setDraft("");
     setStep("time");
-    void say("How much time do you have?");
+    if (agentOn()) {
+      if (!fromAgent) {
+        const label = INTENTS.find((i) => i.id === id)?.label ?? (phrase || "that");
+        agentRef.current?.notify(`I'd like a ${label} session.`);
+      }
+    } else {
+      void say("How much time do you have?");
+    }
   };
 
-  const commitDuration = (minutes: number, open: boolean) => {
+  const commitDuration = (minutes: number, open: boolean, fromAgent = false) => {
     setDuration(minutes);
     setOpenEnded(open);
     onPickDuration(minutes, open);
     setTyping(false);
     setDraft("");
     setStep("soundscape");
-    void say("What would you like to hear beneath my voice?");
+    if (agentOn()) {
+      if (!fromAgent) agentRef.current?.notify(open ? "Open-ended, please." : `${minutes} minutes.`);
+    } else {
+      void say("Now choose a soundscape for your session. Tap any one to hear it.");
+    }
   };
 
-  const commitSoundscape = (id: Soundscape) => {
+  const commitSoundscape = (id: Soundscape, fromAgent = false) => {
     setSoundscape(id);
     onPickSoundscape(id);
     setStep("voice");
-    void say("And a voice to guide you? A woman's voice, a man's, or just the soundscape.");
+    const label = SOUNDSCAPES.find((s) => s.id === id)?.label ?? id;
+    if (agentOn()) {
+      if (!fromAgent) agentRef.current?.notify(`I chose ${label} for the soundscape.`);
+    } else {
+      void say("Now choose a voice to guide your session, or no voice at all. Tap to hear each one.");
+    }
   };
 
-  const commitVoice = (opt: VoiceOpt | null) => {
+  const commitVoice = (opt: VoiceOpt | null, fromAgent = false) => {
     if (!opt) {
       setVoiceSel("none");
       setVoiceLabel("");
@@ -293,21 +319,25 @@ export default function VoicedHello({
       onPickVoice(opt.voice, opt.accent);
     }
     setStep("review");
-    void say("Here's your session.");
+    if (agentOn()) {
+      if (!fromAgent) agentRef.current?.notify(opt ? `I'd like ${opt.label}'s voice.` : "No voice, just the soundscape.");
+    } else {
+      void say("Here's your session.");
+    }
   };
 
   // Map an agent set_voice({selection,name}) to a VoiceOpt and record it.
   const ALL_VOICE_OPTS: VoiceOpt[] = [...FREE_FEMALE, ...FREE_MALE, ...PREM_FEMALE, ...PREM_MALE];
   const commitVoiceFromAgent = (selection?: string, voiceName?: string) => {
-    if (selection === "none") return commitVoice(null);
+    if (selection === "none") return commitVoice(null, true);
     if (voiceName) {
       const byName = ALL_VOICE_OPTS.find(
         (o) => o.key === voiceName || o.label.toLowerCase() === voiceName.toLowerCase(),
       );
-      if (byName) return commitVoice(byName);
+      if (byName) return commitVoice(byName, true);
     }
-    if (selection === "him") return commitVoice(FREE_MALE[0]);
-    return commitVoice(FREE_FEMALE[0]); // default "her"
+    if (selection === "him") return commitVoice(FREE_MALE[0], true);
+    return commitVoice(FREE_FEMALE[0], true); // default "her"
   };
 
   // Start the guided agent (Option A). The caller has already played the greeting; this
@@ -319,15 +349,15 @@ export default function VoicedHello({
     if (!agentConfigured() || agentRef.current) return;
     const tools: AgentTools = {
       set_name: ({ name: n }) => {
-        if (n) commitName(n);
+        if (n) commitName(n, true);
       },
       set_intention: ({ intention, phrase }) => {
-        if (intention) commitIntention(intention as ContextId, phrase);
+        if (intention) commitIntention(intention as ContextId, phrase, true);
       },
       set_duration: ({ minutes, open_ended }) =>
-        commitDuration(open_ended ? INFINITE : minutes ?? 10, !!open_ended),
+        commitDuration(open_ended ? INFINITE : minutes ?? 10, !!open_ended, true),
       set_soundscape: ({ soundscape: s }) => {
-        if (s) commitSoundscape(s as Soundscape);
+        if (s) commitSoundscape(s as Soundscape, true);
       },
       set_voice: ({ selection, name: vn }) => commitVoiceFromAgent(selection, vn),
       begin_session: () => onBegin(),

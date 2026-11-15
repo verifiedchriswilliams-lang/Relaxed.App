@@ -33,6 +33,9 @@ export interface AgentDynamicVars {
 export interface VoiceAgentController {
   /** 0..1 level of the agent's own voice this frame, for the orb (0 when silent). */
   getOutputLevel: () => number;
+  /** Tell the agent something the user did on screen (e.g. tapped a soundscape), so it
+   *  stays in sync with UI selections and can acknowledge + move on. */
+  notify: (text: string) => void;
   /** End the conversation and release the mic. Safe to call more than once. */
   stop: () => Promise<void>;
 }
@@ -195,6 +198,14 @@ export async function startVoiceAgent(
         return levelFrom(conv.getOutputByteFrequencyData?.());
       } catch {
         return 0;
+      }
+    },
+    notify: (text: string) => {
+      if (stopped || !text) return;
+      try {
+        conv.sendUserMessage?.(text);
+      } catch {
+        /* non-fatal: the agent just won't hear about this tap */
       }
     },
     stop: async () => {
