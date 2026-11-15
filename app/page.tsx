@@ -46,7 +46,6 @@ import {
   isNativeApp,
 } from "@/lib/native";
 import { pushWatchState, clearWatchState, onWatchCommand } from "@/lib/watchRemote";
-import { speechAvailable, listenOnce, parseSpokenName } from "@/lib/speech";
 import {
   loadRecent,
   loadFavs,
@@ -422,14 +421,9 @@ export default function Home() {
   // the voice is best-effort (silent if TTS isn't reachable), and audio unlocks on the
   // tap that dismisses it. Speech input for the answers is a later phase.
   const [hello, setHello] = useState(false);
-  const [helloSpeaking, setHelloSpeaking] = useState(false);
-  // Phase 2: the hello becomes a tiny two-step flow — "welcome" (the orb speaks), then
-  // "name" (speak or type). The name step only appears where voice input is available
-  // (on-device iOS plugin, or the browser's speech API on the web); otherwise the
-  // welcome hands straight off to the typed name field.
-  const [helloStep, setHelloStep] = useState<"welcome" | "name">("welcome");
-  const [helloListening, setHelloListening] = useState(false);
-  const [canSpeak, setCanSpeak] = useState(false);
+  // The voiced first run is a full guided overlay (VoicedHello). `helloReturning` opens
+  // it on the welcome-back step for someone who already has a name + history.
+  const [helloReturning, setHelloReturning] = useState(false);
   const [context, setContext] = useState<ContextId>("meditation");
   const [duration, setDuration] = useState<DurationChoice>(10);
   const [voice, setVoice] = useState<VoiceChoice>("female");
@@ -719,46 +713,9 @@ export default function Home() {
     }
   }
 
-  // Leave the voiced welcome and hand off to the typed name field on the home.
+  // Leave the voiced first run and fall back to the classic home.
   function endHello() {
     setHello(false);
-    setHelloSpeaking(false);
-    setHelloListening(false);
-    setHelloStep("welcome");
-  }
-
-  // Tap "begin": unlock audio within the gesture (so the greeting can sound), speak the
-  // welcome, then advance. If voice input is available, go to the "name" step (speak or
-  // type); otherwise hand straight off to the typed name field. On a fixed timer so a
-  // slow/absent voice never leaves the orb stuck.
-  function beginHello() {
-    engineRef.current.unlock();
-    engineRef.current.ensureRunning();
-    markHelloSeen();
-    setHelloSpeaking(true);
-    void sayLine("Welcome to relaxed. What should we call you?");
-    window.setTimeout(() => {
-      setHelloSpeaking(false);
-      if (canSpeak) setHelloStep("name");
-      else endHello();
-    }, 2200);
-  }
-
-  // Phase 2: listen for the spoken name on the "name" step. On a result, set the name
-  // (committed but editable via the chip), give a warm spoken ack, and finish. On
-  // nothing heard, stay put so they can retry or type.
-  async function listenName() {
-    if (helloListening) return;
-    setHelloListening(true);
-    const heard = await listenOnce();
-    setHelloListening(false);
-    const n = parseSpokenName(heard);
-    if (!n) return;
-    setName(n);
-    setNameCommitted(true);
-    persistPrefs(n);
-    void sayLine(`Lovely to meet you, ${n}.`);
-    endHello();
   }
 
   // Silence any audition the moment the tray closes (scrim tap, begin, etc.).
@@ -836,10 +793,17 @@ export default function Home() {
     } catch {
       /* ignore */
     }
-    if (VOICED_HELLO_ENABLED && !hadName && IS_RELAXED && !seenHello) setHello(true);
-    // Whether the name can be answered by voice (Phase 2): on-device plugin, or the
-    // browser's speech API on the web. Drives the mic step; typing is always available.
-    setCanSpeak(speechAvailable());
+    if (VOICED_HELLO_ENABLED && IS_RELAXED) {
+      if (!hadName && !seenHello) {
+        // New visitor: the full first run (intro video -> guided setup).
+        setHelloReturning(false);
+        setHello(true);
+      } else if (hadName && startRecent.length > 0) {
+        // Returning: open on the welcome-back step (repeat or something new).
+        setHelloReturning(true);
+        setHello(true);
+      }
+    }
   }, []);
 
   // The first time the recent/history entry appears (once there's history, e.g.
@@ -2517,14 +2481,49 @@ export default function Home() {
           (typed fallback). The orb reacts only to the app's own voice, never the mic. */}
       {IS_RELAXED && hello && screen === "setup" && (
         <VoicedHello
-          step={helloStep}
-          speaking={helloSpeaking}
-          listening={helloListening}
-          canSpeak={canSpeak}
-          onBegin={beginHello}
-          onListen={listenName}
-          onType={endHello}
+          isReturning={helloReturning}
+          knownName={name}
+          lastSession={
+            recent[0]
+              ? { label: recent[0].label, sub: recent[0].sub }
+              : null
+          }
+          hasPremium={!gate}
+          reduced={false}
           voiceLevel={() => engineRef.current.voiceLevel()}
+          speak={sayLine}
+          onPickName={(n) => {
+            setName(n);
+            setNameCommitted(true);
+            persistPrefs(n);
+          }}
+          onPickContext={(id, phrase) => {
+            setContext(id);
+            if (id === "custom" && phrase) setCustomText(phrase);
+          }}
+          onPickDuration={(minutes) => setDuration(minutes as DurationChoice)}
+          onPickSoundscape={(id) => {
+            setSoundscape(id);
+            setSoundPicked(true);
+            setSoundTab(catOf(id));
+          }}
+          onPickVoice={(v, a) => {
+            setVoice(v);
+            setAccent(a);
+            setVoicePicked(true);
+          }}
+          onBegin={() => {
+            markHelloSeen();
+            setHello(false);
+            // Let the picked choices flush to state, then start the real session.
+            window.setTimeout(() => void begin(), 40);
+          }}
+          onRepeatLast={() => {
+            markHelloSeen();
+            setHello(false);
+            if (recent[0]) replay(recent[0]);
+          }}
+          onExit={endHello}
         />
       )}
 

@@ -46,7 +46,7 @@ relaxed.app/
 |---|---|---|
 | `components/RingOrb.tsx` | Client component | The voice orb: a single authored frame warped in a WebGL (three.js) shader. Always gently alive; `mode`/`level`/`levelSource` drive brightness, warmth and ring-bounce from the **app's own voice** (never the mic). `running` gates its clock for the video handoff. `texture` picks the frame (`"calm"` = full mandala `calm-1.png`; `"play"` = quieted core `calm-play.png`) and can swap in place at runtime. See [audio-engine](./audio-engine.md), [product-spec](./product-spec.md). |
 | `components/PlayOrb.tsx` | Client component | The session orb: wraps `RingOrb` with `texture="play"` and overlays the chosen soundscape's `SoundMotif` in the quieted core (champagne, blended as light, steady motion). Omit `soundscape` for a bare core. Lazy-imported like `RingOrb`. |
-| `components/VoicedHello.tsx` | Client component | The relaxed voiced first-run overlay: plays the load video (`public/orb/intro.mp4`), hands off to the live `RingOrb`, then the welcome + name-by-voice steps (typed fallback). Imported lazily by `app/page.tsx` behind `VOICED_HELLO_ENABLED`. |
+| `components/VoicedHello.tsx` | Client component | The relaxed voiced first-run overlay: plays the load video (`public/orb/intro.mp4`), hands off to the live `RingOrb`, then guides full setup (name → intention → time → soundscape → voice → review → begin) with the orb floating up for the settings; a returning user opens on a welcome-back step (repeat / something new). Works by tap/type (the guaranteed fallback); the ElevenLabs agent drives the same handlers when configured. Imported lazily by `app/page.tsx` behind `VOICED_HELLO_ENABLED`. See [voice-agent-spec](./voice-agent-spec.md). |
 
 ## `lib/` — logic & content
 

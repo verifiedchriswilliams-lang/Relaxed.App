@@ -1,118 +1,520 @@
 "use client";
 
-// The relaxed voiced first run (behind VOICED_HELLO_ENABLED). On open it plays the
-// load video (the stem resolving into the orb), then hands off seamlessly to the live
-// orb. One tap wakes it (unlocks audio + the orb speaks the greeting); then, where voice
-// input is available, the orb listens for the spoken name (with a typed fallback).
+// The relaxed voiced first run (behind VOICED_HELLO_ENABLED). A full-screen overlay
+// over the home. On open it plays the load video (the stem resolving into the orb), then
+// hands off to the living <RingOrb>, which guides setup: name -> intention -> time ->
+// soundscape -> voice -> review -> begin. The orb floats up once for the settings and is
+// handed back to centre by the app's compose screen; it reacts only to the APP's own
+// voice (via voiceLevel), never the mic.
 //
-// The orb reacts only to the APP's own voice level (via levelSource), never the mic.
-// three.js loads only with this component, which the page imports lazily (ssr:false).
+// This component owns the flow UI and works entirely by tap/type (the guaranteed
+// fallback). The ElevenLabs guided agent, when configured, drives the SAME handlers
+// (pick*) through the integration layer, so voice and tap stay in lock-step. three.js
+// loads only with this component, which the page imports lazily (ssr:false).
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import RingOrb from "@/components/RingOrb";
+import { CONTEXTS, type ContextId, type VoiceChoice, INFINITE } from "@/lib/contexts";
+import { SOUNDSCAPES, SOUND_CATS } from "@/lib/audio/soundscapes";
+import type { Soundscape, SoundCat, Accent } from "@/lib/audio/types";
+import { PREMIUM_VOICES_FEMALE, PREMIUM_VOICES_MALE } from "@/lib/premiumVoices";
+import GUIDES from "@/lib/voices.json";
 
-export interface VoicedHelloProps {
-  step: "welcome" | "name";
-  speaking: boolean;
-  listening: boolean;
-  canSpeak: boolean;
-  onBegin: () => void;
-  onListen: () => void;
-  onType: () => void;
-  /** The app's own voice output level, 0..1 (engine.voiceLevel). */
-  voiceLevel: () => number;
-  reduced?: boolean;
+type Step =
+  | "intro"
+  | "name"
+  | "nameHeard"
+  | "intention"
+  | "time"
+  | "soundscape"
+  | "voice"
+  | "review"
+  | "returning";
+
+export interface LastSessionLite {
+  label: string; // e.g. "Sleep"
+  sub: string; // e.g. "10 min · Rain"
 }
 
+export interface VoicedHelloProps {
+  /** Returning user (has a stored name + a last session): open on the welcome-back step. */
+  isReturning?: boolean;
+  knownName?: string;
+  lastSession?: LastSessionLite | null;
+  /** True when there are no premium locks for this user (entitled or no IAP available). */
+  hasPremium?: boolean;
+  reduced?: boolean;
+  /** The app's own voice output level, 0..1 (engine.voiceLevel), for the orb. */
+  voiceLevel: () => number;
+  /** Speak a line through the app's TTS (drives the orb). Optional (silent if absent). */
+  speak?: (text: string) => Promise<void> | void;
+  // Live setters: called as each choice is made so the app's state stays in sync.
+  onPickName: (name: string) => void;
+  onPickContext: (id: ContextId, customPhrase?: string) => void;
+  onPickDuration: (minutes: number, openEnded: boolean) => void;
+  onPickSoundscape: (id: Soundscape) => void;
+  onPickVoice: (voice: VoiceChoice, accent: Accent) => void;
+  /** Confirm at review: begin composing (the app reads the now-synced state). */
+  onBegin: () => void;
+  /** Returning: repeat the last session as-is. */
+  onRepeatLast?: () => void;
+  /** Open the history/recent list (returning). */
+  onHistory?: () => void;
+  /** Leave the voiced flow and fall back to the classic home. */
+  onExit: () => void;
+}
+
+const LockIcon = () => (
+  <svg className="vh-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden="true">
+    <rect x="5" y="11" width="14" height="9" rx="2" />
+    <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+  </svg>
+);
+const PencilIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden="true">
+    <path d="M14.5 5.5l4 4M4 20l1-4L16 5a2 2 0 0 1 3 3L8 19l-4 1z" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+);
+const KeyboardIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden="true">
+    <rect x="3" y="7" width="18" height="11" rx="2" />
+    <path d="M7 11h.01M11 11h.01M15 11h.01M8 15h8" strokeLinecap="round" />
+  </svg>
+);
+
+// Intentions offered in the voice flow (maps to ContextId). "something else" -> custom.
+const INTENTS: { id: ContextId; label: string }[] = [
+  { id: "sleep", label: "sleep" },
+  { id: "flow", label: "flow" },
+  { id: "relax", label: "relax" },
+  { id: "stress-relief", label: "breathe" },
+  { id: "meditation", label: "meditate" },
+];
+const TIME_STOPS: number[] = [5, 10, 15, 20, 30];
+
+// Free voices keyed by the app's voice+accent; premium by id.
+type VoiceOpt = { key: string; label: string; voice: VoiceChoice; accent: Accent; premium: boolean };
+const G = GUIDES as Record<string, { name: string; blurb: string }>;
+const FREE_FEMALE: VoiceOpt[] = [
+  { key: "female-us", label: G["female-us"].name, voice: "female", accent: "us", premium: false },
+  { key: "female-uk", label: G["female-uk"].name, voice: "female", accent: "uk", premium: false },
+];
+const FREE_MALE: VoiceOpt[] = [
+  { key: "male-us", label: G["male-us"].name, voice: "male", accent: "us", premium: false },
+  { key: "male-uk", label: G["male-uk"].name, voice: "male", accent: "uk", premium: false },
+];
+const PREM_FEMALE: VoiceOpt[] = PREMIUM_VOICES_FEMALE.map((v) => ({
+  key: v.id, label: v.name, voice: v.id as VoiceChoice, accent: "us", premium: true,
+}));
+const PREM_MALE: VoiceOpt[] = PREMIUM_VOICES_MALE.map((v) => ({
+  key: v.id, label: v.name, voice: v.id as VoiceChoice, accent: "us", premium: true,
+}));
+
 export default function VoicedHello({
-  step,
-  speaking,
-  listening,
-  canSpeak,
-  onBegin,
-  onListen,
-  onType,
-  voiceLevel,
+  isReturning = false,
+  knownName = "",
+  lastSession = null,
+  hasPremium = false,
   reduced,
+  voiceLevel,
+  speak,
+  onPickName,
+  onPickContext,
+  onPickDuration,
+  onPickSoundscape,
+  onPickVoice,
+  onBegin,
+  onRepeatLast,
+  onHistory,
+  onExit,
 }: VoicedHelloProps) {
-  const [introDone, setIntroDone] = useState(false);
+  const [step, setStep] = useState<Step>(isReturning ? "returning" : "intro");
+  const [introDone, setIntroDone] = useState(isReturning);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // Fallback: if the video can't autoplay (or errors), don't trap the user on it.
+  // Collected selections (local mirror for display; also pushed to the app via pick*).
+  const [name, setName] = useState(knownName);
+  const [context, setContext] = useState<ContextId | null>(null);
+  const [duration, setDuration] = useState<number | null>(null);
+  const [openEnded, setOpenEnded] = useState(false);
+  const [soundscape, setSoundscape] = useState<Soundscape | null>(null);
+  const [voiceLabel, setVoiceLabel] = useState<string>("");
+  const [voiceSel, setVoiceSel] = useState<VoiceChoice | null>(null);
+  const [remember, setRemember] = useState(true);
+
+  // UI-only state
+  const [typing, setTyping] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [soundTab, setSoundTab] = useState<SoundCat>("nature");
+  const [voiceTab, setVoiceTab] = useState<"her" | "him" | "none">("her");
+
+  // Speak a line through the app TTS. The orb reacts on its own via voiceLevel, so this
+  // just needs to fire the audio (best-effort; silent if no speak fn is wired).
+  const say = useCallback(
+    async (line: string) => {
+      if (!speak) return;
+      try {
+        await speak(line);
+      } catch {
+        /* best-effort */
+      }
+    },
+    [speak],
+  );
+
+  // Intro video -> hand off to the orb, then open the conversation.
   useEffect(() => {
+    if (isReturning) return;
     const v = videoRef.current;
     if (!v) return;
     const done = () => setIntroDone(true);
     v.addEventListener("ended", done);
     v.addEventListener("error", done);
-    const safety = window.setTimeout(done, 8000); // never hang past the 6s video
-    v.play?.().catch(() => {}); // muted autoplay is allowed; ignore rejection
+    const safety = window.setTimeout(done, 8000);
+    v.play?.().catch(() => {});
     return () => {
       v.removeEventListener("ended", done);
       v.removeEventListener("error", done);
       window.clearTimeout(safety);
     };
+  }, [isReturning]);
+
+  // Once the orb is live, greet and ask the first question (the name).
+  useEffect(() => {
+    if (step !== "intro" || !introDone) return;
+    setStep("name");
+    void say("Welcome to relaxed. We'll make a guided journey, just for you. First, what should we call you?");
+  }, [step, introDone, say]);
+
+  // Returning: greet by name.
+  useEffect(() => {
+    if (step !== "returning") return;
+    void say(knownName ? `Welcome back, ${knownName}.` : "Welcome back.");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const mode = speaking ? "speaking" : listening ? "listening" : "idle";
+  const orbUp = introDone && step !== "intro" && step !== "returning";
+  // The orb is always in "speaking" mode: it brightens/warms to the app's own voice
+  // (voiceLevel) whenever a line plays, and settles calm when silent (level ~0). It
+  // never reacts to the mic.
+  const orbMode = "speaking" as const;
+
+  // ---- handlers (shared by tap and, later, the voice agent) ----
+  const commitName = (n: string) => {
+    const clean = n.trim();
+    if (!clean) return;
+    setName(clean);
+    onPickName(clean);
+    setTyping(false);
+    setDraft("");
+    setStep("nameHeard");
+    void say(`Lovely to meet you, ${clean}.`).then(() => {
+      setStep("intention");
+      void say("What do you need right now? You could sleep, find flow, relax, breathe, or just tell me what's on your mind.");
+    });
+  };
+
+  const commitIntention = (id: ContextId, phrase?: string) => {
+    setContext(id);
+    onPickContext(id, phrase);
+    setTyping(false);
+    setDraft("");
+    setStep("time");
+    void say("How much time do you have?");
+  };
+
+  const commitDuration = (minutes: number, open: boolean) => {
+    setDuration(minutes);
+    setOpenEnded(open);
+    onPickDuration(minutes, open);
+    setTyping(false);
+    setDraft("");
+    setStep("soundscape");
+    void say("What would you like to hear beneath my voice?");
+  };
+
+  const commitSoundscape = (id: Soundscape) => {
+    setSoundscape(id);
+    onPickSoundscape(id);
+    setStep("voice");
+    void say("And a voice to guide you? A woman's voice, a man's, or just the soundscape.");
+  };
+
+  const commitVoice = (opt: VoiceOpt | null) => {
+    if (!opt) {
+      setVoiceSel("none");
+      setVoiceLabel("");
+      onPickVoice("none", "us");
+    } else {
+      setVoiceSel(opt.voice);
+      setVoiceLabel(opt.label);
+      onPickVoice(opt.voice, opt.accent);
+    }
+    setStep("review");
+    void say("Here's your session.");
+  };
+
+  // Labels for the review sentence.
+  const ctxLabel = useMemo(
+    () => (context ? CONTEXTS.find((c) => c.id === context)?.label ?? context : ""),
+    [context],
+  );
+  const soundName = useMemo(
+    () => (soundscape ? SOUNDSCAPES.find((s) => s.id === soundscape)?.label ?? soundscape : ""),
+    [soundscape],
+  );
+  const durLabel = openEnded ? "open-ended" : duration ? `${duration}-minute` : "";
+
+  // ---- render helpers ----
+  const soundsFor = (cat: SoundCat) => SOUNDSCAPES.filter((s) => s.cat === cat);
+
+  const voiceOptsFor = (tab: "her" | "him" | "none"): VoiceOpt[] =>
+    tab === "her" ? [...FREE_FEMALE, ...PREM_FEMALE] : tab === "him" ? [...FREE_MALE, ...PREM_MALE] : [];
 
   return (
-    <div className="vhello" role="dialog" aria-label="Welcome">
-      <RingOrb
-        mode={mode}
-        levelSource={voiceLevel}
-        running={introDone}
-        reduced={reduced}
-        style={{ position: "absolute", inset: 0 }}
-      />
-      {!introDone && (
-        <video
-          ref={videoRef}
-          className="vhello-video"
-          src="/orb/intro.mp4"
-          muted
-          playsInline
-          autoPlay
-          preload="auto"
-          onTimeUpdate={(e) => {
-            const v = e.currentTarget;
-            if (v.duration && v.currentTime >= v.duration - 0.1) setIntroDone(true);
-          }}
-        />
+    <div className="vh" role="dialog" aria-label="Welcome to relaxed">
+      {!isReturning && !introDone && (
+        <video ref={videoRef} className="vh-video" src="/orb/intro.mp4" muted playsInline autoPlay preload="auto" />
       )}
 
-      <div className={`vhello-ui${introDone ? " ready" : ""}`}>
-        {step === "welcome" ? (
-          <button className="vhello-tap" onClick={onBegin} aria-label="Begin">
-            <div className="vhello-copy">welcome to relaxed</div>
-            <div className="vhello-hint">{speaking ? "" : "touch to begin"}</div>
-          </button>
-        ) : (
-          <div className="vhello-name">
-            <div className="vhello-copy">what should we call you?</div>
-            {canSpeak && (
-              <>
-                <button
-                  className={`vhello-mic${listening ? " on" : ""}`}
-                  onClick={onListen}
-                  disabled={listening}
-                  aria-label="Say your name"
-                >
-                  <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <rect x="9" y="3" width="6" height="11" rx="3" />
-                    <path d="M5 11a7 7 0 0 0 14 0" />
-                    <path d="M12 18v3" />
-                  </svg>
-                </button>
-                <div className="vhello-hint">{listening ? "listening…" : "tap and say your name"}</div>
-              </>
+      {(introDone || isReturning) && (
+        <div className={`vh-orb${orbUp ? " up" : ""}`}>
+          <RingOrb mode={orbMode} levelSource={voiceLevel} reduced={reduced} running />
+        </div>
+      )}
+
+      {/* NAME */}
+      {step === "name" && (
+        <div className="vh-zone">
+          <div className="vh-mid">
+            <div className="vh-ask">what should we call you?</div>
+            {typing && (
+              <input
+                className="vh-input"
+                autoFocus
+                value={draft}
+                placeholder="your name"
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitName(draft);
+                }}
+                aria-label="your name"
+              />
             )}
-            <button className="vhello-type" onClick={onType}>
-              {canSpeak ? "or type instead" : "continue"}
-            </button>
           </div>
-        )}
-      </div>
+          <div className="vh-foot">
+            {typing ? (
+              <button className="vh-begin" onClick={() => commitName(draft)}>continue</button>
+            ) : (
+              <button className="vh-type" onClick={() => setTyping(true)}>
+                <KeyboardIcon /> type instead
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* NAME HEARD */}
+      {step === "nameHeard" && (
+        <div className="vh-zone">
+          <div className="vh-mid">
+            <div className="vh-name">
+              nice to meet you, <b>{name}</b>
+              <button className="vh-type" aria-label="edit name" onClick={() => { setTyping(true); setStep("name"); }}>
+                <PencilIcon />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* INTENTION */}
+      {step === "intention" && (
+        <div className="vh-zone">
+          <div className="vh-mid">
+            <div className="vh-ask">what do you need right now?</div>
+            {typing ? (
+              <input
+                className="vh-input"
+                autoFocus
+                value={draft}
+                placeholder="in your own words"
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && draft.trim()) commitIntention("custom", draft.trim());
+                }}
+                aria-label="what you need"
+              />
+            ) : (
+              <div className="vh-hints">
+                {INTENTS.map((it, i) => (
+                  <span key={it.id} style={{ display: "contents" }}>
+                    {i > 0 && <span className="vh-dot">·</span>}
+                    <button className="vh-hintb" onClick={() => commitIntention(it.id)}>{it.label}</button>
+                  </span>
+                ))}
+                <span className="vh-dot">·</span>
+                <button className="vh-hintb" onClick={() => setTyping(true)}>something else</button>
+              </div>
+            )}
+          </div>
+          <div className="vh-foot">
+            {typing && <button className="vh-begin" onClick={() => draft.trim() && commitIntention("custom", draft.trim())}>continue</button>}
+          </div>
+        </div>
+      )}
+
+      {/* TIME */}
+      {step === "time" && (
+        <div className="vh-zone">
+          <div className="vh-mid">
+            <div className="vh-ask">how much time do you have?</div>
+            <div className="vh-hints">
+              {TIME_STOPS.map((m, i) => (
+                <span key={m} style={{ display: "contents" }}>
+                  {i > 0 && <span className="vh-dot">·</span>}
+                  <button className="vh-hintb" onClick={() => commitDuration(m, false)}>{m}</button>
+                </span>
+              ))}
+              <span className="vh-dot">·</span>
+              <button
+                className="vh-hintb"
+                onClick={() => commitDuration(INFINITE, true)}
+                aria-label="open-ended (premium)"
+              >
+                open-ended {!hasPremium && <LockIcon />}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SOUNDSCAPE (required) */}
+      {step === "soundscape" && (
+        <div className="vh-zone">
+          <div className="vh-mid" style={{ justifyContent: "flex-start", gap: 10, paddingTop: 4 }}>
+            <div className="vh-title">choose a soundscape</div>
+            <div className="vh-tabs">
+              {SOUND_CATS.map((c) => (
+                <button key={c.id} className={`vh-tab${soundTab === c.id ? " on" : ""}`} onClick={() => setSoundTab(c.id)}>
+                  {c.label.toLowerCase()}
+                </button>
+              ))}
+            </div>
+            <div className="vh-pills">
+              {soundsFor(soundTab).map((s) => {
+                const locked = s.tier === "premium" && !hasPremium;
+                return (
+                  <button
+                    key={s.id}
+                    className={`vh-pill${soundscape === s.id ? " sel" : ""}${locked ? " locked" : ""}`}
+                    onClick={() => commitSoundscape(s.id)}
+                  >
+                    {s.label.toLowerCase()} {locked && <LockIcon />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VOICE (optional, last) */}
+      {step === "voice" && (
+        <div className="vh-zone">
+          <div className="vh-mid" style={{ justifyContent: "flex-start", gap: 10, paddingTop: 4 }}>
+            <div className="vh-title">choose a voice</div>
+            <div className="vh-tabs">
+              {(["her", "him", "none"] as const).map((t) => (
+                <button key={t} className={`vh-tab${voiceTab === t ? " on" : ""}`} onClick={() => setVoiceTab(t)}>{t}</button>
+              ))}
+            </div>
+            {voiceTab === "none" ? (
+              <button className="vh-begin" onClick={() => commitVoice(null)}>just the soundscape</button>
+            ) : (
+              <div className="vh-pills">
+                {voiceOptsFor(voiceTab).map((o) => {
+                  const locked = o.premium && !hasPremium;
+                  return (
+                    <button
+                      key={o.key}
+                      className={`vh-pill${voiceSel === o.voice ? " sel" : ""}${locked ? " locked" : ""}`}
+                      onClick={() => commitVoice(o)}
+                    >
+                      {o.label.toLowerCase()} {locked && <LockIcon />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* REVIEW */}
+      {step === "review" && (
+        <div className="vh-zone">
+          <div className="vh-mid" style={{ gap: 12 }}>
+            <div className="vh-lead">ready{name ? `, ${name}` : ""}?</div>
+            <div className="vh-review">
+              a <button className="vh-ed" onClick={() => setStep("time")}>{durLabel}</button>{" "}
+              <button className="vh-ed" onClick={() => setStep("intention")}>{ctxLabel.toLowerCase()}</button> session with{" "}
+              <button className="vh-ed" onClick={() => setStep("soundscape")}>{soundName.toLowerCase()}</button>
+              {voiceSel && voiceSel !== "none" ? (
+                <>
+                  , guided by <button className="vh-ed" onClick={() => setStep("voice")}>{voiceLabel.toLowerCase()}</button>
+                </>
+              ) : (
+                <>
+                  , <button className="vh-ed" onClick={() => setStep("voice")}>no voice</button>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="vh-foot">
+            <div className="vh-remember">
+              <span>remember me on this device</span>
+              <button className={`vh-toggle${remember ? " on" : ""}`} aria-pressed={remember} aria-label="remember me" onClick={() => setRemember((v) => !v)} />
+            </div>
+            <button className="vh-begin" onClick={onBegin}>begin session</button>
+            <button className="vh-type" onClick={onExit}>not now</button>
+          </div>
+        </div>
+      )}
+
+      {/* RETURNING */}
+      {step === "returning" && (
+        <>
+          {onHistory && (
+            <button className="vh-hist" onClick={onHistory}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden="true">
+                <path d="M3 12a9 9 0 1 0 2.6-6.3M3 4v3h3" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M12 8v4l3 2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              history
+            </button>
+          )}
+          <div className="vh-top">
+            <div className="vh-lead">welcome back{knownName ? `, ${knownName}` : ""}</div>
+            {lastSession && <div className="vh-detail">{lastSession.label.toLowerCase()} · {lastSession.sub.toLowerCase()}</div>}
+          </div>
+          <div className="vh-bot">
+            {onRepeatLast && lastSession && (
+              <button className="vh-begin" onClick={onRepeatLast}>repeat last session</button>
+            )}
+            <button
+              className="vh-ghost"
+              onClick={() => {
+                setStep("intention");
+                void say("Let's make something new. What do you need right now?");
+              }}
+            >
+              something new
+            </button>
+            <button className="vh-type" onClick={onExit}>not now</button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

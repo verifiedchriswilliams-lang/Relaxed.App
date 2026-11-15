@@ -502,131 +502,392 @@
   background: var(--ink-0);
 }
 
+
 /* ---- voiced first run (onboarding) -------------------------------------- */
-/* A first-launch experience over the home: the load video (public/orb/intro.mp4)
-   resolves the stem into the living orb, then one touch wakes it to speak the welcome
-   ("welcome" step) and it invites the name by voice or type ("name" step). The orb is
-   the <RingOrb> WebGL component; it reacts only to the app's own voice. relaxed only. */
-[data-brand="relaxed"] .vhello {
+/* A first-launch experience over the home (behind VOICED_HELLO_ENABLED): the load
+   video (public/orb/intro.mp4) resolves the stem into the living <RingOrb>, which then
+   guides setup by voice, name -> intention -> time -> soundscape -> voice -> review.
+   The orb floats up once (settings) and back to centre at compose; it reacts only to
+   the app's own voice. Content lives in the black space below the orb, never on it.
+   relaxed only. Full-screen fixed overlay above the home. */
+[data-brand="relaxed"] .vh {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: var(--night-0);
-  color: var(--ink-0);
+  background: var(--ink-bg, #0b0a09);
   overflow: hidden;
+  color: var(--ink-0);
 }
-/* The load video sits above the orb and is removed from the DOM once it ends (handoff). */
-[data-brand="relaxed"] .vhello-video {
+[data-brand="relaxed"] .vh-video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  background: var(--night-0);
-  z-index: 2;
+  z-index: 1;
 }
-/* Copy + controls, centred below the orb; fade in only after the intro hands off. */
-[data-brand="relaxed"] .vhello-ui {
+/* the persistent orb layer: full-bleed, centred. A single transform moves it between
+   its two locked positions (centre and the raised "settings" spot); the long ease is
+   the smooth float up/down, never a per-screen jump. */
+[data-brand="relaxed"] .vh-orb {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 118%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) translateY(0);
+  transition: transform 1.7s cubic-bezier(0.33, 0, 0.2, 1);
+  z-index: 1;
+}
+[data-brand="relaxed"] .vh-orb.up {
+  transform: translate(-50%, -50%) translateY(-13%);
+}
+[data-brand="relaxed"] .vh-orb > * {
+  width: 100%;
+  height: 100%;
+}
+/* content zone: the lower band, over a soft scrim, so text never sits on the orb */
+[data-brand="relaxed"] .vh-zone {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(12vh + env(safe-area-inset-bottom, 0px));
-  z-index: 3;
+  bottom: 0;
+  top: 58%;
+  z-index: 2;
   display: flex;
+  flex-direction: column;
+  padding: 0 22px calc(22px + env(safe-area-inset-bottom));
+  gap: 12px;
+  background: linear-gradient(
+    to top,
+    rgba(11, 10, 9, 0.97) 54%,
+    rgba(11, 10, 9, 0.55) 82%,
+    transparent
+  );
+  animation: vh-fade 0.6s ease both;
+}
+[data-brand="relaxed"] .vh-zone .vh-mid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
   justify-content: center;
-  padding: 0 24px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.7s var(--rx-ease-soft) 0.15s;
+  gap: 10px;
+  text-align: center;
 }
-[data-brand="relaxed"] .vhello-ui.ready {
-  opacity: 1;
-  pointer-events: auto;
-}
-[data-brand="relaxed"] .vhello-tap,
-[data-brand="relaxed"] .vhello-name {
+[data-brand="relaxed"] .vh-zone .vh-foot {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
-  background: none;
-  border: 0;
-  color: inherit;
-  font: inherit;
+  gap: 10px;
+}
+/* centred-orb screens (compose + returning): text above and below, orb in the middle */
+[data-brand="relaxed"] .vh-top {
+  position: absolute;
+  top: 14%;
+  left: 0;
+  right: 0;
+  z-index: 3;
   text-align: center;
-  cursor: pointer;
-  padding: 0;
+  padding: 0 22px;
+  animation: vh-fade 0.6s ease both;
 }
-[data-brand="relaxed"] .vhello-copy {
-  font-size: 22px;
-  font-weight: 400;
+[data-brand="relaxed"] .vh-bot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(26px + env(safe-area-inset-bottom));
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 0 22px;
+  animation: vh-fade 0.6s ease both;
+}
+[data-brand="relaxed"] .vh-ask {
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--ink-1);
+}
+[data-brand="relaxed"] .vh-title {
+  font-family: var(--font-head, inherit);
+  font-weight: 600;
+  font-size: 16px;
   color: var(--ink-0);
-  text-transform: lowercase;
 }
-[data-brand="relaxed"] .vhello-hint {
-  font-size: 13px;
-  letter-spacing: 0.08em;
-  text-transform: lowercase;
-  color: var(--ink-2);
-  min-height: 16px;
-  animation: hello-hint 3s ease-in-out infinite;
+[data-brand="relaxed"] .vh-lead {
+  font-family: var(--font-head, inherit);
+  font-weight: 600;
+  font-size: 20px;
+  color: var(--ink-0);
 }
-/* The mic: a calm Bone-ringed circle; fills + pulses while listening. */
-[data-brand="relaxed"] .vhello-mic {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
+[data-brand="relaxed"] .vh-name {
+  font-size: 17px;
+  color: var(--ink-0);
   display: inline-flex;
   align-items: center;
+  gap: 7px;
   justify-content: center;
-  background: transparent;
-  border: 1.5px solid var(--rx-line-strong);
-  color: var(--ink-0);
-  cursor: pointer;
-  transition: background var(--t-ui) var(--ease-ui);
 }
-[data-brand="relaxed"] .vhello-mic:hover {
-  background: var(--rx-hover);
+[data-brand="relaxed"] .vh-name b {
+  font-weight: 600;
 }
-[data-brand="relaxed"] .vhello-mic.on {
-  background: var(--ink-0);
-  color: var(--rx-invert-fg);
-  animation: mic-pulse 1.6s ease-in-out infinite;
+/* tabs (soundscape families / her-him-none) */
+[data-brand="relaxed"] .vh-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  font-size: 13px;
+  color: var(--ink-2);
 }
-[data-brand="relaxed"] .vhello-type {
+[data-brand="relaxed"] .vh-tab {
   background: none;
   border: 0;
   color: var(--ink-2);
-  font-size: 13px;
-  letter-spacing: 0.08em;
-  text-transform: lowercase;
+  padding: 2px 0;
   cursor: pointer;
+}
+[data-brand="relaxed"] .vh-tab.on {
+  color: var(--ink-0);
+  border-bottom: 1.5px solid var(--ink-0);
+}
+/* pills */
+[data-brand="relaxed"] .vh-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 7px;
+}
+[data-brand="relaxed"] .vh-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--ink-0);
+  border: 1px solid var(--rx-line-strong, rgba(239, 235, 227, 0.26));
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+[data-brand="relaxed"] .vh-pill.sel {
+  background: var(--ink-0);
+  color: var(--ink-bg, #121110);
+  border-color: var(--ink-0);
+}
+[data-brand="relaxed"] .vh-pill.locked {
+  opacity: 0.6;
+}
+[data-brand="relaxed"] .vh-lock {
+  width: 12px;
+  height: 12px;
+}
+/* the typed-fallback affordance + spoken hints */
+[data-brand="relaxed"] .vh-type,
+[data-brand="relaxed"] .vh-say {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-2);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+[data-brand="relaxed"] .vh-hints {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+[data-brand="relaxed"] .vh-hintb {
+  background: none;
+  border: 0;
+  color: var(--ink-2);
+  cursor: pointer;
+  padding: 2px 4px;
+}
+[data-brand="relaxed"] .vh-dot {
+  opacity: 0.45;
+}
+/* the typed input (fallback / "type instead") */
+[data-brand="relaxed"] .vh-input {
+  width: 100%;
+  max-width: 320px;
+  background: rgba(239, 235, 227, 0.05);
+  border: 1px solid var(--rx-line-strong, rgba(239, 235, 227, 0.26));
+  border-radius: 12px;
+  color: var(--ink-0);
+  font: inherit;
+  font-size: 15px;
+  padding: 11px 14px;
+  text-align: center;
+}
+/* primary + ghost buttons */
+[data-brand="relaxed"] .vh-begin {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ink-0);
+  color: var(--ink-bg, #121110);
+  font-weight: 600;
+  font-size: 14px;
+  border: 0;
+  border-radius: 999px;
+  padding: 13px;
+  cursor: pointer;
+}
+[data-brand="relaxed"] .vh-ghost {
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  color: var(--ink-0);
+  font-size: 14px;
+  border: 1px solid var(--rx-line-strong, rgba(239, 235, 227, 0.26));
+  border-radius: 999px;
+  padding: 12px;
+  cursor: pointer;
+}
+/* review sentence (mad-libs): each editable word underlined */
+[data-brand="relaxed"] .vh-review {
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink-1);
+  max-width: 30ch;
+  margin: 0 auto;
+}
+[data-brand="relaxed"] .vh-ed {
+  color: var(--ink-0);
+  font-weight: 600;
+  border: 0;
+  border-bottom: 1.5px dotted rgba(216, 168, 92, 0.5);
+  background: none;
+  padding: 0 0 1px;
+  cursor: pointer;
+}
+/* remember-me toggle */
+[data-brand="relaxed"] .vh-remember {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 340px;
+  font-size: 12.5px;
+  color: var(--ink-1);
+}
+[data-brand="relaxed"] .vh-toggle {
+  width: 36px;
+  height: 21px;
+  border-radius: 999px;
+  border: 1px solid var(--rx-line-strong, rgba(239, 235, 227, 0.26));
+  position: relative;
+  flex: none;
+  background: none;
+  cursor: pointer;
+}
+[data-brand="relaxed"] .vh-toggle::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ink-2);
+  top: 1.5px;
+  left: 2px;
+  transition: transform 0.2s, background 0.2s;
+}
+[data-brand="relaxed"] .vh-toggle.on {
+  background: rgba(216, 168, 92, 0.5);
+  border-color: rgba(216, 168, 92, 0.6);
+}
+[data-brand="relaxed"] .vh-toggle.on::after {
+  transform: translateX(15px);
+  background: var(--ink-0);
+}
+/* history entry point (returning) */
+[data-brand="relaxed"] .vh-hist {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top));
+  right: 16px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--ink-1);
+  border: 1px solid var(--rx-line-strong, rgba(239, 235, 227, 0.26));
+  border-radius: 999px;
   padding: 6px 10px;
+  background: none;
+  cursor: pointer;
 }
-@keyframes hello-hint {
-  0%,
-  100% {
-    opacity: 0.45;
-  }
-  50% {
-    opacity: 0.9;
-  }
+/* compose steps (mirrors the classic .steps, re-dressed under the orb) */
+[data-brand="relaxed"] .vh-detail {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--ink-1);
 }
-@keyframes mic-pulse {
-  0%,
-  100% {
-    transform: scale(1);
+[data-brand="relaxed"] .vh-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  align-items: flex-start;
+}
+[data-brand="relaxed"] .vh-step {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+[data-brand="relaxed"] .vh-sdot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rx-line-strong, rgba(239, 235, 227, 0.26));
+  flex: none;
+}
+[data-brand="relaxed"] .vh-step.done,
+[data-brand="relaxed"] .vh-step.active {
+  color: var(--ink-0);
+}
+[data-brand="relaxed"] .vh-step.done .vh-sdot,
+[data-brand="relaxed"] .vh-step.active .vh-sdot {
+  background: var(--ink-0);
+}
+[data-brand="relaxed"] .vh-gfoot {
+  font-size: 11.5px;
+  color: var(--ink-2);
+  text-align: center;
+  line-height: 1.45;
+  max-width: 30ch;
+}
+@keyframes vh-fade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
   }
-  50% {
-    transform: scale(1.06);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  [data-brand="relaxed"] .vhello-hint {
-    animation: none;
-    opacity: 0.7;
+  [data-brand="relaxed"] .vh-orb {
+    transition-duration: 0.2s;
   }
-  [data-brand="relaxed"] .vhello-mic.on {
+  [data-brand="relaxed"] .vh-zone,
+  [data-brand="relaxed"] .vh-top,
+  [data-brand="relaxed"] .vh-bot {
     animation: none;
   }
 }
