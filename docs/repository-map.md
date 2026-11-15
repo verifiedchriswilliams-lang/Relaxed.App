@@ -145,8 +145,10 @@ relaxed.app/
   A separate tvOS target in the Xcode project on the Mac — see the folder's README.
 - `public/aurora.jpg` — the ElevenMind night-sky background (relaxed uses none).
 - `public/orb/` — the voice-orb assets: `calm-1.png` (the authored orb frame the
-  `RingOrb` shader warps) and `intro.mp4` (the load video: the stem resolving into the
-  orb, which hands off to the live orb in `VoicedHello`).
+  `RingOrb` shader warps), `calm-play.png` (the same frame with its centre quieted so a
+  per-soundscape motif can sit in the core during a session; the swirling ribbons are
+  untouched), and `intro.mp4` (the load video: the stem resolving into the orb, which
+  hands off to the live orb in `VoicedHello`).
 
 ## Where to make common changes
 
