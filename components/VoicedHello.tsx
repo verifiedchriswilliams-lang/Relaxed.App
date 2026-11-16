@@ -233,20 +233,24 @@ export default function VoicedHello({
   // First-run step 1: the voice-first explainer's "allow microphone". iOS only prompts for
   // getUserMedia from inside a gesture, so this button IS the gesture. Whether they allow
   // or deny, we move on to "tap to begin" (the flow still works by tap/type without mic).
-  const requestMic = () => {
+  const requestMic = async () => {
     try {
       localStorage.setItem("relaxed.micasked.v1", "1");
     } catch {
       /* ignore */
     }
-    const done = () => setLoadPhase("begin");
+    // Direct getUserMedia (the pattern our working iOS build uses): this is the gesture that
+    // makes iOS Safari show the permission prompt. Stop the probe stream; the agent opens
+    // its own mic when it connects. Allow or deny, we proceed to "tap to begin".
     try {
-      const m = navigator.mediaDevices?.getUserMedia?.({ audio: true });
-      if (m) m.then((s) => s.getTracks().forEach((t) => t.stop())).then(done, done);
-      else done();
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mic.getTracks().forEach((t) => t.stop());
+      }
     } catch {
-      done();
+      /* denied or unavailable: the tap/type flow still works */
     }
+    setLoadPhase("begin");
   };
 
   // "tap to begin": unlock audio, then play the already-mounted + primed video IN PLACE

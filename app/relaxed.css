@@ -598,7 +598,11 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 118%;
+  /* Sized off viewport HEIGHT to match the intro video, which is object-fit:cover (fills
+     height on a phone), so the live orb is the same size as the video's final frame at the
+     hand-off. aspect-ratio keeps it square. */
+  height: 51%;
+  width: auto;
   aspect-ratio: 1;
   transform: translate(-50%, -50%) translateY(0);
   transition: transform 1.7s cubic-bezier(0.33, 0, 0.2, 1);

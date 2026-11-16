@@ -66,18 +66,6 @@ export function agentConfigured(): boolean {
   return !!agentId();
 }
 
-// Normalise the SDK's byte frequency data to the same 0..1 feel as engine.voiceLevel,
-// so the orb behaves identically whether the voice is the app's TTS or the agent.
-function levelFrom(data: Uint8Array | undefined | null): number {
-  if (!data || data.length === 0) return 0;
-  let sum = 0;
-  for (let i = 0; i < data.length; i++) {
-    const v = data[i] / 255;
-    sum += v * v;
-  }
-  return Math.min(1, Math.sqrt(sum / data.length) * 4);
-}
-
 export async function startVoiceAgent(
   opts: StartVoiceAgentOptions,
 ): Promise<VoiceAgentController | null> {
@@ -141,9 +129,11 @@ export async function startVoiceAgent(
     },
   };
 
-  // Base session config shared by public and private agents.
+  // Base session config shared by public and private agents. WebSocket (not WebRTC): this
+  // is the connection our working iOS build uses, and it is the reliable path for the mic
+  // on iOS Safari.
   const base: Record<string, unknown> = {
-    connectionType: "webrtc",
+    connectionType: "websocket",
     clientTools,
     dynamicVariables: opts.dynamicVariables,
     // Option A: the pre-rendered clip already greeted + asked the name, so the live
@@ -195,7 +185,10 @@ export async function startVoiceAgent(
     getOutputLevel: () => {
       if (stopped) return 0;
       try {
-        return levelFrom(conv.getOutputByteFrequencyData?.());
+        // getOutputVolume() is synchronous and works on both connection types (0..1, where
+        // 0 is -100dB and 1 is -30dB). Scale so a speaking voice drives the orb well.
+        const v = conv.getOutputVolume ? conv.getOutputVolume() : 0;
+        return Math.min(1, (typeof v === "number" ? v : 0) * 2.2);
       } catch {
         return 0;
       }
