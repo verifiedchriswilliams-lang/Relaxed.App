@@ -29,6 +29,7 @@
 | `relaxed.recentHint.v1` | One-time flag: the recent/history entry has been introduced | Non-personal; a single `"1"`. |
 | `relaxed.appbanner.v1` | One-time flag: the web "download on the App Store" strip was dismissed | Non-personal; a single `"1"`. relaxed web only; never set inside the native app. |
 | `relaxed.hello.v1` | One-time flag: the voiced welcome (onboarding) has been shown | Non-personal; a single `"1"`, so the first-run greeting never replays. relaxed only. |
+| `relaxed.voiced.v1` | Per-device opt-in to the voiced first run, set by the `?voiced=1` URL override (cleared by `?voiced=0`) | Non-personal; a single `"1"`. A testing/rollout toggle so the experience can be enabled on one device without the global flag; relaxed only. |
 
 Everything above is readable only by the site's own origin, is never sent to any
 server, and is cleared if the user clears site data or deletes the app. There is
