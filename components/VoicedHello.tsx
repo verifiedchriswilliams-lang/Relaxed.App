@@ -143,6 +143,10 @@ export default function VoicedHello({
   // the audio-unlock gesture, and it visually continues the native splash.
   const [step, setStep] = useState<Step>("load");
   const [introDone, setIntroDone] = useState(false);
+  // The orb first appears exactly where the video left it (centred), then gently drifts up
+  // as it starts to speak. `drifted` flips a beat after the conversation opens, so the rise
+  // is a smooth motion rather than an instant jump at the hand-off.
+  const [drifted, setDrifted] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   // The ElevenLabs guided agent (when configured). agentActive flips true once it is
@@ -195,7 +199,7 @@ export default function VoicedHello({
   // without even prompting. We drop the probe stream immediately; the agent opens its own
   // mic once permission is granted.
   const begin = () => {
-    onUnlockAudio?.();
+    // Mic first, inside the gesture (iOS only allows getUserMedia from a user gesture).
     if (agentConfigured()) {
       try {
         navigator.mediaDevices
@@ -206,23 +210,34 @@ export default function VoicedHello({
         /* no mic API: the tap/type fallback still works */
       }
     }
-    setStep(isReturning ? "returning" : "intro");
+    onUnlockAudio?.();
+    if (isReturning) {
+      setStep("returning");
+      return;
+    }
+    // Play the already-mounted video IN PLACE (it was showing its first frame as the load
+    // screen), so there is no element swap and no black blink between tap and animation.
+    setStep("intro");
+    const v = videoRef.current;
+    if (v) {
+      v.play?.().catch(() => {});
+      window.setTimeout(() => setIntroDone(true), 8000); // safety: never hang on the video
+    } else {
+      setIntroDone(true);
+    }
   };
 
-  // Intro video (only while on the "intro" step) -> hand off to the orb.
+  // The intro video is mounted across the load + intro steps (same element). Listen for its
+  // end so we can hand off to the live orb.
   useEffect(() => {
-    if (step !== "intro") return;
     const v = videoRef.current;
     if (!v) return;
     const done = () => setIntroDone(true);
     v.addEventListener("ended", done);
     v.addEventListener("error", done);
-    const safety = window.setTimeout(done, 8000);
-    v.play?.().catch(() => {});
     return () => {
       v.removeEventListener("ended", done);
       v.removeEventListener("error", done);
-      window.clearTimeout(safety);
     };
   }, [step]);
 
@@ -232,12 +247,16 @@ export default function VoicedHello({
   useEffect(() => {
     if (step !== "intro" || !introDone) return;
     setStep("name");
+    // Let the orb settle where the video left it (centred) for a beat, then drift up as the
+    // greeting begins, so the hand-off reads as one continuous motion, not a jump.
+    const rise = window.setTimeout(() => setDrifted(true), 650);
     void (async () => {
       await say(
         "Welcome to relaxed. We'll make a guided journey, just for you. First, what should we call you?",
       );
       void startAgent();
     })();
+    return () => window.clearTimeout(rise);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, introDone]);
 
@@ -248,7 +267,8 @@ export default function VoicedHello({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  const orbUp = introDone && step !== "intro" && step !== "returning";
+  // Up only after the brief settle (drifted), and never on the welcome-back step.
+  const orbUp = drifted && step !== "intro" && step !== "returning";
   // The orb is always in "speaking" mode: it brightens/warms to the app's own voice
   // (voiceLevel) whenever a line plays, and settles calm when silent (level ~0). It
   // never reacts to the mic.
@@ -424,17 +444,11 @@ export default function VoicedHello({
 
   return (
     <div className="vh" role="dialog" aria-label="Welcome to relaxed">
-      {/* LOAD: the intro video's exact first frame (the glossy stem), so it is pixel-
-          identical to where the video begins, no size jump, and continuous with the native
-          splash. The tap unlocks audio + mic and kicks off the animation (or welcome-back). */}
-      {step === "load" && (
-        <button className="vh-load" onClick={begin} aria-label="Tap to begin">
-          <img className="vh-loadimg" src="/orb/intro-first.jpg" alt="" aria-hidden="true" />
-          <span className="vh-tap">tap to begin</span>
-        </button>
-      )}
-
-      {step === "intro" && !introDone && (
+      {/* The intro video is mounted across BOTH the load and intro steps. On load it shows
+          its own first frame (poster = the glossy stem), so the "r" you tap is literally the
+          first frame of the animation, no element swap, no black blink. The tap just plays
+          it in place. Continuous with the native splash. */}
+      {(step === "load" || step === "intro") && !introDone && (
         <video
           ref={videoRef}
           className="vh-video"
@@ -445,24 +459,17 @@ export default function VoicedHello({
           preload="auto"
         />
       )}
+      {step === "load" && (
+        <button className="vh-load" onClick={begin} aria-label="Tap to begin">
+          <span className="vh-tap">tap to begin</span>
+        </button>
+      )}
 
       {step !== "load" && step !== "intro" && (
         <div className={`vh-orb${orbUp ? " up" : ""}`}>
           <RingOrb mode={orbMode} levelSource={orbLevel} reduced={reduced} running />
         </div>
       )}
-
-      {/* Persistent escape hatch: never trap anyone in the flow. Drops to the classic home.
-          Hidden on the load screen (nothing to escape yet) and on the review/returning
-          steps, which carry their own "not now". */}
-      {step !== "load" &&
-        step !== "intro" &&
-        step !== "review" &&
-        step !== "returning" && (
-          <button className="vh-skip" onClick={onExit} aria-label="Skip setup">
-            skip
-          </button>
-        )}
 
       {/* NAME */}
       {step === "name" && (
