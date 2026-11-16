@@ -50,8 +50,11 @@ _As of 2026-10-08._
   orb floating up once for the settings and back to centre for compose/session/close
   (`components/VoicedHello.tsx`). It is driven by an **ElevenLabs guided agent**
   (`lib/voiceAgent.ts`, `@elevenlabs/client`, agent id in `NEXT_PUBLIC_ELEVENLABS_AGENT_ID`;
-  spec in [voice-agent-spec.md](./voice-agent-spec.md)) using mic **Option A**; **tap/type is
-  the guaranteed fallback**, so it works with no agent. The **session screen** uses the living
+  spec in [voice-agent-spec.md](./voice-agent-spec.md)). The agent **connects inside the "tap to
+  begin" gesture with no app audio running** (iOS throws `getUserMedia` `InvalidStateError`
+  otherwise) and **speaks the greeting as its first message** over the stem→orb animation, the
+  way our other working ElevenLabs build does it; **tap/type is the guaranteed fallback**, so it
+  works with no agent. The **session screen** uses the living
   orb with the soundscape motif in a **quieted core** (`components/PlayOrb.tsx`,
   `public/orb/calm-play.png`), breathing with the clock. **In the agent path the user's voice
   leaves the device** (processed by ElevenLabs; disclosed in the mic prompt, approved) — see

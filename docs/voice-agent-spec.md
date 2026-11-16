@@ -19,20 +19,24 @@ way, so voice and tap never drift apart. The living orb reacts to the **agent's 
 (approved). The session itself (after "begin") is **not** the agent; it's the app's existing
 TTS pipeline in the chosen voice. The agent must never presume it is that guiding voice.
 
-## Microphone timing — Option A (locked, SDK-supported)
+## Microphone timing (agent connects in the tap gesture)
 
-1. A **pre-rendered greeting clip** plays with the mic off. Its content is the greeting
-   **and** the first question: *"Welcome to relaxed. Let's make a guided journey, just
-   for you. First, what should we call you?"*
-   - Render this clip in the **same voice** you give the agent, so the handoff is
-     seamless. (I can also generate it through the app's TTS once we pick the voice.)
-2. The **mic prompt** (`getUserMedia`) fires right after that clip.
-3. The agent connects with its **first message overridden to empty**, so it opens the
-   mic and just **listens**. The user's first utterance is their name; the agent takes it
-   from there.
+iOS Safari throws `InvalidStateError` from `getUserMedia` if it runs outside a user gesture
+or while an `AudioContext` is active, so the agent is connected the way our other working
+ElevenLabs build does it:
 
-So the agent's conversation effectively **starts at the name answer**. Its system prompt
-below is written for that.
+1. A first-run **mic permission step** (a card over the "r") grants the mic up front. Tap/type
+   is always available if the person declines.
+2. On **"tap to begin"** (the user gesture), the app connects the agent **immediately**, with
+   **no app audio running** (the audio engine is left dormant on this path, so the session is
+   clean). This is the single thing that makes the mic open reliably.
+3. The agent speaks the **greeting as its `firstMessage`** — *"Welcome to relaxed. We'll make a
+   guided journey, just for you. First, what should we call you?"* — over the stem→orb
+   animation, then listens. One audio system (the SDK), no app-TTS during the agent flow.
+
+So the agent greets and then its conversation **starts at the name answer**; its system prompt
+below is written for that. (The **no-agent fallback** still uses app-TTS for the greeting and
+the tap/type flow, where there is no mic and so no conflict.)
 
 ## What I need back from you
 

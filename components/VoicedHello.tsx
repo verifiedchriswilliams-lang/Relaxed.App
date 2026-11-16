@@ -55,13 +55,13 @@ export interface VoicedHelloProps {
   voiceLevel: () => number;
   /** Speak a line through the app's TTS (drives the orb). Optional (silent if absent). */
   speak?: (text: string) => Promise<void> | void;
-  /** Called on the "tap to begin" gesture: unlock the audio engine so the orb can sound
-   *  (mobile/WKWebView block audio until a user gesture). */
+  /** Called on "tap to begin" ONLY on the no-agent (app-TTS) path: unlock the audio engine so
+   *  the orb can sound. On the agent path we deliberately never touch the engine during
+   *  onboarding, so the iOS audio session stays clean for the agent's mic. */
   onUnlockAudio?: () => void;
-  /** Called just before the voice agent opens its mic: suspend the app's AudioContext so the
-   *  iOS audio session is clean (a running AudioContext makes getUserMedia throw
-   *  InvalidStateError). The agent plays through its own context; ours resumes at compose. */
-  onReleaseAudio?: () => void | Promise<void>;
+  /** Mark the voiced welcome as seen (so it doesn't replay), without touching audio. Called on
+   *  the begin gesture regardless of path. */
+  onMarkSeen?: () => void;
   // Live setters: called as each choice is made so the app's state stays in sync.
   onPickName: (name: string) => void;
   onPickContext: (id: ContextId, customPhrase?: string) => void;
@@ -106,6 +106,12 @@ const INTENTS: { id: ContextId; label: string }[] = [
 ];
 const TIME_STOPS: number[] = [5, 10, 15, 20, 30];
 
+// The opening line. With the agent, it is the agent's first message (spoken by the agent over
+// the stem->orb animation); without an agent it is spoken by app TTS and the tap/type flow runs.
+const GREETING =
+  "Welcome to relaxed. We'll make a guided journey, just for you. First, what should we call you?";
+const GREETING_RETURN = "Let's make something new. What do you need right now?";
+
 // Free voices keyed by the app's voice+accent; premium by id.
 type VoiceOpt = { key: string; label: string; voice: VoiceChoice; accent: Accent; premium: boolean };
 const G = GUIDES as Record<string, { name: string; blurb: string }>;
@@ -133,7 +139,7 @@ export default function VoicedHello({
   voiceLevel,
   speak,
   onUnlockAudio,
-  onReleaseAudio,
+  onMarkSeen,
   onPickName,
   onPickContext,
   onPickDuration,
@@ -239,21 +245,17 @@ export default function VoicedHello({
     // Show the mic step on first run, or always when testing via an explicit ?voiced=1.
     setLoadPhase(agentConfigured() && (forced || !asked) ? "mic" : "begin");
     setLoadReady(true);
-    // Prime the decoder: briefly play muted (allowed for muted+playsInline) then pause back
-    // at frame 0, so the video is decoded and buffered and play() on tap resumes instantly
-    // with no black/stutter. Best-effort.
+    // Prime the decoder with load() (not play()): buffer the video so play() on tap starts
+    // promptly, WITHOUT the brief visible playback the old play()/pause() trick caused (it
+    // showed a few frames of the animation through the mic modal before "tap to begin"). The
+    // poster (the "r", = frame 0) covers any small start delay, so the hand-off stays seamless.
     const v = videoRef.current;
     if (v) {
-      v.play()
-        .then(() => {
-          v.pause();
-          try {
-            v.currentTime = 0;
-          } catch {
-            /* ignore */
-          }
-        })
-        .catch(() => {});
+      try {
+        v.load();
+      } catch {
+        /* ignore */
+      }
     }
   }, []);
 
@@ -276,8 +278,8 @@ export default function VoicedHello({
     // Stop the probe stream; the agent opens its own mic when it connects.
     try {
       const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Permission is what we needed; release the probe. The agent opens its own mic later,
-      // in a clean audio session (we suspend our engine's AudioContext just before it does).
+      // Permission is what we needed here; release the probe. The agent opens its own mic in
+      // the "tap to begin" gesture, with no app audio running, so the session is clean then.
       mic.getTracks().forEach((t) => t.stop());
       setMicResult("granted");
       setLoadPhase("begin"); // granted
@@ -296,15 +298,23 @@ export default function VoicedHello({
     }
   };
 
-  // "tap to begin": unlock audio, then play the already-mounted + primed video IN PLACE
-  // (no element swap, no black blink), or go straight to welcome-back for a returning user.
+  // "tap to begin". The agent is connected RIGHT HERE, inside the tap gesture, with no app
+  // audio running (exactly how our working ElevenLabs build does it): on iOS getUserMedia must
+  // run in a user gesture and with a clean audio session, otherwise it throws InvalidStateError.
+  // The agent speaks the greeting (its first message) over the stem->orb video. Only the
+  // no-agent fallback unlocks our engine (for app-TTS); the agent path never touches it here.
   const begin = () => {
-    onUnlockAudio?.();
+    onMarkSeen?.();
     if (isReturning) {
       setStep("returning");
       return;
     }
     setStep("intro");
+    if (agentConfigured()) {
+      void startAgent(GREETING); // connect now, in the gesture, clean session
+    } else {
+      onUnlockAudio?.(); // no agent: unlock the engine so the app-TTS greeting can play
+    }
     const v = videoRef.current;
     if (v) {
       v.play?.().catch(() => {});
@@ -328,29 +338,19 @@ export default function VoicedHello({
     };
   }, [step]);
 
-  // Once the orb is live, greet and ask the first question (the name). Option A: play the
-  // greeting (app TTS, mic off), then connect the agent so it listens for the name. If no
-  // agent is configured, this is just the greeting and the tap/type flow takes over.
+  // When the video resolves into the orb, run the visual hand-off. The AGENT (already
+  // connecting since the tap) greets via its first message, so there is no app audio here.
+  // Only the no-agent fallback speaks the greeting with app TTS and drives the tap/type flow.
   useEffect(() => {
     if (step !== "intro" || !introDone) return;
     setStep("name");
     // Cross-fade: the orb fades in over the video's frozen last frame, then the video drops.
     const drop = window.setTimeout(() => setVideoGone(true), 900);
-    // Let the orb settle where the video left it (centred) for a beat, then drift up as the
-    // greeting begins, so the hand-off reads as one continuous motion, not a jump.
+    // Let the orb settle where the video left it (centred) for a beat, then drift up.
     const rise = window.setTimeout(() => setDrifted(true), 1100);
-    void (async () => {
-      await say(
-        "Welcome to relaxed. We'll make a guided journey, just for you. First, what should we call you?",
-      );
-      // Clean the iOS audio session before the agent opens its mic: a running AudioContext
-      // (ours, from the greeting) makes getUserMedia throw InvalidStateError. Suspend ours and
-      // let the session settle a beat (the working reference app waits similarly), then connect.
-      // The agent plays through its own context; ours resumes when the session composes.
-      await onReleaseAudio?.();
-      await new Promise((r) => window.setTimeout(r, 160));
-      void startAgent();
-    })();
+    if (!agentConfigured()) {
+      void say(GREETING);
+    }
     return () => {
       window.clearTimeout(drop);
       window.clearTimeout(rise);
@@ -358,9 +358,11 @@ export default function VoicedHello({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, introDone]);
 
-  // Returning: greet by name once we land on the welcome-back step (after the tap).
+  // Returning: greet by name on the welcome-back step. Only on the no-agent path (app TTS); on
+  // the agent path we keep the audio session clean so the agent's mic connects when the user
+  // taps "something new" (the agent greets then). The welcome-back text is on screen regardless.
   useEffect(() => {
-    if (step !== "returning") return;
+    if (step !== "returning" || agentConfigured()) return;
     void say(knownName ? `Welcome back, ${knownName}.` : "Welcome back.");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
@@ -471,12 +473,12 @@ export default function VoicedHello({
     return commitVoice(FREE_FEMALE[0], true); // default "her"
   };
 
-  // Start the guided agent (Option A). The caller has already played the greeting; this
-  // requests the mic and connects with an empty first message so the agent just listens.
-  // If it can't connect (no agent configured, mic denied, error), the tap/type fallback
-  // stays in control. The agent's client tools call the very same commit* handlers, so
+  // Start the guided agent. Called INSIDE the begin/"something new" tap gesture with no app
+  // audio running, so the mic opens cleanly on iOS. The agent speaks `firstMessage` (the
+  // greeting) and then listens. If it can't connect (no agent, mic denied, error), the
+  // tap/type fallback stays in control. Its client tools call the same commit* handlers, so
   // voice and tap drive identical state.
-  async function startAgent() {
+  async function startAgent(firstMessage = "") {
     if (!agentConfigured() || agentRef.current) return;
     const tools: AgentTools = {
       set_name: ({ name: n }) => {
@@ -496,6 +498,7 @@ export default function VoicedHello({
     setAgentState("connecting");
     const ctrl = await startVoiceAgent({
       tools,
+      firstMessage,
       dynamicVariables: {
         user_name: knownName,
         is_returning: isReturning ? "true" : "false",
@@ -835,12 +838,12 @@ export default function VoicedHello({
               className="vh-ghost"
               onClick={() => {
                 setStep("intention");
-                void (async () => {
-                  await say("Let's make something new. What do you need right now?");
-                  await onReleaseAudio?.();
-                  await new Promise((r) => window.setTimeout(r, 160));
-                  void startAgent();
-                })();
+                if (agentConfigured()) {
+                  void startAgent(GREETING_RETURN); // connect in this gesture; agent greets
+                } else {
+                  onUnlockAudio?.();
+                  void say(GREETING_RETURN);
+                }
               }}
             >
               something new

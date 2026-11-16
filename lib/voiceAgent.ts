@@ -5,9 +5,11 @@
 // app's own handlers. The orb reacts to the AGENT's output here (getOutputByteFrequency),
 // exactly as it reacts to the app's own TTS elsewhere, never to the microphone.
 //
-// Mic timing is Option A: the caller plays a pre-rendered greeting (mic off), then calls
-// startVoiceAgent, which requests the mic and connects with the agent's first message
-// overridden to empty so it simply listens for the spoken name.
+// Mic timing: the caller starts this INSIDE the "tap to begin" gesture with no app audio
+// running, so getUserMedia opens the mic in a clean iOS audio session (a running AudioContext,
+// or a call outside a user gesture, makes it throw InvalidStateError). The agent speaks the
+// greeting via `firstMessage` and then listens, so there is a single audio system (the SDK),
+// the way our other working ElevenLabs build does it.
 //
 // The SDK is dynamically imported so it stays out of every bundle until a session is
 // actually started. The whole path is dormant unless NEXT_PUBLIC_ELEVENLABS_AGENT_ID is
@@ -42,6 +44,8 @@ export interface VoiceAgentController {
 
 export interface StartVoiceAgentOptions {
   tools: AgentTools;
+  /** The agent's opening line, spoken on connect (empty = silent, just listen). */
+  firstMessage?: string;
   dynamicVariables: AgentDynamicVars;
   onConnect?: () => void;
   onDisconnect?: () => void;
@@ -139,9 +143,8 @@ export async function startVoiceAgent(
     connectionType: "websocket",
     clientTools,
     dynamicVariables: opts.dynamicVariables,
-    // Option A: the pre-rendered clip already greeted + asked the name, so the live
-    // agent opens silent and just listens.
-    overrides: { agent: { firstMessage: "" } },
+    // The agent speaks this on connect (the greeting), then listens. Empty = silent.
+    overrides: { agent: { firstMessage: opts.firstMessage ?? "" } },
     onConnect: () => opts.onConnect?.(),
     onDisconnect: () => opts.onDisconnect?.(),
     onError: (e: unknown) => opts.onError?.(e),

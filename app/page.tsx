@@ -2585,16 +2585,12 @@ export default function Home() {
           voiceLevel={() => engineRef.current.voiceLevel()}
           speak={sayLine}
           onUnlockAudio={() => {
+            // No-agent (app-TTS) path only. On the agent path VoicedHello never calls this, so
+            // our AudioContext stays dormant and the iOS session is clean for the agent's mic.
             engineRef.current.unlock();
             engineRef.current.ensureRunning();
-            markHelloSeen();
           }}
-          onReleaseAudio={() => {
-            // Suspend our AudioContext so the iOS audio session is clean when the voice agent
-            // opens its mic (a running context makes getUserMedia throw InvalidStateError).
-            // It resumes when the session composes (the engine plays again on Begin).
-            engineRef.current.suspend();
-          }}
+          onMarkSeen={markHelloSeen}
           onPickName={(n) => {
             setName(n);
             setNameCommitted(true);
