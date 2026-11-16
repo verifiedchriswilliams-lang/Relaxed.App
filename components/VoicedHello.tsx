@@ -163,10 +163,6 @@ export default function VoicedHello({
   // whether mic was already asked, so only the "r" shows until then (no flash).
   const [loadPhase, setLoadPhase] = useState<"mic" | "begin">("begin");
   const [loadReady, setLoadReady] = useState(false);
-  // Set when getUserMedia is refused for this origin (iOS Safari remembers a prior deny and
-  // then rejects instantly without a prompt). We surface how to re-enable; the flow still
-  // works by tap/type, so the user can also just continue.
-  const [micBlocked, setMicBlocked] = useState(false);
 
   // Diagnostics (hidden unless the page is opened with ?vhdebug=1). A live readout of the
   // mic result + agent connection state + listening/speaking mode, so a single run tells us
@@ -268,33 +264,25 @@ export default function VoicedHello({
     } catch {
       /* ignore */
     }
-    // No mic API at all (rare): skip straight to the tap/type flow.
+    // No mic API at all (rare): send them to the classic tap/type home.
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setMicResult("unsupported");
-      setLoadPhase("begin");
+      onExit();
       return;
     }
-    // Direct getUserMedia inside this tap gesture is what makes iOS Safari show the prompt.
-    // Stop the probe stream; the agent opens its own mic when it connects.
+    // This tap IS the kickoff (like the reference build's one-tap "start"). Request the mic in
+    // the gesture; the system prompt's "Allow" doubles as "tap to begin": on grant we start the
+    // voiced flow and connect the agent right here. Decline/blocked -> the classic text home,
+    // so a mic-less visitor types everything instead of hearing a voice they can't answer.
     try {
       const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Permission is what we needed here; release the probe. The agent opens its own mic in
-      // the "tap to begin" gesture, with no app audio running, so the session is clean then.
-      mic.getTracks().forEach((t) => t.stop());
+      mic.getTracks().forEach((t) => t.stop()); // permission secured; the agent opens its own
       setMicResult("granted");
-      setLoadPhase("begin"); // granted
+      begin(); // grant = begin: play the intro + connect the agent (clean session, in-gesture)
     } catch (err) {
       const nm = (err as { name?: string } | null)?.name;
-      if (nm === "NotAllowedError" || nm === "SecurityError") {
-        // The browser is refusing the mic for this origin without a prompt (a remembered
-        // deny). Tell the user how to re-enable; they can also continue by tap/type.
-        setMicResult("blocked");
-        setMicBlocked(true);
-      } else {
-        // Unsupported / hardware / other: the tap/type flow still works, so move on.
-        setMicResult("err:" + (nm || "unknown"));
-        setLoadPhase("begin");
-      }
+      setMicResult("declined:" + (nm || "unknown"));
+      onExit(); // no mic -> classic tap/type home
     }
   };
 
@@ -588,24 +576,12 @@ export default function VoicedHello({
       {step === "load" && loadReady && loadPhase === "mic" && (
         <div className="vh-load vh-load-modal">
           <div className="vh-miccard">
-            {!micBlocked ? (
-              <>
-                <div className="vh-micwhy">
-                  relaxed is a voice-first experience. allow the microphone to set up your
-                  session just by talking.
-                </div>
-                <button className="vh-begin" onClick={requestMic}>allow microphone</button>
-                <button className="vh-type" onClick={() => setLoadPhase("begin")}>maybe later</button>
-              </>
-            ) : (
-              <>
-                <div className="vh-micwhy">
-                  the microphone is blocked for this site. allow it for relaxed.app in your
-                  browser settings and reload, or just continue and set up by tapping.
-                </div>
-                <button className="vh-begin" onClick={() => setLoadPhase("begin")}>continue</button>
-              </>
-            )}
+            <div className="vh-micwhy">
+              relaxed is a voice-first experience. allow the microphone to set up your session
+              just by talking.
+            </div>
+            <button className="vh-begin" onClick={requestMic}>allow microphone</button>
+            <button className="vh-type" onClick={onExit}>maybe later</button>
           </div>
         </div>
       )}

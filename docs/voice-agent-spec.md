@@ -29,10 +29,15 @@ ElevenLabs build does it:
    is always available if the person declines.
 2. On **"tap to begin"** (the user gesture), the app connects the agent **immediately**, with
    **no app audio running** (the audio engine is left dormant on this path, so the session is
-   clean). This is the single thing that makes the mic open reliably.
+   clean). This is the single thing that makes the mic open reliably. The **mic grant doubles as
+   the start gesture** (one tap: allow microphone, then the system Allow), so there is no
+   separate "tap to begin"; **declining or "maybe later" sends the person to the classic
+   tap/type home** instead of a voice they cannot answer.
 3. The agent speaks the **greeting as its `firstMessage`** — *"Welcome to relaxed. We'll make a
    guided journey, just for you. First, what should we call you?"* — over the stem→orb
-   animation, then listens. One audio system (the SDK), no app-TTS during the agent flow.
+   animation, then listens. One audio system (the SDK); the greeting comes from the agent's
+   **dashboard "First message"** (no client overrides, which must be enabled on the agent or the
+   session is dropped), and there is no app-TTS on the agent path.
 
 So the agent greets and then its conversation **starts at the name answer**; its system prompt
 below is written for that. (The **no-agent fallback** still uses app-TTS for the greeting and
