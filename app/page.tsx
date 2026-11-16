@@ -108,11 +108,37 @@ const PlayOrb = dynamic(() => import("@/components/PlayOrb"), { ssr: false });
 // The voiced welcome (onboarding) is a once-ever first-run moment, independent of
 // whether prefs are saved, so it never nags on every launch.
 const HELLO_SEEN_KEY = "relaxed.hello.v1";
-// Kill switch for the voiced first-run welcome. OFF by default (production), so the flow
-// stays dormant until it's polished and enabled deliberately. Set NEXT_PUBLIC_VOICED_HELLO=1
-// in an environment (local dev or a preview) to turn it on there for testing without
-// touching production.
-const VOICED_HELLO_ENABLED = process.env.NEXT_PUBLIC_VOICED_HELLO === "1";
+// Remembers a per-device opt-in from the ?voiced=1 override (so it survives in the native
+// app, which loads the site root without the query string).
+const VOICED_OVERRIDE_KEY = "relaxed.voiced.v1";
+
+// Whether the voiced first run is on for THIS session. Three ways, in order:
+//   1. The global env flag (NEXT_PUBLIC_VOICED_HELLO=1) — how it ships to everyone.
+//   2. A URL override: ...?voiced=1 turns it on for this device and remembers it;
+//      ?voiced=0 turns it off and forgets it. Lets us test on relaxed.app (or a dev
+//      build pointed there) WITHOUT flipping the global flag, so normal visitors and
+//      current App Store users are untouched.
+//   3. The remembered override from a previous ?voiced=1.
+// Client-only (reads window); returns false during SSR, which is fine (the overlay and
+// the orb screens are only reached after mount/interaction).
+function voicedHelloEnabled(): boolean {
+  if (process.env.NEXT_PUBLIC_VOICED_HELLO === "1") return true;
+  if (typeof window === "undefined") return false;
+  try {
+    const q = new URLSearchParams(window.location.search).get("voiced");
+    if (q === "1") {
+      localStorage.setItem(VOICED_OVERRIDE_KEY, "1");
+      return true;
+    }
+    if (q === "0") {
+      localStorage.removeItem(VOICED_OVERRIDE_KEY);
+      return false;
+    }
+    return localStorage.getItem(VOICED_OVERRIDE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 import GUIDES from "@/lib/voices.json";
 
@@ -428,6 +454,9 @@ export default function Home() {
   // The voiced first run is a full guided overlay (VoicedHello). `helloReturning` opens
   // it on the welcome-back step for someone who already has a name + history.
   const [helloReturning, setHelloReturning] = useState(false);
+  // Whether the voiced experience is on for this session (env flag or ?voiced override).
+  // Resolved once on mount (client-only) so the render gates below stay consistent.
+  const [voicedEnabled, setVoicedEnabled] = useState(false);
   const [context, setContext] = useState<ContextId>("meditation");
   const [duration, setDuration] = useState<DurationChoice>(10);
   const [voice, setVoice] = useState<VoiceChoice>("female");
@@ -797,7 +826,9 @@ export default function Home() {
     } catch {
       /* ignore */
     }
-    if (VOICED_HELLO_ENABLED && IS_RELAXED) {
+    const voiced = voicedHelloEnabled();
+    setVoicedEnabled(voiced);
+    if (voiced && IS_RELAXED) {
       if (!hadName && !seenHello) {
         // New visitor: the full first run (intro video -> guided setup).
         setHelloReturning(false);
@@ -1788,8 +1819,8 @@ export default function Home() {
           <Wordmark />
         </div>
         <div className="generating">
-          <div className={`gen-orb${IS_RELAXED && VOICED_HELLO_ENABLED ? " gen-orb-live" : ""}`}>
-            {IS_RELAXED && VOICED_HELLO_ENABLED ? (
+          <div className={`gen-orb${IS_RELAXED && voicedEnabled ? " gen-orb-live" : ""}`}>
+            {IS_RELAXED && voicedEnabled ? (
               // The living orb settles to centre here (quieted core + soundscape motif),
               // the same orb that then carries the session.
               <PlayOrb
@@ -1888,7 +1919,7 @@ export default function Home() {
         </div>
 
         <div className="player-center">
-          {IS_RELAXED && VOICED_HELLO_ENABLED ? (
+          {IS_RELAXED && voicedEnabled ? (
             // Voiced experience: the living orb with the soundscape motif in its quieted
             // core, breathing with the clock, reacting to the guide's voice.
             <div className="play-orb play-orb-live" ref={playOrbRef}>
@@ -2008,8 +2039,8 @@ export default function Home() {
     content = (
       <main className="wrap done-wrap">
         <div className="done">
-          <div className={`done-orb${IS_RELAXED && VOICED_HELLO_ENABLED ? " done-orb-live" : ""}`}>
-            {IS_RELAXED && VOICED_HELLO_ENABLED ? (
+          <div className={`done-orb${IS_RELAXED && voicedEnabled ? " done-orb-live" : ""}`}>
+            {IS_RELAXED && voicedEnabled ? (
               // The orb rests at centre for the quiet close (quieted core, no motif).
               <PlayOrb mode="idle" running />
             ) : (

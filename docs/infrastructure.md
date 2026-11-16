@@ -60,7 +60,7 @@ deployment never disturbs the other.
 | `NEXT_PUBLIC_BRAND` | Selects relaxed vs elevenmind |
 | `NEXT_PUBLIC_BLOB_BASE_URL` | Base origin for hosted audio; unset → serve from `/public` |
 | `NEXT_PUBLIC_ENABLE_CUSTOM` | Toggle the "Make Your Own" tile |
-| `NEXT_PUBLIC_VOICED_HELLO` | `1` turns the voiced first run on in that environment (local/preview); unset → off (production default). This is the `VOICED_HELLO_ENABLED` gate. |
+| `NEXT_PUBLIC_VOICED_HELLO` | `1` turns the voiced first run on for everyone in that environment; unset → off (production default). Independently, a **per-device URL override** works without this flag: visiting `…/?voiced=1` turns it on for that device and remembers it (`relaxed.voiced.v1` in localStorage); `?voiced=0` turns it off. Lets us test on production relaxed.app (or a native dev build pointed there) without affecting normal visitors or current App Store users. |
 | `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` | Overrides the guided-onboarding agent's public id (a working default is baked in). Public id; ships in the browser bundle. |
 | `NEXT_PUBLIC_ELEVENLABS_AGENT_PRIVATE` | `1` when the agent has auth enabled: the client then fetches a short-lived token from `/api/eleven-token` (needs `ELEVENLABS_API_KEY`) instead of connecting by id. Unset → public connect. |
 

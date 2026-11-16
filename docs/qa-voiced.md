@@ -6,11 +6,15 @@ goes live. Work top to bottom; note anything that feels off, not just hard failu
 
 ## 0. Set up a test build
 
+- **Easiest (once the code is on `main`): the per-device override.** Open
+  **`relaxed.app/?voiced=1`** in mobile/desktop Safari, full voiced experience, with the
+  real keys, and it does NOT affect anyone else (the global flag stays off). `?voiced=0`
+  turns it back off. This is the recommended way to QA before launch.
+- **In the native app:** run a dev build from Xcode onto your device (it carries the mic
+  permission) with the web pointed at `relaxed.app/?voiced=1` (set once; the opt-in is
+  remembered on-device). Separate from the App Store app; no production impact.
 - **Local:** `NEXT_PUBLIC_VOICED_HELLO=1 npm run dev`, with `ELEVENLABS_API_KEY` and
-  `ANTHROPIC_API_KEY` in `.env.local` (the agent id is baked in).
-- **Shareable (recommended):** a Vercel **Preview** of `feat/voiced-onboarding-orb` with
-  `NEXT_PUBLIC_VOICED_HELLO=1` added to the **Preview** environment (keys already available
-  to Preview). Open the preview URL in desktop + **mobile Safari**. Production stays off.
+  `ANTHROPIC_API_KEY` in `.env.local` (the agent id is baked in). Or `/?voiced=1` locally.
 - To reset "new user" state between runs: clear site data, or in the console
   `localStorage.clear()` then reload.
 
