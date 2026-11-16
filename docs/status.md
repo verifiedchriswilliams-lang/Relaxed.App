@@ -65,6 +65,18 @@ _As of 2026-10-08._
   `/api/eleven-token` is ready); optional intro-video poster frame; then flip the global
   flag on. A native release would be the 1.6 candidate (see
   [roadmap.md](./roadmap.md)).
+  **Live-QA polish (2026-11-16, flag still off):** the load screen no longer flashes the
+  classic home before the "r" (a pre-paint Ink cover, `html.vh-booting`, is set by an inline
+  boot script in `app/layout.tsx` whenever the overlay will show, and released once React's
+  own cover is up); the live orb's size at the video→orb hand-off was tuned to the video's
+  final-frame core (`.vh-orb` height 56%); and the mic permission is now a centred card over
+  the "r" that surfaces a **blocked** state. **Gotcha:** iOS Safari remembers a prior mic
+  **deny per origin** and then rejects `getUserMedia` with no prompt, so a device tested
+  earlier may never see the prompt again until its site permission is reset (aA → Website
+  Settings → Microphone → Allow, or clear website data for relaxed.app). The radio demo
+  prompts because that origin was allowed, not because of any header difference (neither
+  site sets a Permissions-Policy). Safari mic state is per-origin and separate from the
+  native app's `NSMicrophoneUsageDescription`.
 - Nothing in Apple review. **1.4.2 approved and launched 2026-10-08** (start-from-watch +
   watch-face widget + setup-screen layout). 1.4.1 released 2026-10-04 (expedited). The web
   continues to deploy continuously on push to `main`.

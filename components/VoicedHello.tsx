@@ -152,6 +152,10 @@ export default function VoicedHello({
   // whether mic was already asked, so only the "r" shows until then (no flash).
   const [loadPhase, setLoadPhase] = useState<"mic" | "begin">("begin");
   const [loadReady, setLoadReady] = useState(false);
+  // Set when getUserMedia is refused for this origin (iOS Safari remembers a prior deny and
+  // then rejects instantly without a prompt). We surface how to re-enable; the flow still
+  // works by tap/type, so the user can also just continue.
+  const [micBlocked, setMicBlocked] = useState(false);
   // Keep the video's frozen last frame under the orb briefly so the orb can cross-fade in
   // over it (no hard cut), then drop the video.
   const [videoGone, setVideoGone] = useState(false);
@@ -242,18 +246,28 @@ export default function VoicedHello({
     } catch {
       /* ignore */
     }
-    // Direct getUserMedia (the pattern our working iOS build uses): this is the gesture that
-    // makes iOS Safari show the permission prompt. Stop the probe stream; the agent opens
-    // its own mic when it connects. Allow or deny, we proceed to "tap to begin".
-    try {
-      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
-        mic.getTracks().forEach((t) => t.stop());
-      }
-    } catch {
-      /* denied or unavailable: the tap/type flow still works */
+    // No mic API at all (rare): skip straight to the tap/type flow.
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setLoadPhase("begin");
+      return;
     }
-    setLoadPhase("begin");
+    // Direct getUserMedia inside this tap gesture is what makes iOS Safari show the prompt.
+    // Stop the probe stream; the agent opens its own mic when it connects.
+    try {
+      const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mic.getTracks().forEach((t) => t.stop());
+      setLoadPhase("begin"); // granted
+    } catch (err) {
+      const nm = (err as { name?: string } | null)?.name;
+      if (nm === "NotAllowedError" || nm === "SecurityError") {
+        // The browser is refusing the mic for this origin without a prompt (a remembered
+        // deny). Tell the user how to re-enable; they can also continue by tap/type.
+        setMicBlocked(true);
+      } else {
+        // Unsupported / hardware / other: the tap/type flow still works, so move on.
+        setLoadPhase("begin");
+      }
+    }
   };
 
   // "tap to begin": unlock audio, then play the already-mounted + primed video IN PLACE
@@ -516,13 +530,26 @@ export default function VoicedHello({
           begin"; after we've asked once, straight to "tap to begin". The "r" (video poster)
           is the backdrop. */}
       {step === "load" && loadReady && loadPhase === "mic" && (
-        <div className="vh-load">
-          <div className="vh-loadcopy">
-            <div className="vh-micwhy">
-              relaxed is a voice-first experience. allow the microphone to talk with it.
-            </div>
-            <button className="vh-begin" onClick={requestMic}>allow microphone</button>
-            <button className="vh-type" onClick={() => setLoadPhase("begin")}>maybe later</button>
+        <div className="vh-load vh-load-modal">
+          <div className="vh-miccard">
+            {!micBlocked ? (
+              <>
+                <div className="vh-micwhy">
+                  relaxed is a voice-first experience. allow the microphone to set up your
+                  session just by talking.
+                </div>
+                <button className="vh-begin" onClick={requestMic}>allow microphone</button>
+                <button className="vh-type" onClick={() => setLoadPhase("begin")}>maybe later</button>
+              </>
+            ) : (
+              <>
+                <div className="vh-micwhy">
+                  the microphone is blocked for this site. allow it for relaxed.app in your
+                  browser settings and reload, or just continue and set up by tapping.
+                </div>
+                <button className="vh-begin" onClick={() => setLoadPhase("begin")}>continue</button>
+              </>
+            )}
           </div>
         </div>
       )}

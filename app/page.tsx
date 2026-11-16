@@ -828,6 +828,7 @@ export default function Home() {
     }
     const voiced = voicedHelloEnabled();
     setVoicedEnabled(voiced);
+    let overlayShown = false;
     if (voiced && IS_RELAXED) {
       // An explicit ?voiced=1 in the URL this load forces the first run to show (so it can
       // be retested by reloading that URL), bypassing the once-ever / returning gates.
@@ -841,12 +842,26 @@ export default function Home() {
         // New visitor (or a forced retest): the full first run (intro -> guided setup).
         setHelloReturning(false);
         setHello(true);
+        overlayShown = true;
       } else if (hadName && startRecent.length > 0) {
         // Returning: open on the welcome-back step (repeat or something new).
         setHelloReturning(true);
         setHello(true);
+        overlayShown = true;
       }
     }
+    // Release the pre-paint Ink cover (html.vh-booting) now that React owns the screen.
+    // When the overlay will show, wait one frame so .vh-prefill (also Ink) has painted
+    // first, so the hand-off is seamless; otherwise reveal the classic home immediately.
+    const clearBoot = () => {
+      try {
+        document.documentElement.classList.remove("vh-booting");
+      } catch {
+        /* ignore */
+      }
+    };
+    if (overlayShown) requestAnimationFrame(clearBoot);
+    else clearBoot();
   }, []);
 
   // The first time the recent/history entry appears (once there's history, e.g.

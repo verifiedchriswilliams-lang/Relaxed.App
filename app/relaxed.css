@@ -534,6 +534,19 @@
   z-index: 59;
   background: var(--ink-bg, #121110);
 }
+/* Pre-paint Ink cover: added by the inline boot script in <head> BEFORE React hydrates,
+   whenever the voiced overlay is going to show, so the classic home never flashes in the
+   gap before the mount effect sets `hello` (which is what paints .vh-prefill). It sits just
+   under .vh-prefill (z 59) and the overlay (z 60), both also Ink, so when React takes over
+   the hand-off is Ink-to-Ink with no visible seam. The page removes the class once its own
+   cover is committed. */
+html.vh-booting body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 58;
+  background: #121110;
+}
 /* LOAD overlay: sits over the video (which shows its own first frame, the glossy "r"). The
    bottom holds either the voice-first explainer + mic permission (first run) or "tap to
    begin". Transparent so the "r" shows through. */
@@ -552,6 +565,29 @@
 }
 [data-brand="relaxed"] .vh-load-tap {
   cursor: pointer;
+}
+/* Mic permission presented as a centred card over the "r" (not tucked at the bottom), so the
+   request reads as a deliberate first step. A soft scrim dims the "r" behind it. */
+[data-brand="relaxed"] .vh-load-modal {
+  justify-content: center;
+  padding: 0 24px calc(env(safe-area-inset-bottom));
+  background: rgba(10, 9, 8, 0.45);
+}
+[data-brand="relaxed"] .vh-miccard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 330px;
+  padding: 24px 22px 20px;
+  border-radius: 20px;
+  background: rgba(18, 17, 16, 0.82);
+  border: 1px solid rgba(240, 235, 225, 0.1);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: vh-fade 0.5s ease both;
 }
 [data-brand="relaxed"] .vh-loadcopy {
   display: flex;
@@ -601,7 +637,7 @@
   /* Sized off viewport HEIGHT to match the intro video, which is object-fit:cover (fills
      height on a phone), so the live orb is the same size as the video's final frame at the
      hand-off. aspect-ratio keeps it square. Tuned to the video's final-frame orb. */
-  height: 53%;
+  height: 56%;
   width: auto;
   aspect-ratio: 1;
   transform: translate(-50%, -50%) translateY(0);
