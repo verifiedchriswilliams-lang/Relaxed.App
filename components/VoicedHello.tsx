@@ -156,6 +156,21 @@ export default function VoicedHello({
   // then rejects instantly without a prompt). We surface how to re-enable; the flow still
   // works by tap/type, so the user can also just continue.
   const [micBlocked, setMicBlocked] = useState(false);
+
+  // Diagnostics (hidden unless the page is opened with ?vhdebug=1). A live readout of the
+  // mic result + agent connection state + listening/speaking mode, so a single run tells us
+  // exactly where the voice path stops, instead of inferring from "it can't hear me".
+  const [dbg] = useState(() => {
+    try {
+      return new URLSearchParams(window.location.search).get("vhdebug") === "1";
+    } catch {
+      return false;
+    }
+  });
+  const [micResult, setMicResult] = useState("?");
+  const [agentState, setAgentState] = useState("idle");
+  const [agentErr, setAgentErr] = useState("");
+  const [agentMode, setAgentMode] = useState("");
   // Keep the video's frozen last frame under the orb briefly so the orb can cross-fade in
   // over it (no hard cut), then drop the video.
   const [videoGone, setVideoGone] = useState(false);
@@ -248,6 +263,7 @@ export default function VoicedHello({
     }
     // No mic API at all (rare): skip straight to the tap/type flow.
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setMicResult("unsupported");
       setLoadPhase("begin");
       return;
     }
@@ -256,15 +272,18 @@ export default function VoicedHello({
     try {
       const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
       mic.getTracks().forEach((t) => t.stop());
+      setMicResult("granted");
       setLoadPhase("begin"); // granted
     } catch (err) {
       const nm = (err as { name?: string } | null)?.name;
       if (nm === "NotAllowedError" || nm === "SecurityError") {
         // The browser is refusing the mic for this origin without a prompt (a remembered
         // deny). Tell the user how to re-enable; they can also continue by tap/type.
+        setMicResult("blocked");
         setMicBlocked(true);
       } else {
         // Unsupported / hardware / other: the tap/type flow still works, so move on.
+        setMicResult("err:" + (nm || "unknown"));
         setLoadPhase("begin");
       }
     }
@@ -461,6 +480,7 @@ export default function VoicedHello({
       set_voice: ({ selection, name: vn }) => commitVoiceFromAgent(selection, vn),
       begin_session: () => onBegin(),
     };
+    setAgentState("connecting");
     const ctrl = await startVoiceAgent({
       tools,
       dynamicVariables: {
@@ -471,15 +491,23 @@ export default function VoicedHello({
       },
       onConnect: () => {
         agentActive.current = true;
+        setAgentState("connected");
       },
       onDisconnect: () => {
         agentActive.current = false;
+        setAgentState("ended");
       },
-      onError: () => {
+      onError: (e) => {
         agentActive.current = false;
+        setAgentState("error");
+        setAgentErr(String((e as { message?: string } | null)?.message ?? e ?? ""));
       },
+      onModeChange: (m) => setAgentMode(m),
     });
     agentRef.current = ctrl;
+    // startVoiceAgent returns null when it couldn't get a controller (no agent, mic denied,
+    // import/connect failure). onError above already carries the reason when there was one.
+    if (!ctrl) setAgentState((s) => (s === "error" ? s : "no-controller"));
   }
 
   // End the agent (and release the mic) when the overlay goes away.
@@ -510,6 +538,12 @@ export default function VoicedHello({
 
   return (
     <div className="vh" role="dialog" aria-label="Welcome to relaxed">
+      {dbg && (
+        <div className="vh-dbg" aria-hidden="true">
+          mic:{micResult} · agent:{agentState}
+          {agentErr ? ` (${agentErr})` : ""} · mode:{agentMode || "-"}
+        </div>
+      )}
       {/* The intro video is one element across load -> intro -> (briefly) the orb cross-fade.
           On load it shows its own first frame (poster = the glossy stem), so the "r" you tap
           is literally frame one of the animation, no element swap, no black blink. It stays

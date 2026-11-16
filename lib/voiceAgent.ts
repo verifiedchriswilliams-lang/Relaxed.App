@@ -79,7 +79,10 @@ export async function startVoiceAgent(
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     // We don't need the stream handle; the SDK opens its own. Release this probe.
     stream.getTracks().forEach((t) => t.stop());
-  } catch {
+  } catch (e) {
+    // Surface WHY (so the caller's diagnostics can tell a mic deny apart from a connect
+    // failure) before falling back to the tap/type flow.
+    opts.onError?.(new Error("mic:" + ((e as { name?: string } | null)?.name || "denied")));
     return null;
   }
 
