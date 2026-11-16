@@ -150,8 +150,9 @@ relaxed.app/
 - `public/orb/` — the voice-orb assets: `calm-1.png` (the authored orb frame the
   `RingOrb` shader warps), `calm-play.png` (the same frame with its centre quieted so a
   per-soundscape motif can sit in the core during a session; the swirling ribbons are
-  untouched), and `intro.mp4` (the load video: the stem resolving into the orb, which
-  hands off to the live orb in `VoicedHello`).
+  untouched), `intro.mp4` (the load video: the stem resolving into the orb, which hands off
+  to the live orb in `VoicedHello`), and `intro-first.jpg` (the video's exact first frame,
+  the glossy stem, used as the load screen and the video poster so the hand-off is seamless).
 
 ## Where to make common changes
 

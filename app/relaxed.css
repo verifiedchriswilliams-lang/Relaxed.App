@@ -526,22 +526,34 @@
   object-fit: cover;
   z-index: 1;
 }
-/* LOAD screen: the static stem + "tap to begin", continuous with the native splash.
-   The whole screen is the tap target (unlocks audio + starts the intro). */
+/* Ink pre-fill: covers the classic home the moment the voiced overlay is triggered, while
+   its lazy chunk loads, so nothing flashes through. Sits just under the overlay (.vh z 60). */
+[data-brand="relaxed"] .vh-prefill {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+  background: var(--ink-bg, #121110);
+}
+/* LOAD screen: the intro video's exact first frame (glossy stem) + "tap to begin",
+   continuous with the native splash and pixel-identical to where the video starts. The
+   whole screen is the tap target (unlocks audio + mic, starts the intro). */
 [data-brand="relaxed"] .vh-load {
   position: absolute;
   inset: 0;
   z-index: 3;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
+  padding: 0;
   background: var(--ink-bg, #121110);
   border: 0;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-[data-brand="relaxed"] .vh-stem {
-  color: var(--ink-0);
+[data-brand="relaxed"] .vh-loadimg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 [data-brand="relaxed"] .vh-tap {
   position: absolute;

@@ -829,8 +829,16 @@ export default function Home() {
     const voiced = voicedHelloEnabled();
     setVoicedEnabled(voiced);
     if (voiced && IS_RELAXED) {
-      if (!hadName && !seenHello) {
-        // New visitor: the full first run (intro video -> guided setup).
+      // An explicit ?voiced=1 in the URL this load forces the first run to show (so it can
+      // be retested by reloading that URL), bypassing the once-ever / returning gates.
+      let forced = false;
+      try {
+        forced = new URLSearchParams(window.location.search).get("voiced") === "1";
+      } catch {
+        /* ignore */
+      }
+      if (forced || (!hadName && !seenHello)) {
+        // New visitor (or a forced retest): the full first run (intro -> guided setup).
         setHelloReturning(false);
         setHello(true);
       } else if (hadName && startRecent.length > 0) {
@@ -2541,9 +2549,13 @@ export default function Home() {
         {content}
       </div>
 
-      {/* Voiced first run (relaxed, first launch only): the load video resolves into the
-          living orb, one touch wakes it to speak the welcome, then it listens for the name
-          (typed fallback). The orb reacts only to the app's own voice, never the mic. */}
+      {/* The voiced overlay is lazy-loaded; cover the classic home with Ink the instant it's
+          triggered so nothing flashes through while its chunk loads. */}
+      {IS_RELAXED && hello && screen === "setup" && <div className="vh-prefill" aria-hidden="true" />}
+
+      {/* Voiced first run (relaxed): the load screen's "r" (the intro's first frame) → tap →
+          stem-to-orb video → the orb guides setup. The orb reacts only to the app's own
+          voice (agent or TTS), never the mic. */}
       {IS_RELAXED && hello && screen === "setup" && (
         <VoicedHello
           isReturning={helloReturning}

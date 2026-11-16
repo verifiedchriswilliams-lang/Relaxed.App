@@ -14,7 +14,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import RingOrb from "@/components/RingOrb";
-import { StemGlyph } from "@/lib/mark";
 import { CONTEXTS, type ContextId, type VoiceChoice, INFINITE } from "@/lib/contexts";
 import { SOUNDSCAPES, SOUND_CATS } from "@/lib/audio/soundscapes";
 import type { Soundscape, SoundCat, Accent } from "@/lib/audio/types";
@@ -189,10 +188,24 @@ export default function VoicedHello({
     return voiceLevel();
   }, [voiceLevel]);
 
-  // The "tap to begin" gesture: unlock audio (so the orb can sound), then either play the
-  // stem->orb intro video (new) or go straight to the welcome-back step (returning).
+  // The "tap to begin" gesture: unlock audio (so the orb can sound), prime the mic, then
+  // either play the stem->orb intro video (new) or go straight to welcome-back (returning).
+  // iOS Safari only allows getUserMedia from inside a user gesture, so we request mic
+  // permission HERE (on the tap), not later after the greeting, otherwise Safari blocks it
+  // without even prompting. We drop the probe stream immediately; the agent opens its own
+  // mic once permission is granted.
   const begin = () => {
     onUnlockAudio?.();
+    if (agentConfigured()) {
+      try {
+        navigator.mediaDevices
+          ?.getUserMedia?.({ audio: true })
+          .then((s) => s.getTracks().forEach((t) => t.stop()))
+          .catch(() => {});
+      } catch {
+        /* no mic API: the tap/type fallback still works */
+      }
+    }
     setStep(isReturning ? "returning" : "intro");
   };
 
@@ -411,17 +424,26 @@ export default function VoicedHello({
 
   return (
     <div className="vh" role="dialog" aria-label="Welcome to relaxed">
-      {/* LOAD: the static stem, continuous with the native splash. The tap unlocks audio
-          and kicks off the intro animation (or, for a returning user, the welcome-back). */}
+      {/* LOAD: the intro video's exact first frame (the glossy stem), so it is pixel-
+          identical to where the video begins, no size jump, and continuous with the native
+          splash. The tap unlocks audio + mic and kicks off the animation (or welcome-back). */}
       {step === "load" && (
         <button className="vh-load" onClick={begin} aria-label="Tap to begin">
-          <StemGlyph size={120} className="vh-stem" />
+          <img className="vh-loadimg" src="/orb/intro-first.jpg" alt="" aria-hidden="true" />
           <span className="vh-tap">tap to begin</span>
         </button>
       )}
 
       {step === "intro" && !introDone && (
-        <video ref={videoRef} className="vh-video" src="/orb/intro.mp4" muted playsInline preload="auto" />
+        <video
+          ref={videoRef}
+          className="vh-video"
+          src="/orb/intro.mp4"
+          poster="/orb/intro-first.jpg"
+          muted
+          playsInline
+          preload="auto"
+        />
       )}
 
       {step !== "load" && step !== "intro" && (
