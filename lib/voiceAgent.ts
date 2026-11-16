@@ -8,8 +8,8 @@
 // Mic timing: the caller starts this INSIDE the "tap to begin" gesture with no app audio
 // running, so getUserMedia opens the mic in a clean iOS audio session (a running AudioContext,
 // or a call outside a user gesture, makes it throw InvalidStateError). The agent speaks the
-// greeting via `firstMessage` and then listens, so there is a single audio system (the SDK),
-// the way our other working ElevenLabs build does it.
+// greeting via its dashboard "First message" and then listens, so there is a single audio
+// system (the SDK), the way our other working ElevenLabs build does it.
 //
 // The SDK is dynamically imported so it stays out of every bundle until a session is
 // actually started. The whole path is dormant unless NEXT_PUBLIC_ELEVENLABS_AGENT_ID is
@@ -42,13 +42,18 @@ export interface VoiceAgentController {
   stop: () => Promise<void>;
 }
 
+export interface DisconnectInfo {
+  reason?: string; // "error" | "agent" | "user"
+  message?: string;
+  closeCode?: number;
+  closeReason?: string;
+}
+
 export interface StartVoiceAgentOptions {
   tools: AgentTools;
-  /** The agent's opening line, spoken on connect (empty = silent, just listen). */
-  firstMessage?: string;
   dynamicVariables: AgentDynamicVars;
   onConnect?: () => void;
-  onDisconnect?: () => void;
+  onDisconnect?: (info?: DisconnectInfo) => void;
   onError?: (err: unknown) => void;
   /** "speaking" = agent talking, "listening" = waiting for the user. */
   onModeChange?: (mode: "speaking" | "listening") => void;
@@ -143,10 +148,16 @@ export async function startVoiceAgent(
     connectionType: "websocket",
     clientTools,
     dynamicVariables: opts.dynamicVariables,
-    // The agent speaks this on connect (the greeting), then listens. Empty = silent.
-    overrides: { agent: { firstMessage: opts.firstMessage ?? "" } },
+    // No client overrides: the agent's opening line comes from its dashboard "First message"
+    // (overrides have to be explicitly enabled on the agent or the session is dropped right
+    // after connect). The greeting is configured there.
     onConnect: () => opts.onConnect?.(),
-    onDisconnect: () => opts.onDisconnect?.(),
+    onDisconnect: (d: DisconnectInfo | undefined) =>
+      opts.onDisconnect?.(
+        d
+          ? { reason: d.reason, message: d.message, closeCode: d.closeCode, closeReason: d.closeReason }
+          : undefined,
+      ),
     onError: (e: unknown) => opts.onError?.(e),
     onModeChange: (ev: { mode?: string } | undefined) => {
       const m = ev?.mode === "speaking" ? "speaking" : "listening";

@@ -311,7 +311,7 @@ export default function VoicedHello({
     }
     setStep("intro");
     if (agentConfigured()) {
-      void startAgent(GREETING); // connect now, in the gesture, clean session
+      void startAgent(); // connect now, in the gesture, clean session; agent greets (dashboard first message)
     } else {
       onUnlockAudio?.(); // no agent: unlock the engine so the app-TTS greeting can play
     }
@@ -474,11 +474,12 @@ export default function VoicedHello({
   };
 
   // Start the guided agent. Called INSIDE the begin/"something new" tap gesture with no app
-  // audio running, so the mic opens cleanly on iOS. The agent speaks `firstMessage` (the
-  // greeting) and then listens. If it can't connect (no agent, mic denied, error), the
+  // audio running, so the mic opens cleanly on iOS. The agent speaks its dashboard first
+  // message (the greeting) and then listens. If it can't connect (no agent, mic denied, error),
+  // the
   // tap/type fallback stays in control. Its client tools call the same commit* handlers, so
   // voice and tap drive identical state.
-  async function startAgent(firstMessage = "") {
+  async function startAgent() {
     if (!agentConfigured() || agentRef.current) return;
     const tools: AgentTools = {
       set_name: ({ name: n }) => {
@@ -498,7 +499,6 @@ export default function VoicedHello({
     setAgentState("connecting");
     const ctrl = await startVoiceAgent({
       tools,
-      firstMessage,
       dynamicVariables: {
         user_name: knownName,
         is_returning: isReturning ? "true" : "false",
@@ -509,9 +509,15 @@ export default function VoicedHello({
         agentActive.current = true;
         setAgentState("connected");
       },
-      onDisconnect: () => {
+      onDisconnect: (info) => {
         agentActive.current = false;
         setAgentState("ended");
+        const why = info
+          ? [info.reason, info.closeReason || info.message, info.closeCode]
+              .filter((x) => x !== undefined && x !== "")
+              .join(" ")
+          : "";
+        if (why) setAgentErr(why);
       },
       onError: (e) => {
         agentActive.current = false;
@@ -839,7 +845,7 @@ export default function VoicedHello({
               onClick={() => {
                 setStep("intention");
                 if (agentConfigured()) {
-                  void startAgent(GREETING_RETURN); // connect in this gesture; agent greets
+                  void startAgent(); // connect in this gesture; agent greets (dashboard first message)
                 } else {
                   onUnlockAudio?.();
                   void say(GREETING_RETURN);
