@@ -205,12 +205,15 @@ export default function VoicedHello({
   // decoded and ready to play instantly (no stutter) when they tap.
   useEffect(() => {
     let asked = false;
+    let forced = false;
     try {
       asked = localStorage.getItem("relaxed.micasked.v1") === "1";
+      forced = new URLSearchParams(window.location.search).get("voiced") === "1";
     } catch {
       /* ignore */
     }
-    setLoadPhase(asked || !agentConfigured() ? "begin" : "mic");
+    // Show the mic step on first run, or always when testing via an explicit ?voiced=1.
+    setLoadPhase(agentConfigured() && (forced || !asked) ? "mic" : "begin");
     setLoadReady(true);
     // Prime the decoder: briefly play muted (allowed for muted+playsInline) then pause back
     // at frame 0, so the video is decoded and buffered and play() on tap resumes instantly
