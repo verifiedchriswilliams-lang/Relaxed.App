@@ -181,6 +181,20 @@ export default function VoicedHello({
   // fallback runs. agentRef holds the controller for the orb's level + teardown.
   const agentRef = useRef<VoiceAgentController | null>(null);
   const agentActive = useRef(false);
+  // The mic stream acquired at the (clean) mic-permission gesture, held open on purpose:
+  // iOS puts the audio session into playback once the greeting plays through our engine, and
+  // then the agent's own getUserMedia can't switch it to record (InvalidStateError). Keeping
+  // a capture alive holds the session in record/playAndRecord the whole way, so the agent
+  // connects cleanly. Released once the agent is up (it opens its own) or on teardown.
+  const micStreamRef = useRef<MediaStream | null>(null);
+  const releaseHeldMic = useCallback(() => {
+    try {
+      micStreamRef.current?.getTracks().forEach((t) => t.stop());
+    } catch {
+      /* ignore */
+    }
+    micStreamRef.current = null;
+  }, []);
 
   // Collected selections (local mirror for display; also pushed to the app via pick*).
   const [name, setName] = useState(knownName);
@@ -271,7 +285,14 @@ export default function VoicedHello({
     // Stop the probe stream; the agent opens its own mic when it connects.
     try {
       const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mic.getTracks().forEach((t) => t.stop());
+      // Hold the stream open for the agent (keeps the iOS audio session in record mode so the
+      // agent's later getUserMedia doesn't hit InvalidStateError). With no agent, release it.
+      if (agentConfigured()) {
+        releaseHeldMic(); // drop any earlier one first
+        micStreamRef.current = mic;
+      } else {
+        mic.getTracks().forEach((t) => t.stop());
+      }
       setMicResult("granted");
       setLoadPhase("begin"); // granted
     } catch (err) {
@@ -492,6 +513,9 @@ export default function VoicedHello({
       onConnect: () => {
         agentActive.current = true;
         setAgentState("connected");
+        // The SDK now holds its own capture, which keeps the session in record mode, so our
+        // bridging stream can be released (stops the duplicate capture / orange indicator).
+        releaseHeldMic();
       },
       onDisconnect: () => {
         agentActive.current = false;
@@ -507,7 +531,10 @@ export default function VoicedHello({
     agentRef.current = ctrl;
     // startVoiceAgent returns null when it couldn't get a controller (no agent, mic denied,
     // import/connect failure). onError above already carries the reason when there was one.
-    if (!ctrl) setAgentState((s) => (s === "error" ? s : "no-controller"));
+    if (!ctrl) {
+      setAgentState((s) => (s === "error" ? s : "no-controller"));
+      releaseHeldMic(); // nothing will take it over; free the mic
+    }
   }
 
   // End the agent (and release the mic) when the overlay goes away.
@@ -516,7 +543,9 @@ export default function VoicedHello({
       void agentRef.current?.stop();
       agentRef.current = null;
       agentActive.current = false;
+      releaseHeldMic();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Labels for the review sentence.
