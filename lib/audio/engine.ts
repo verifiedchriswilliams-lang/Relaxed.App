@@ -855,8 +855,10 @@ export class AudioEngine {
     }
   }
 
-  suspend() {
-    this.ctx?.suspend().catch(() => {});
+  suspend(): Promise<void> {
+    // Returns a promise that resolves once the context is actually suspended, so callers that
+    // need a clean iOS audio session (e.g. before opening the mic) can await it.
+    return this.ctx?.suspend().catch(() => {}) ?? Promise.resolve();
   }
   resume() {
     this.ctx?.resume().catch(() => {});

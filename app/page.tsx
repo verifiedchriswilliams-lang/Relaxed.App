@@ -2589,6 +2589,12 @@ export default function Home() {
             engineRef.current.ensureRunning();
             markHelloSeen();
           }}
+          onReleaseAudio={() => {
+            // Suspend our AudioContext so the iOS audio session is clean when the voice agent
+            // opens its mic (a running context makes getUserMedia throw InvalidStateError).
+            // It resumes when the session composes (the engine plays again on Begin).
+            engineRef.current.suspend();
+          }}
           onPickName={(n) => {
             setName(n);
             setNameCommitted(true);
