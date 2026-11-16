@@ -447,9 +447,13 @@ const MOTIFS: Record<string, Inner> = {
 // Fallback: a calm single wave for any id without a bespoke motif.
 const DEFAULT_MOTIF: Inner = <Wave y={50} amp={8} step={20} dur={9} />;
 
-export function SoundMotif({ id }: { id: string }) {
+export function SoundMotif({ id, className }: { id: string; className?: string }) {
   return (
-    <svg className="pmotif" viewBox="0 0 100 100" aria-hidden="true">
+    <svg
+      className={className ? `pmotif ${className}` : "pmotif"}
+      viewBox="0 0 100 100"
+      aria-hidden="true"
+    >
       {MOTIFS[id] ?? DEFAULT_MOTIF}
     </svg>
   );

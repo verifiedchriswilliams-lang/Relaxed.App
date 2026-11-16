@@ -35,6 +35,8 @@ grounded in the actual code, with every non-obvious claim traceable to a file.
 | 15 | [monetization.md](./monetization.md) | Paid Applications Agreement constraints and the paywall plan (premium soundscapes, `relaxed+`): IAP, commission/Small Business Program, banking & tax, subscription rules. |
 | 16 | [product-brief.md](./product-brief.md) | One-document synthesis of relaxed.app — what it is, first principles/ethos, how it works, feature surface, status, and the active backlog. Written to stand alone (e.g. for external/LLM review). |
 | 17 | [CHANGELOG.md](./CHANGELOG.md) | Release history (web + iOS). |
+| 18 | [voice-agent-spec.md](./voice-agent-spec.md) | The ElevenLabs guided agent for the voiced first run: system prompt, client tools, enums, mic timing. |
+| 19 | [qa-voiced.md](./qa-voiced.md) | Thorough test checklist for the voiced first run before it goes live. |
 
 ### Detailed runbooks & assets (referenced by the above)
 

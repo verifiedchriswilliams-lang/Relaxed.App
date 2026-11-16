@@ -35,6 +35,9 @@
   open:** the `AudioEngine` itself (Web Audio graph, ducking, streaming) and the
   React UI have no automated coverage — they need a jsdom/browser or e2e harness,
   and audio/haptics still require real-device QA ([qa-phase0.md](./qa-phase0.md)).
+  The new WebGL voice orb (`components/RingOrb.tsx`) and the first-run overlay
+  (`components/VoicedHello.tsx`) are likewise WebGL/DOM and have no automated
+  coverage; they are verified by hand (and the `/ring-orb` dev route).
   The entire **watchOS app** is also untested: the SwiftUI views, the
   `SessionEngine`, the `PhoneLink` sync, and the watch's own breath math
   (`native/watch/`) have no automated coverage. The Swift breath math is a 1:1 port

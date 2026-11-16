@@ -125,6 +125,14 @@ beds draw spikes, tones draw waves). These are the only "illustration" in the
 relaxed world and stay monochrome line art; an id with no bespoke motif falls
 back to a calm single wave.
 
+In the voiced session experience (behind `VOICED_HELLO_ENABLED`), the same motif is
+reused inside the living orb's **quieted core** via `<PlayOrb>`: `SoundMotif` takes a
+`className="core"` that re-dresses it as *light* (champagne strokes, gold fill accents, a
+soft bloom, `mix-blend-mode: screen`) sized to the orb's centre, rather than the flat
+Bone-on-Ink line art of the classic player ring. The motion stays steady (its own loop);
+the breath lives in the orb, not the motif. The geometry is unchanged, so the watch port
+is unaffected.
+
 The motifs are ported **1:1** to a SwiftUI Canvas on the Apple Watch
 (`native/watch/SoundMotif.swift`): the same 100×100 grid, the same Bone-on-Ink
 line language, the same oscilloscope/axis treatment for the Frequencies family.

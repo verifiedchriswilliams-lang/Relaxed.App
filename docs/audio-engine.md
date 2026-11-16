@@ -125,6 +125,11 @@ ambient bed (file loop or synth) ──► ambientMaster ──► ambientDuck �
 
 - **Voice bus:** one gain node per session at the normalized voice level; every
   spoken line is a `BufferSource` through it.
+- **Voice level tap (onboarding orb):** the `preview` buffer path (used for the
+  onboarding greeting and tray auditions) routes through a shared `AnalyserNode`
+  (`gain ► voiceAnalyser ► destination`). `engine.voiceLevel()` returns the RMS of
+  that node (~0..1), which drives the first-run Ring Orb. It is the **app's own voice
+  output**, never the microphone.
 - **Ambient bed:** all 15 current soundscapes (Nature, Music, and Frequencies) are
   hosted looping MP3s (`startFile`, `loop = true`) served from Blob. The engine
   also contains procedural generators, brown/white/pink noise (Paul Kellet pink),

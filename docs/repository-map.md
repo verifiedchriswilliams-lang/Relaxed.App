@@ -32,12 +32,22 @@ relaxed.app/
 | `app/globals.css` | CSS | Base (ElevenMind) design system + all shared component styles. |
 | `app/relaxed.css` | CSS | relaxed brand token overrides + relaxed-only structure (scoped `[data-brand="relaxed"]`). |
 | `app/privacy/page.tsx` | Server | The privacy policy page (App Store requirement). |
+| `app/ring-orb/page.tsx` | Client component | Isolated **dev route** to preview the voice orb (mode / level / sim / warmth). Not linked from the app. |
 | `app/api/generate/route.ts` | Node route | Preset session assembly + cache-first voicing. |
 | `app/api/custom-script/route.ts` | Node route | Live bespoke script via Claude. |
 | `app/api/tts/route.ts` | Node route | One line → MP3 (custom streaming). |
+| `app/api/eleven-token/route.ts` | Node route | Mints a short-lived ElevenLabs agent token / signed URL for a **private** onboarding agent (keeps the API key server-side). Dormant for a public agent. See [voice-agent-spec](./voice-agent-spec.md), [security](./security.md). |
 | `app/icon.tsx`, `app/apple-icon.tsx` | Edge image | Brand-aware favicon / home-screen icon. |
 | `app/opengraph-image.tsx`, `app/twitter-image.tsx` | Edge image | Brand-aware share cards. |
 | `app/artwork/route.tsx` | Edge route | 512² Now-Playing lock-screen artwork (`?c=<category>`). |
+
+## `components/` — React components
+
+| Path | Kind | Purpose |
+|---|---|---|
+| `components/RingOrb.tsx` | Client component | The voice orb: a single authored frame warped in a WebGL (three.js) shader. Always gently alive; `mode`/`level`/`levelSource` drive brightness, warmth and ring-bounce from the **app's own voice** (never the mic). `running` gates its clock for the video handoff. `texture` picks the frame (`"calm"` = full mandala `calm-1.png`; `"play"` = quieted core `calm-play.png`) and can swap in place at runtime. See [audio-engine](./audio-engine.md), [product-spec](./product-spec.md). |
+| `components/PlayOrb.tsx` | Client component | The session orb: wraps `RingOrb` with `texture="play"` and overlays the chosen soundscape's `SoundMotif` in the quieted core (champagne, blended as light, steady motion). Omit `soundscape` for a bare core. Lazy-imported like `RingOrb`. |
+| `components/VoicedHello.tsx` | Client component | The relaxed voiced first-run overlay: plays the load video (`public/orb/intro.mp4`), hands off to the live `RingOrb`, then guides full setup (name → intention → time → soundscape → voice → review → begin) with the orb floating up for the settings; a returning user opens on a welcome-back step (repeat / something new). Works by tap/type (the guaranteed fallback); the ElevenLabs agent drives the same handlers when configured. Imported lazily by `app/page.tsx` behind `VOICED_HELLO_ENABLED`. See [voice-agent-spec](./voice-agent-spec.md). |
 
 ## `lib/` — logic & content
 
@@ -70,6 +80,7 @@ relaxed.app/
 | `lib/native.ts` | Capacitor bridge: haptics + MediaSession + local notifications; safe web no-ops | [ios-native](./ios-native.md) |
 | `lib/watchRemote.ts` | Web side of the Apple Watch remote: dedupe + push session state / clear, and `onWatchCommand`, bridged to the `WatchBridge` Capacitor plugin; a no-op without the plugin (tests in `tests/watchRemote.test.ts`) | [ios-native](./ios-native.md) |
 | `lib/speech.ts` | Voice input for the voiced onboarding: `speechAvailable`, `listenOnce` (on-device `SpeechInput` plugin, else the browser Web Speech API, else none), `parseSpokenName` (tests in `tests/speech.test.ts`) | [ios-native](./ios-native.md), [data-privacy](./data-privacy.md) |
+| `lib/voiceAgent.ts` | The ElevenLabs guided-agent layer for the voiced first run: dynamically imports `@elevenlabs/client`, requests the mic (Option A), connects with an empty first message, maps the agent's client tools to the app's setup handlers, and exposes the agent's output level for the orb. Dormant unless `NEXT_PUBLIC_ELEVENLABS_AGENT_ID` is set. | [voice-agent-spec](./voice-agent-spec.md), [data-privacy](./data-privacy.md) |
 | `lib/voices.json` | Voice guide names used by the preview builder | [audio-engine](./audio-engine.md) |
 
 ## `scripts/` — maintenance tooling
@@ -136,6 +147,11 @@ relaxed.app/
 
   A separate tvOS target in the Xcode project on the Mac — see the folder's README.
 - `public/aurora.jpg` — the ElevenMind night-sky background (relaxed uses none).
+- `public/orb/` — the voice-orb assets: `calm-1.png` (the authored orb frame the
+  `RingOrb` shader warps), `calm-play.png` (the same frame with its centre quieted so a
+  per-soundscape motif can sit in the core during a session; the swirling ribbons are
+  untouched), and `intro.mp4` (the load video: the stem resolving into the orb, which
+  hands off to the live orb in `VoicedHello`).
 
 ## Where to make common changes
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   CONTEXTS,
   DURATIONS,
@@ -45,7 +46,6 @@ import {
   isNativeApp,
 } from "@/lib/native";
 import { pushWatchState, clearWatchState, onWatchCommand } from "@/lib/watchRemote";
-import { speechAvailable, listenOnce, parseSpokenName } from "@/lib/speech";
 import {
   loadRecent,
   loadFavs,
@@ -98,13 +98,47 @@ const IS_RELAXED = BRAND.id === "relaxed";
 // (shown only in a browser, never inside the native app). Dismissal is remembered.
 const APPSTORE_URL = "https://apps.apple.com/us/app/relaxed-app/id6807080633";
 const BANNER_DISMISS_KEY = "relaxed.appbanner.v1";
+// The voiced first-run overlay (orb + intro video + voice input). Lazy so three.js and
+// the video load only when the overlay actually shows (first run, relaxed) and never bloat
+// the main bundle or the ElevenMind build.
+const VoicedHello = dynamic(() => import("@/components/VoicedHello"), { ssr: false });
+// The living session orb (quieted core + soundscape motif). relaxed voiced experience
+// only; lazy so three.js stays out of the main bundle, like RingOrb.
+const PlayOrb = dynamic(() => import("@/components/PlayOrb"), { ssr: false });
 // The voiced welcome (onboarding) is a once-ever first-run moment, independent of
 // whether prefs are saved, so it never nags on every launch.
 const HELLO_SEEN_KEY = "relaxed.hello.v1";
-// Kill switch for the voiced first-run welcome. Off in production: the first-run
-// experience isn't good enough to put in front of every new visitor yet. The flow
-// stays in the code (gated here) until it's polished and re-enabled deliberately.
-const VOICED_HELLO_ENABLED = false;
+// Remembers a per-device opt-in from the ?voiced=1 override (so it survives in the native
+// app, which loads the site root without the query string).
+const VOICED_OVERRIDE_KEY = "relaxed.voiced.v1";
+
+// Whether the voiced first run is on for THIS session. Three ways, in order:
+//   1. The global env flag (NEXT_PUBLIC_VOICED_HELLO=1) — how it ships to everyone.
+//   2. A URL override: ...?voiced=1 turns it on for this device and remembers it;
+//      ?voiced=0 turns it off and forgets it. Lets us test on relaxed.app (or a dev
+//      build pointed there) WITHOUT flipping the global flag, so normal visitors and
+//      current App Store users are untouched.
+//   3. The remembered override from a previous ?voiced=1.
+// Client-only (reads window); returns false during SSR, which is fine (the overlay and
+// the orb screens are only reached after mount/interaction).
+function voicedHelloEnabled(): boolean {
+  if (process.env.NEXT_PUBLIC_VOICED_HELLO === "1") return true;
+  if (typeof window === "undefined") return false;
+  try {
+    const q = new URLSearchParams(window.location.search).get("voiced");
+    if (q === "1") {
+      localStorage.setItem(VOICED_OVERRIDE_KEY, "1");
+      return true;
+    }
+    if (q === "0") {
+      localStorage.removeItem(VOICED_OVERRIDE_KEY);
+      return false;
+    }
+    return localStorage.getItem(VOICED_OVERRIDE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 import GUIDES from "@/lib/voices.json";
 
@@ -417,14 +451,12 @@ export default function Home() {
   // the voice is best-effort (silent if TTS isn't reachable), and audio unlocks on the
   // tap that dismisses it. Speech input for the answers is a later phase.
   const [hello, setHello] = useState(false);
-  const [helloSpeaking, setHelloSpeaking] = useState(false);
-  // Phase 2: the hello becomes a tiny two-step flow — "welcome" (the orb speaks), then
-  // "name" (speak or type). The name step only appears where voice input is available
-  // (on-device iOS plugin, or the browser's speech API on the web); otherwise the
-  // welcome hands straight off to the typed name field.
-  const [helloStep, setHelloStep] = useState<"welcome" | "name">("welcome");
-  const [helloListening, setHelloListening] = useState(false);
-  const [canSpeak, setCanSpeak] = useState(false);
+  // The voiced first run is a full guided overlay (VoicedHello). `helloReturning` opens
+  // it on the welcome-back step for someone who already has a name + history.
+  const [helloReturning, setHelloReturning] = useState(false);
+  // Whether the voiced experience is on for this session (env flag or ?voiced override).
+  // Resolved once on mount (client-only) so the render gates below stay consistent.
+  const [voicedEnabled, setVoicedEnabled] = useState(false);
   const [context, setContext] = useState<ContextId>("meditation");
   const [duration, setDuration] = useState<DurationChoice>(10);
   const [voice, setVoice] = useState<VoiceChoice>("female");
@@ -714,46 +746,9 @@ export default function Home() {
     }
   }
 
-  // Leave the voiced welcome and hand off to the typed name field on the home.
+  // Leave the voiced first run and fall back to the classic home.
   function endHello() {
     setHello(false);
-    setHelloSpeaking(false);
-    setHelloListening(false);
-    setHelloStep("welcome");
-  }
-
-  // Tap "begin": unlock audio within the gesture (so the greeting can sound), speak the
-  // welcome, then advance. If voice input is available, go to the "name" step (speak or
-  // type); otherwise hand straight off to the typed name field. On a fixed timer so a
-  // slow/absent voice never leaves the orb stuck.
-  function beginHello() {
-    engineRef.current.unlock();
-    engineRef.current.ensureRunning();
-    markHelloSeen();
-    setHelloSpeaking(true);
-    void sayLine("Welcome to relaxed. What should we call you?");
-    window.setTimeout(() => {
-      setHelloSpeaking(false);
-      if (canSpeak) setHelloStep("name");
-      else endHello();
-    }, 2200);
-  }
-
-  // Phase 2: listen for the spoken name on the "name" step. On a result, set the name
-  // (committed but editable via the chip), give a warm spoken ack, and finish. On
-  // nothing heard, stay put so they can retry or type.
-  async function listenName() {
-    if (helloListening) return;
-    setHelloListening(true);
-    const heard = await listenOnce();
-    setHelloListening(false);
-    const n = parseSpokenName(heard);
-    if (!n) return;
-    setName(n);
-    setNameCommitted(true);
-    persistPrefs(n);
-    void sayLine(`Lovely to meet you, ${n}.`);
-    endHello();
   }
 
   // Silence any audition the moment the tray closes (scrim tap, begin, etc.).
@@ -831,10 +826,19 @@ export default function Home() {
     } catch {
       /* ignore */
     }
-    if (VOICED_HELLO_ENABLED && !hadName && IS_RELAXED && !seenHello) setHello(true);
-    // Whether the name can be answered by voice (Phase 2): on-device plugin, or the
-    // browser's speech API on the web. Drives the mic step; typing is always available.
-    setCanSpeak(speechAvailable());
+    const voiced = voicedHelloEnabled();
+    setVoicedEnabled(voiced);
+    if (voiced && IS_RELAXED) {
+      if (!hadName && !seenHello) {
+        // New visitor: the full first run (intro video -> guided setup).
+        setHelloReturning(false);
+        setHello(true);
+      } else if (hadName && startRecent.length > 0) {
+        // Returning: open on the welcome-back step (repeat or something new).
+        setHelloReturning(true);
+        setHello(true);
+      }
+    }
   }, []);
 
   // The first time the recent/history entry appears (once there's history, e.g.
@@ -1815,8 +1819,17 @@ export default function Home() {
           <Wordmark />
         </div>
         <div className="generating">
-          <div className="gen-orb">
-            {IS_RELAXED ? (
+          <div className={`gen-orb${IS_RELAXED && voicedEnabled ? " gen-orb-live" : ""}`}>
+            {IS_RELAXED && voicedEnabled ? (
+              // The living orb settles to centre here (quieted core + soundscape motif),
+              // the same orb that then carries the session.
+              <PlayOrb
+                soundscape={soundscape}
+                mode="speaking"
+                levelSource={() => engineRef.current.voiceLevel()}
+                running
+              />
+            ) : IS_RELAXED ? (
               <StemGlyph size={92} className="gen-glyph" />
             ) : (
               <>
@@ -1906,24 +1919,38 @@ export default function Home() {
         </div>
 
         <div className="player-center">
-          <div className="play-orb" ref={playOrbRef}>
-            <div
-              className={`disc ${playing ? "breathe" : ""}`}
-              style={
-                IS_RELAXED
-                  ? undefined
-                  : ({
-                      background: selected.art,
-                      "--pg": selected.glow,
-                    } as React.CSSProperties)
-              }
-            />
-            <div className="ring" />
-            {/* relaxed: the motif sits OUTSIDE the breathing disc so it stays
-                steady (its own gentle motion) while the ring expands/contracts
-                around it — otherwise it scales with the ring and jitters. */}
-            {IS_RELAXED && <SoundMotif id={soundscape} />}
-          </div>
+          {IS_RELAXED && voicedEnabled ? (
+            // Voiced experience: the living orb with the soundscape motif in its quieted
+            // core, breathing with the clock, reacting to the guide's voice.
+            <div className="play-orb play-orb-live" ref={playOrbRef}>
+              <PlayOrb
+                soundscape={soundscape}
+                breathing
+                mode="speaking"
+                levelSource={() => engineRef.current.voiceLevel()}
+                running
+              />
+            </div>
+          ) : (
+            <div className="play-orb" ref={playOrbRef}>
+              <div
+                className={`disc ${playing ? "breathe" : ""}`}
+                style={
+                  IS_RELAXED
+                    ? undefined
+                    : ({
+                        background: selected.art,
+                        "--pg": selected.glow,
+                      } as React.CSSProperties)
+                }
+              />
+              <div className="ring" />
+              {/* relaxed: the motif sits OUTSIDE the breathing disc so it stays
+                  steady (its own gentle motion) while the ring expands/contracts
+                  around it — otherwise it scales with the ring and jitters. */}
+              {IS_RELAXED && <SoundMotif id={soundscape} />}
+            </div>
+          )}
           <div className="breath">
             <div className={`cue ${playing ? "pulse" : ""}`}>{breathCue}</div>
             <div className="sub">{breathSub}</div>
@@ -2012,19 +2039,26 @@ export default function Home() {
     content = (
       <main className="wrap done-wrap">
         <div className="done">
-          <div className="done-orb">
-            <div
-              className="disc"
-              style={
-                IS_RELAXED
-                  ? undefined
-                  : ({
-                      background: selected.art,
-                      "--pg": selected.glow,
-                    } as React.CSSProperties)
-              }
-            />
-            <div className="ring" />
+          <div className={`done-orb${IS_RELAXED && voicedEnabled ? " done-orb-live" : ""}`}>
+            {IS_RELAXED && voicedEnabled ? (
+              // The orb rests at centre for the quiet close (quieted core, no motif).
+              <PlayOrb mode="idle" running />
+            ) : (
+              <>
+                <div
+                  className="disc"
+                  style={
+                    IS_RELAXED
+                      ? undefined
+                      : ({
+                          background: selected.art,
+                          "--pg": selected.glow,
+                        } as React.CSSProperties)
+                  }
+                />
+                <div className="ring" />
+              </>
+            )}
           </div>
           <div className="done-title">
             Well done{name.trim() ? <>, {name.trim()}</> : ""}.
@@ -2507,46 +2541,60 @@ export default function Home() {
         {content}
       </div>
 
-      {/* Voiced welcome (Phase 1), relaxed, first launch only: the stem mark with its
-          breathing glow speaks a warm hello, then hands off to the name field. The tap
-          both unlocks audio and lets the orb speak. */}
+      {/* Voiced first run (relaxed, first launch only): the load video resolves into the
+          living orb, one touch wakes it to speak the welcome, then it listens for the name
+          (typed fallback). The orb reacts only to the app's own voice, never the mic. */}
       {IS_RELAXED && hello && screen === "setup" && (
-        <div className={`hello${helloSpeaking || helloListening ? " speaking" : ""}`}>
-          {helloStep === "welcome" ? (
-            <button className="hello-tap" onClick={beginHello} aria-label="Begin">
-              <div className="gen-orb hello-orb">
-                <StemGlyph size={104} className="gen-glyph" />
-              </div>
-              <div className="hello-copy">welcome to relaxed</div>
-              <div className="hello-hint">{helloSpeaking ? "" : "tap to begin"}</div>
-            </button>
-          ) : (
-            <div className="hello-name">
-              <div className="gen-orb hello-orb">
-                <StemGlyph size={104} className="gen-glyph" />
-              </div>
-              <div className="hello-copy">what should we call you?</div>
-              <button
-                className={`mic${helloListening ? " on" : ""}`}
-                onClick={listenName}
-                disabled={helloListening}
-                aria-label="Say your name"
-              >
-                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <rect x="9" y="3" width="6" height="11" rx="3" />
-                  <path d="M5 11a7 7 0 0 0 14 0" />
-                  <path d="M12 18v3" />
-                </svg>
-              </button>
-              <div className="hello-hint">
-                {helloListening ? "listening…" : "tap and say your name"}
-              </div>
-              <button className="hello-type" onClick={endHello}>
-                or type instead
-              </button>
-            </div>
-          )}
-        </div>
+        <VoicedHello
+          isReturning={helloReturning}
+          knownName={name}
+          lastSession={
+            recent[0]
+              ? { label: recent[0].label, sub: recent[0].sub }
+              : null
+          }
+          hasPremium={!gate}
+          reduced={false}
+          voiceLevel={() => engineRef.current.voiceLevel()}
+          speak={sayLine}
+          onUnlockAudio={() => {
+            engineRef.current.unlock();
+            engineRef.current.ensureRunning();
+            markHelloSeen();
+          }}
+          onPickName={(n) => {
+            setName(n);
+            setNameCommitted(true);
+            persistPrefs(n);
+          }}
+          onPickContext={(id, phrase) => {
+            setContext(id);
+            if (id === "custom" && phrase) setCustomText(phrase);
+          }}
+          onPickDuration={(minutes) => setDuration(minutes as DurationChoice)}
+          onPickSoundscape={(id) => {
+            setSoundscape(id);
+            setSoundPicked(true);
+            setSoundTab(catOf(id));
+          }}
+          onPickVoice={(v, a) => {
+            setVoice(v);
+            setAccent(a);
+            setVoicePicked(true);
+          }}
+          onBegin={() => {
+            markHelloSeen();
+            setHello(false);
+            // Let the picked choices flush to state, then start the real session.
+            window.setTimeout(() => void begin(), 40);
+          }}
+          onRepeatLast={() => {
+            markHelloSeen();
+            setHello(false);
+            if (recent[0]) replay(recent[0]);
+          }}
+          onExit={endHello}
+        />
       )}
 
       {/* Options tray (setup only) */}
