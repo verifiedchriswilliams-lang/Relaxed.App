@@ -147,6 +147,14 @@ export default function VoicedHello({
   // as it starts to speak. `drifted` flips a beat after the conversation opens, so the rise
   // is a smooth motion rather than an instant jump at the hand-off.
   const [drifted, setDrifted] = useState(false);
+  // Load screen has two phases: "mic" (first run: voice-first explainer + mic permission)
+  // then "begin" (tap to begin). `loadReady` gates the bottom copy until we've checked
+  // whether mic was already asked, so only the "r" shows until then (no flash).
+  const [loadPhase, setLoadPhase] = useState<"mic" | "begin">("begin");
+  const [loadReady, setLoadReady] = useState(false);
+  // Keep the video's frozen last frame under the orb briefly so the orb can cross-fade in
+  // over it (no hard cut), then drop the video.
+  const [videoGone, setVideoGone] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   // The ElevenLabs guided agent (when configured). agentActive flips true once it is
@@ -192,31 +200,63 @@ export default function VoicedHello({
     return voiceLevel();
   }, [voiceLevel]);
 
-  // The "tap to begin" gesture: unlock audio (so the orb can sound), prime the mic, then
-  // either play the stem->orb intro video (new) or go straight to welcome-back (returning).
-  // iOS Safari only allows getUserMedia from inside a user gesture, so we request mic
-  // permission HERE (on the tap), not later after the greeting, otherwise Safari blocks it
-  // without even prompting. We drop the probe stream immediately; the agent opens its own
-  // mic once permission is granted.
-  const begin = () => {
-    // Mic first, inside the gesture (iOS only allows getUserMedia from a user gesture).
-    if (agentConfigured()) {
-      try {
-        navigator.mediaDevices
-          ?.getUserMedia?.({ audio: true })
-          .then((s) => s.getTracks().forEach((t) => t.stop()))
-          .catch(() => {});
-      } catch {
-        /* no mic API: the tap/type fallback still works */
-      }
+  // Decide the load phase once (client): first run shows the mic explainer + permission;
+  // after we've asked once, go straight to "tap to begin". Also prime the video so it is
+  // decoded and ready to play instantly (no stutter) when they tap.
+  useEffect(() => {
+    let asked = false;
+    try {
+      asked = localStorage.getItem("relaxed.micasked.v1") === "1";
+    } catch {
+      /* ignore */
     }
+    setLoadPhase(asked || !agentConfigured() ? "begin" : "mic");
+    setLoadReady(true);
+    // Prime the decoder: briefly play muted (allowed for muted+playsInline) then pause back
+    // at frame 0, so the video is decoded and buffered and play() on tap resumes instantly
+    // with no black/stutter. Best-effort.
+    const v = videoRef.current;
+    if (v) {
+      v.play()
+        .then(() => {
+          v.pause();
+          try {
+            v.currentTime = 0;
+          } catch {
+            /* ignore */
+          }
+        })
+        .catch(() => {});
+    }
+  }, []);
+
+  // First-run step 1: the voice-first explainer's "allow microphone". iOS only prompts for
+  // getUserMedia from inside a gesture, so this button IS the gesture. Whether they allow
+  // or deny, we move on to "tap to begin" (the flow still works by tap/type without mic).
+  const requestMic = () => {
+    try {
+      localStorage.setItem("relaxed.micasked.v1", "1");
+    } catch {
+      /* ignore */
+    }
+    const done = () => setLoadPhase("begin");
+    try {
+      const m = navigator.mediaDevices?.getUserMedia?.({ audio: true });
+      if (m) m.then((s) => s.getTracks().forEach((t) => t.stop())).then(done, done);
+      else done();
+    } catch {
+      done();
+    }
+  };
+
+  // "tap to begin": unlock audio, then play the already-mounted + primed video IN PLACE
+  // (no element swap, no black blink), or go straight to welcome-back for a returning user.
+  const begin = () => {
     onUnlockAudio?.();
     if (isReturning) {
       setStep("returning");
       return;
     }
-    // Play the already-mounted video IN PLACE (it was showing its first frame as the load
-    // screen), so there is no element swap and no black blink between tap and animation.
     setStep("intro");
     const v = videoRef.current;
     if (v) {
@@ -247,16 +287,21 @@ export default function VoicedHello({
   useEffect(() => {
     if (step !== "intro" || !introDone) return;
     setStep("name");
+    // Cross-fade: the orb fades in over the video's frozen last frame, then the video drops.
+    const drop = window.setTimeout(() => setVideoGone(true), 900);
     // Let the orb settle where the video left it (centred) for a beat, then drift up as the
     // greeting begins, so the hand-off reads as one continuous motion, not a jump.
-    const rise = window.setTimeout(() => setDrifted(true), 650);
+    const rise = window.setTimeout(() => setDrifted(true), 1100);
     void (async () => {
       await say(
         "Welcome to relaxed. We'll make a guided journey, just for you. First, what should we call you?",
       );
       void startAgent();
     })();
-    return () => window.clearTimeout(rise);
+    return () => {
+      window.clearTimeout(drop);
+      window.clearTimeout(rise);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, introDone]);
 
@@ -444,11 +489,11 @@ export default function VoicedHello({
 
   return (
     <div className="vh" role="dialog" aria-label="Welcome to relaxed">
-      {/* The intro video is mounted across BOTH the load and intro steps. On load it shows
-          its own first frame (poster = the glossy stem), so the "r" you tap is literally the
-          first frame of the animation, no element swap, no black blink. The tap just plays
-          it in place. Continuous with the native splash. */}
-      {(step === "load" || step === "intro") && !introDone && (
+      {/* The intro video is one element across load -> intro -> (briefly) the orb cross-fade.
+          On load it shows its own first frame (poster = the glossy stem), so the "r" you tap
+          is literally frame one of the animation, no element swap, no black blink. It stays
+          as a frozen last frame under the orb while the orb fades in, then drops. */}
+      {!videoGone && (
         <video
           ref={videoRef}
           className="vh-video"
@@ -459,14 +504,29 @@ export default function VoicedHello({
           preload="auto"
         />
       )}
-      {step === "load" && (
-        <button className="vh-load" onClick={begin} aria-label="Tap to begin">
+
+      {/* LOAD: first run shows the voice-first explainer + mic permission, then "tap to
+          begin"; after we've asked once, straight to "tap to begin". The "r" (video poster)
+          is the backdrop. */}
+      {step === "load" && loadReady && loadPhase === "mic" && (
+        <div className="vh-load">
+          <div className="vh-loadcopy">
+            <div className="vh-micwhy">
+              relaxed is a voice-first experience. allow the microphone to talk with it.
+            </div>
+            <button className="vh-begin" onClick={requestMic}>allow microphone</button>
+            <button className="vh-type" onClick={() => setLoadPhase("begin")}>maybe later</button>
+          </div>
+        </div>
+      )}
+      {step === "load" && loadReady && loadPhase === "begin" && (
+        <button className="vh-load vh-load-tap" onClick={begin} aria-label="Tap to begin">
           <span className="vh-tap">tap to begin</span>
         </button>
       )}
 
       {step !== "load" && step !== "intro" && (
-        <div className={`vh-orb${orbUp ? " up" : ""}`}>
+        <div className={`vh-orb vh-orb-in${orbUp ? " up" : ""}`}>
           <RingOrb mode={orbMode} levelSource={orbLevel} reduced={reduced} running />
         </div>
       )}
