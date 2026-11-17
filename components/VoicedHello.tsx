@@ -647,6 +647,7 @@ export default function VoicedHello({
                   the microphone didn&rsquo;t start. if you meant to allow it, make sure it&rsquo;s
                   on for relaxed.app in your browser settings, then try again. or set up by typing.
                 </div>
+                <div className="vh-micerr">{micResult}</div>
                 <button className="vh-begin" onClick={requestMic}>try again</button>
                 <button className="vh-type" onClick={onExit}>type instead</button>
               </>

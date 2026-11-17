@@ -606,6 +606,12 @@ html.vh-booting body::before {
   padding: 0 24px calc(env(safe-area-inset-bottom));
   background: rgba(10, 9, 8, 0.45);
 }
+[data-brand="relaxed"] .vh-micerr {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  color: var(--ink-2);
+  opacity: 0.7;
+}
 [data-brand="relaxed"] .vh-miccard {
   display: flex;
   flex-direction: column;
