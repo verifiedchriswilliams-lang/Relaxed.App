@@ -41,6 +41,12 @@ export const metadata: Metadata = {
   },
 };
 
+// Serve the HTML fresh on every request instead of from Vercel's edge cache. The app shell is
+// client-rendered, so a statically cached page can keep serving an older build's asset
+// references to some regions after a deploy (seen as "updates not showing" on fresh devices).
+// Forcing dynamic rendering makes each load reference the current build's CSS/JS.
+export const dynamic = "force-dynamic";
+
 export const viewport: Viewport = {
   // Both brands are single dark worlds: relaxed on Ink, ElevenMind on night blue.
   themeColor: BRAND.id === "relaxed" ? "#121110" : "#070912",
