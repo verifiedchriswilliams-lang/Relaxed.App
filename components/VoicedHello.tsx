@@ -162,10 +162,6 @@ export default function VoicedHello({
   // the audio-unlock gesture, and it visually continues the native splash.
   const [step, setStep] = useState<Step>("load");
   const [introDone, setIntroDone] = useState(false);
-  // The orb first appears exactly where the video left it (centred), then gently drifts up
-  // as it starts to speak. `drifted` flips a beat after the conversation opens, so the rise
-  // is a smooth motion rather than an instant jump at the hand-off.
-  const [drifted, setDrifted] = useState(false);
   // Load screen has two phases: "mic" (first run: voice-first explainer + mic permission)
   // then "begin" (tap to begin). `loadReady` gates the bottom copy until we've checked
   // whether mic was already asked, so only the "r" shows until then (no flash).
@@ -197,8 +193,14 @@ export default function VoicedHello({
   // fallback runs. agentRef holds the controller for the orb's level + teardown.
   const agentRef = useRef<VoiceAgentController | null>(null);
   const agentActive = useRef(false);
-  // Hand-off timers (video drop + orb drift). Fire once; cleared only on unmount.
+  // Hand-off timers (video drop). Fire once; cleared only on unmount.
   const handoffTimers = useRef<number[]>([]);
+  // The agent's client tools are built ONCE when it connects (before any choice is made), so a
+  // handler captured there would read stale state. onBegin triggers the page to compose from its
+  // CURRENT state (name/intention/time/soundscape/voice), so the agent's begin_session must call
+  // the latest one, not the connect-time closure — otherwise the session composes from defaults.
+  const onBeginRef = useRef(onBegin);
+  onBeginRef.current = onBegin;
 
   // Collected selections (local mirror for display; also pushed to the app via pick*).
   const [name, setName] = useState(knownName);
@@ -370,15 +372,11 @@ export default function VoicedHello({
   useEffect(() => {
     if (step !== "intro" || !introDone) return;
     setStep("name");
-    // Drop the video and drift the orb up, a beat apart. These run ONCE at the hand-off; we do
-    // NOT clear them in a cleanup, because setStep("name") re-runs this effect immediately and a
-    // cleanup would cancel them before they fire (the old bug: the orb never drifted and the
-    // video was never removed, so it sat invisible on top and ate every tap). Cleared only on
-    // unmount, via handoffTimers below.
-    handoffTimers.current.push(
-      window.setTimeout(() => setVideoGone(true), 900),
-      window.setTimeout(() => setDrifted(true), 1100),
-    );
+    // Drop the video a beat after the orb paints. Runs ONCE at the hand-off; we do NOT clear it
+    // in a cleanup, because setStep("name") re-runs this effect immediately and a cleanup would
+    // cancel it before it fires (the old bug: the video was never removed, so it sat invisible on
+    // top and ate every tap). Cleared only on unmount, via handoffTimers below.
+    handoffTimers.current.push(window.setTimeout(() => setVideoGone(true), 900));
     // The orb has established; connect the agent (she greets here, over the orb, not over the
     // video). Audio output was unlocked in the tap, so her voice plays. No agent -> app-TTS.
     if (agentConfigured()) {
@@ -398,8 +396,10 @@ export default function VoicedHello({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  // Up only after the brief settle (drifted), and never on the welcome-back step.
-  const orbUp = drifted && step !== "intro" && step !== "returning";
+  // The orb holds the video's final-frame position (centred) through name / intention / time,
+  // and only floats UP on the soundscape + voice pickers, where the taller content needs the
+  // room. (It rides back to centre for compose/play on the page side.)
+  const orbUp = step === "soundscape" || step === "voice";
   // The orb is always in "speaking" mode: it brightens/warms to the app's own voice
   // (voiceLevel) whenever a line plays, and settles calm when silent (level ~0). It
   // never reacts to the mic.
@@ -563,7 +563,7 @@ export default function VoicedHello({
         if (s) commitSoundscape(s as Soundscape, true);
       },
       set_voice: ({ selection, name: vn }) => commitVoiceFromAgent(selection, vn),
-      begin_session: () => onBegin(),
+      begin_session: () => onBeginRef.current(),
     };
     setAgentState("connecting");
     const ctrl = await startVoiceAgent({
@@ -634,7 +634,7 @@ export default function VoicedHello({
     <div className="vh" role="dialog" aria-label="Welcome to relaxed">
       {dbg && (
         <div className="vh-dbg" aria-hidden="true">
-          build:nov17-d · mic:{micResult} · agent:{agentState}
+          build:nov17-e · mic:{micResult} · agent:{agentState}
           {agentErr ? ` (${agentErr})` : ""} · mode:{agentMode || "-"}
         </div>
       )}

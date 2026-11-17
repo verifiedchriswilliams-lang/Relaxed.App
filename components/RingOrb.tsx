@@ -99,9 +99,16 @@ const FRAG = `
       ring = mix(ring, vec3(dot(ring,vec3(0.299,0.587,0.114))), 0.78) * vec3(1.0,0.955,0.875);
       col += ring * rim * 0.45;                                             // ring-light wraps the sphere's rim (depth)
     }
-    // uOpaque=1: paint the Ink base (opaque canvas). uOpaque=0: drop the base so only the orb's
-    // light is emitted, which additive blending lays over whatever is behind (no Ink rectangle).
-    gl_FragColor = vec4(uBg*uOpaque + col*uBright, 1.0);
+    // uOpaque=1: solid Ink base + orb (opaque canvas, onboarding). uOpaque=0: transparent canvas
+    // (player/compose) - alpha is the orb's own coverage (bright ribbons/core opaque, the gaps
+    // clear) so it blends over the page with NO Ink rectangle. Premultiplied output.
+    vec3 lit = col * uBright;
+    float cover = clamp(max(max(lit.r, lit.g), lit.b) * 1.3, 0.0, 1.0);
+    if (uOpaque > 0.5) {
+      gl_FragColor = vec4(uBg + lit, 1.0);
+    } else {
+      gl_FragColor = vec4(lit * cover, cover);
+    }
   }`;
 
 export default function RingOrb({
@@ -166,7 +173,6 @@ export default function RingOrb({
       vertexShader: VERT,
       fragmentShader: FRAG,
       transparent: wantAlpha,
-      blending: wantAlpha ? THREE.AdditiveBlending : THREE.NormalBlending,
       uniforms: {
         tOrb: { value: tex },
         uTime: { value: 0 },
@@ -265,7 +271,11 @@ export default function RingOrb({
     <div
       ref={hostRef}
       className={className}
-      style={{ background: "#121110", ...style }}
+      // Fill the container so the canvas is square (without this, inside a wrapper that doesn't
+      // size its child — e.g. PlayOrb's .orb-canvas — the canvas collapsed to half height, a
+      // landscape "box" with the orb squished up top). Transparent orbs keep a transparent host
+      // so no Ink rectangle shows behind the additive canvas; opaque orbs keep the Ink base.
+      style={{ width: "100%", height: "100%", background: transparent ? "transparent" : "#121110", ...style }}
       aria-hidden="true"
     />
   );
