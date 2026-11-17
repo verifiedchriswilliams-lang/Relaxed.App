@@ -291,7 +291,26 @@ export default function VoicedHello({
       mic.getTracks().forEach((t) => t.stop()); // permission secured; the agent opens its own
       setMicResult("granted");
       setMicFailed(false);
-      begin(); // grant = begin: play the intro + connect the agent (clean session, in-gesture)
+      // Unlock iOS audio OUTPUT in this gesture (a 1-sample silent play on a throwaway context,
+      // closed right after). The agent connects later (when the orb establishes, not in a
+      // gesture), so this is what lets her voice play then.
+      try {
+        const AC =
+          (window as unknown as { AudioContext?: typeof AudioContext }).AudioContext ||
+          (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        if (AC) {
+          const actx = new AC();
+          const b = actx.createBuffer(1, 1, 22050);
+          const s = actx.createBufferSource();
+          s.buffer = b;
+          s.connect(actx.destination);
+          s.start(0);
+          window.setTimeout(() => actx.close().catch(() => {}), 150);
+        }
+      } catch {
+        /* ignore */
+      }
+      begin(); // grant = begin: play the intro; the agent connects when the orb establishes
     } catch (err) {
       const nm = (err as { name?: string } | null)?.name || "unknown";
       setMicResult("declined:" + nm);
@@ -314,9 +333,10 @@ export default function VoicedHello({
       return;
     }
     setStep("intro");
-    if (agentConfigured()) {
-      void startAgent(); // connect now, in the gesture, clean session; agent greets (dashboard first message)
-    } else {
+    // The agent is connected when the orb ESTABLISHES (see the intro effect), not here, so she
+    // doesn't talk over the stem->orb video. We unlock audio output in this gesture (below, in
+    // requestMic) so her voice still plays even though the connect happens after the video.
+    if (!agentConfigured()) {
       onUnlockAudio?.(); // no agent: unlock the engine so the app-TTS greeting can play
     }
     const v = videoRef.current;
@@ -352,7 +372,12 @@ export default function VoicedHello({
     const drop = window.setTimeout(() => setVideoGone(true), 900);
     // Let the orb settle where the video left it (centred) for a beat, then drift up.
     const rise = window.setTimeout(() => setDrifted(true), 1100);
-    if (!agentConfigured()) {
+    // Now that the orb has established, connect the agent (she greets here, over the orb, not
+    // over the video). Audio output was unlocked in the tap, so her voice plays. No agent ->
+    // app-TTS greeting + tap/type.
+    if (agentConfigured()) {
+      void startAgent();
+    } else {
       void say(GREETING);
     }
     return () => {

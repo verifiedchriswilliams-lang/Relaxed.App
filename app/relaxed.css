@@ -682,6 +682,7 @@ html.vh-booting body::before {
   transform: translate(-50%, -50%) translateY(0);
   transition: transform 1.7s cubic-bezier(0.33, 0, 0.2, 1);
   z-index: 2; /* above the video (z 1) so it cross-fades in over the frozen last frame */
+  pointer-events: none; /* decorative: never intercept taps meant for the tabs/pills below it */
 }
 /* The orb fades in over the video's frozen last frame (they are aligned), so the hand-off
    is a dissolve, not a cut. */
