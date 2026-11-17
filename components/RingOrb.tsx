@@ -37,6 +37,11 @@ export interface RingOrbProps {
    *  so a per-soundscape motif can sit in the core. Can change at runtime (e.g. the
    *  compose transition); the texture swaps in place without re-initialising WebGL. */
   texture?: "calm" | "play";
+  /** Render the orb on a TRANSPARENT canvas with additive blending, so its light blends over
+   *  whatever is behind it (e.g. the player screen's vignette) instead of painting a flat Ink
+   *  rectangle ("black box"). Default false = opaque Ink canvas (used by the onboarding orb,
+   *  which sits on a flat Ink overlay). Captured at mount. */
+  transparent?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -54,7 +59,7 @@ const VERT = `varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.x
 const FRAG = `
   precision highp float;
   uniform sampler2D tOrb;
-  uniform float uTime, uImgAspect, uEnv, uBright, uAngelic; uniform vec2 uRes;
+  uniform float uTime, uImgAspect, uEnv, uBright, uAngelic, uOpaque; uniform vec2 uRes;
   uniform vec3 uBg;
   varying vec2 vUv;
   void main(){
@@ -94,7 +99,9 @@ const FRAG = `
       ring = mix(ring, vec3(dot(ring,vec3(0.299,0.587,0.114))), 0.78) * vec3(1.0,0.955,0.875);
       col += ring * rim * 0.45;                                             // ring-light wraps the sphere's rim (depth)
     }
-    gl_FragColor = vec4(uBg + col*uBright, 1.0);
+    // uOpaque=1: paint the Ink base (opaque canvas). uOpaque=0: drop the base so only the orb's
+    // light is emitted, which additive blending lays over whatever is behind (no Ink rectangle).
+    gl_FragColor = vec4(uBg*uOpaque + col*uBright, 1.0);
   }`;
 
 export default function RingOrb({
@@ -105,13 +112,14 @@ export default function RingOrb({
   reduced,
   running = true,
   texture = "calm",
+  transparent = false,
   className,
   style,
 }: RingOrbProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   // Latest props, read inside the animation loop without re-initialising WebGL.
-  const live = useRef({ mode, level, levelSource, angelicQuiet, reduced, running, texture });
-  live.current = { mode, level, levelSource, angelicQuiet, reduced, running, texture };
+  const live = useRef({ mode, level, levelSource, angelicQuiet, reduced, running, texture, transparent });
+  live.current = { mode, level, levelSource, angelicQuiet, reduced, running, texture, transparent };
   // Refs so a texture change can swap the uniform in place (orb is persistent, the
   // frame it warps changes at the compose transition) without tearing down WebGL.
   const matRef = useRef<THREE.ShaderMaterial | null>(null);
@@ -126,14 +134,16 @@ export default function RingOrb({
       window.matchMedia &&
       window.matchMedia("(prefers-reduced-motion:reduce)").matches;
 
+    const wantAlpha = !!live.current.transparent;
     let renderer: THREE.WebGLRenderer;
     try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: wantAlpha });
     } catch {
       return; // no WebGL: render nothing (the host stays the Ink background)
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.LinearSRGBColorSpace; // passthrough colour
+    if (wantAlpha) renderer.setClearColor(0x000000, 0); // transparent canvas; orb blends over bg
     const canvas = renderer.domElement;
     canvas.style.display = "block";
     canvas.style.width = "100%";
@@ -155,6 +165,8 @@ export default function RingOrb({
     const mat = new THREE.ShaderMaterial({
       vertexShader: VERT,
       fragmentShader: FRAG,
+      transparent: wantAlpha,
+      blending: wantAlpha ? THREE.AdditiveBlending : THREE.NormalBlending,
       uniforms: {
         tOrb: { value: tex },
         uTime: { value: 0 },
@@ -162,6 +174,7 @@ export default function RingOrb({
         uEnv: { value: 0 },
         uBright: { value: 1 },
         uAngelic: { value: angelicQuiet },
+        uOpaque: { value: wantAlpha ? 0 : 1 },
         uRes: { value: new THREE.Vector2(1, 1) },
         uBg: { value: INK.clone() },
       },

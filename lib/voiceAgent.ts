@@ -38,6 +38,9 @@ export interface VoiceAgentController {
   /** Tell the agent something the user did on screen (e.g. tapped a soundscape), so it
    *  stays in sync with UI selections and can acknowledge + move on. */
   notify: (text: string) => void;
+  /** Mute/unmute the agent's mic input. Used to stop on-screen previews (a voice clip, a
+   *  soundscape bed) from feeding the agent's transcription while the user auditions. */
+  setMicMuted: (muted: boolean) => void;
   /** End the conversation and release the mic. Safe to call more than once. */
   stop: () => Promise<void>;
 }
@@ -216,6 +219,14 @@ export async function startVoiceAgent(
         conv.sendUserMessage?.(text);
       } catch {
         /* non-fatal: the agent just won't hear about this tap */
+      }
+    },
+    setMicMuted: (muted: boolean) => {
+      if (stopped) return;
+      try {
+        conv.setMicMuted?.(muted);
+      } catch {
+        /* non-fatal */
       }
     },
     stop: async () => {

@@ -2611,6 +2611,9 @@ export default function Home() {
             setAccent(a);
             setVoicePicked(true);
           }}
+          onPreviewSoundscape={(id) => previewSound(id as Soundscape)}
+          onPreviewVoice={(v, a) => previewVoice(v, a)}
+          onStopPreview={() => engineRef.current.stopPreview()}
           onBegin={() => {
             markHelloSeen();
             setHello(false);

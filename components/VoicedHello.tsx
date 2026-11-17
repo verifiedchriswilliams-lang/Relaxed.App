@@ -68,6 +68,11 @@ export interface VoicedHelloProps {
   onPickDuration: (minutes: number, openEnded: boolean) => void;
   onPickSoundscape: (id: Soundscape) => void;
   onPickVoice: (voice: VoiceChoice, accent: Accent) => void;
+  /** Audition a soundscape bed / a voice clip while the user is choosing (tap to hear). */
+  onPreviewSoundscape?: (id: Soundscape) => void;
+  onPreviewVoice?: (voice: VoiceChoice, accent: Accent) => void;
+  /** Stop any audition in progress. */
+  onStopPreview?: () => void;
   /** Confirm at review: begin composing (the app reads the now-synced state). */
   onBegin: () => void;
   /** Returning: repeat the last session as-is. */
@@ -145,6 +150,9 @@ export default function VoicedHello({
   onPickDuration,
   onPickSoundscape,
   onPickVoice,
+  onPreviewSoundscape,
+  onPreviewVoice,
+  onStopPreview,
   onBegin,
   onRepeatLast,
   onHistory,
@@ -204,6 +212,9 @@ export default function VoicedHello({
   const [draft, setDraft] = useState("");
   const [soundTab, setSoundTab] = useState<SoundCat>("nature");
   const [voiceTab, setVoiceTab] = useState<"her" | "him" | "none">("her");
+  // The selected voice pill's key (free voices share a `voice` value across accents, so the
+  // highlight + "continue" track the exact option by key).
+  const [selVoiceKey, setSelVoiceKey] = useState<string>("");
 
   // Speak a line through the app TTS. The orb reacts on its own via voiceLevel, so this
   // just needs to fire the audio (best-effort; silent if no speak fn is wired). Once the
@@ -368,6 +379,42 @@ export default function VoicedHello({
   // agent via notify() so it acknowledges and advances, keeping voice + UI in lock-step.
   const agentOn = () => agentActive.current;
 
+  // Audition (preview) without committing: a tap plays the bed / voice clip and highlights the
+  // choice; a "continue" button (or the agent's own tool) confirms + advances. While a preview
+  // plays we mute the agent's mic so the audio doesn't feed its transcription; it auto-unmutes
+  // after the clip (~7.5s) or when the user acts.
+  const previewTimer = useRef<number | null>(null);
+  const muteAgentForPreview = () => {
+    agentRef.current?.setMicMuted(true);
+    if (previewTimer.current) window.clearTimeout(previewTimer.current);
+    previewTimer.current = window.setTimeout(() => {
+      agentRef.current?.setMicMuted(false);
+      previewTimer.current = null;
+    }, 7500);
+  };
+  const endPreview = () => {
+    if (previewTimer.current) {
+      window.clearTimeout(previewTimer.current);
+      previewTimer.current = null;
+    }
+    onStopPreview?.();
+    agentRef.current?.setMicMuted(false);
+  };
+  const auditionSoundscape = (s: Soundscape) => {
+    setSoundscape(s);
+    onPickSoundscape(s);
+    muteAgentForPreview();
+    onPreviewSoundscape?.(s);
+  };
+  const auditionVoice = (opt: VoiceOpt) => {
+    setSelVoiceKey(opt.key);
+    setVoiceSel(opt.voice);
+    setVoiceLabel(opt.label);
+    onPickVoice(opt.voice, opt.accent);
+    muteAgentForPreview();
+    onPreviewVoice?.(opt.voice, opt.accent);
+  };
+
   const commitName = (n: string, fromAgent = false) => {
     const clean = n.trim();
     if (!clean) return;
@@ -418,6 +465,7 @@ export default function VoicedHello({
   };
 
   const commitSoundscape = (id: Soundscape, fromAgent = false) => {
+    endPreview();
     setSoundscape(id);
     onPickSoundscape(id);
     setStep("voice");
@@ -430,6 +478,7 @@ export default function VoicedHello({
   };
 
   const commitVoice = (opt: VoiceOpt | null, fromAgent = false) => {
+    endPreview();
     if (!opt) {
       setVoiceSel("none");
       setVoiceLabel("");
@@ -523,10 +572,12 @@ export default function VoicedHello({
   // End the agent (and release the mic) when the overlay goes away.
   useEffect(() => {
     return () => {
+      if (previewTimer.current) window.clearTimeout(previewTimer.current);
       void agentRef.current?.stop();
       agentRef.current = null;
       agentActive.current = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Labels for the review sentence.
@@ -561,7 +612,7 @@ export default function VoicedHello({
       {!videoGone && (
         <video
           ref={videoRef}
-          className="vh-video"
+          className={`vh-video${step !== "load" && step !== "intro" ? " fading" : ""}`}
           src="/orb/intro.mp4"
           poster="/orb/intro-first.jpg"
           muted
@@ -592,7 +643,11 @@ export default function VoicedHello({
       )}
 
       {step !== "load" && step !== "intro" && (
-        <div className={`vh-orb vh-orb-in${orbUp ? " up" : ""}`}>
+        <div
+          className={`vh-orb vh-orb-in${orbUp ? " up" : ""}${
+            step === "soundscape" || step === "voice" ? " pick" : ""
+          }`}
+        >
           <RingOrb mode={orbMode} levelSource={orbLevel} reduced={reduced} running />
         </div>
       )}
@@ -705,8 +760,8 @@ export default function VoicedHello({
 
       {/* SOUNDSCAPE (required) */}
       {step === "soundscape" && (
-        <div className="vh-zone">
-          <div className="vh-mid" style={{ justifyContent: "flex-start", gap: 10, paddingTop: 4 }}>
+        <div className="vh-zone picker">
+          <div className="vh-mid">
             <div className="vh-title">choose a soundscape</div>
             <div className="vh-tabs">
               {SOUND_CATS.map((c) => (
@@ -722,7 +777,7 @@ export default function VoicedHello({
                   <button
                     key={s.id}
                     className={`vh-pill${soundscape === s.id ? " sel" : ""}${locked ? " locked" : ""}`}
-                    onClick={() => commitSoundscape(s.id)}
+                    onClick={() => auditionSoundscape(s.id)}
                   >
                     {s.label.toLowerCase()} {locked && <LockIcon />}
                   </button>
@@ -730,13 +785,18 @@ export default function VoicedHello({
               })}
             </div>
           </div>
+          <div className="vh-foot">
+            {soundscape && (
+              <button className="vh-begin" onClick={() => commitSoundscape(soundscape)}>continue</button>
+            )}
+          </div>
         </div>
       )}
 
       {/* VOICE (optional, last) */}
       {step === "voice" && (
-        <div className="vh-zone">
-          <div className="vh-mid" style={{ justifyContent: "flex-start", gap: 10, paddingTop: 4 }}>
+        <div className="vh-zone picker">
+          <div className="vh-mid">
             <div className="vh-title">choose a voice</div>
             <div className="vh-tabs">
               {(["her", "him", "none"] as const).map((t) => (
@@ -752,14 +812,22 @@ export default function VoicedHello({
                   return (
                     <button
                       key={o.key}
-                      className={`vh-pill${voiceSel === o.voice ? " sel" : ""}${locked ? " locked" : ""}`}
-                      onClick={() => commitVoice(o)}
+                      className={`vh-pill${selVoiceKey === o.key ? " sel" : ""}${locked ? " locked" : ""}`}
+                      onClick={() => auditionVoice(o)}
                     >
                       {o.label.toLowerCase()} {locked && <LockIcon />}
                     </button>
                   );
                 })}
               </div>
+            )}
+          </div>
+          <div className="vh-foot">
+            {voiceTab !== "none" && selVoiceKey && (
+              <button className="vh-begin" onClick={() => {
+                const opt = ALL_VOICE_OPTS.find((o) => o.key === selVoiceKey);
+                if (opt) commitVoice(opt);
+              }}>continue</button>
             )}
           </div>
         </div>

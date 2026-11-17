@@ -27,7 +27,7 @@ export default function PlayOrb({ soundscape, breathing, className, style, ...or
   return (
     <div className={cls} style={style}>
       <div className="orb-canvas">
-        <RingOrb texture="play" {...orb} />
+        <RingOrb texture="play" {...orb} transparent />
       </div>
       {soundscape ? <SoundMotif id={soundscape} className="core" /> : null}
     </div>

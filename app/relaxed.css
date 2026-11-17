@@ -467,10 +467,15 @@
      open (~31%) orb positions. Tunable with this one value. */
   padding-top: clamp(72px, 15vh, 160px);
 }
+[data-brand="relaxed"] .player-top {
+  /* More air at the very top so the title + timer clear the status bar / Dynamic Island / the
+     browser chrome and don't crowd the edge. */
+  padding: max(42px, calc(env(safe-area-inset-top) + 12px)) 12px 0;
+}
 [data-brand="relaxed"] .player-bottom {
-  /* Keep the controls (and, when open, the transcript) off the screen edge in both
-     states, now that relaxed has no "show transcript" line beneath them. */
-  padding-bottom: max(20px, 2.5vh);
+  /* Keep the controls (and, when open, the transcript/karaoke) off the screen edge AND clear
+     the home indicator / browser bottom bar, so the transcript isn't hidden behind it. */
+  padding-bottom: calc(max(20px, 2.5vh) + env(safe-area-inset-bottom));
 }
 [data-brand="relaxed"] .transcript {
   /* Air above the panel so it stops crowding the controls, and a more compact body
@@ -525,6 +530,13 @@
   height: 100%;
   object-fit: cover;
   z-index: 1;
+}
+/* Hand-off to the live orb: the video's frozen last frame fades out ON TOP of the orb (which
+   is already painted at full, aligned beneath it), so the orb is revealed with no dip. */
+[data-brand="relaxed"] .vh-video.fading {
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.9s ease;
 }
 /* Ink pre-fill: covers the classic home the moment the voiced overlay is triggered, while
    its lazy chunk loads, so nothing flashes through. Sits just under the overlay (.vh z 60). */
@@ -681,6 +693,11 @@ html.vh-booting body::before {
 [data-brand="relaxed"] .vh-orb.up {
   transform: translate(-50%, -50%) translateY(-13%);
 }
+/* Soundscape / voice pickers need room for tabs + up to 3 rows of pills, so the orb floats
+   higher (a smooth drift, same 1.7s ease) and clears the content zone below it. */
+[data-brand="relaxed"] .vh-orb.up.pick {
+  transform: translate(-50%, -50%) translateY(-40%);
+}
 [data-brand="relaxed"] .vh-orb > * {
   width: 100%;
   height: 100%;
@@ -699,11 +716,27 @@ html.vh-booting body::before {
   gap: 12px;
   background: linear-gradient(
     to top,
-    rgba(11, 10, 9, 0.97) 54%,
-    rgba(11, 10, 9, 0.55) 82%,
+    rgba(11, 10, 9, 0.98) 62%,
+    rgba(11, 10, 9, 0.78) 86%,
     transparent
   );
   animation: vh-fade 0.6s ease both;
+}
+/* Picker screens (soundscape / voice): the orb floats high, so the content sits on solid Ink
+   with headroom for the tabs + pills, and nothing overlaps the orb. */
+[data-brand="relaxed"] .vh-zone.picker {
+  top: 55%;
+  padding-top: 8px;
+  background: linear-gradient(
+    to top,
+    rgba(11, 10, 9, 0.98) 72%,
+    rgba(11, 10, 9, 0.85) 90%,
+    transparent
+  );
+}
+[data-brand="relaxed"] .vh-zone.picker .vh-mid {
+  justify-content: flex-start;
+  gap: 14px;
 }
 [data-brand="relaxed"] .vh-zone .vh-mid {
   flex: 1;
@@ -751,7 +784,7 @@ html.vh-booting body::before {
 [data-brand="relaxed"] .vh-title {
   font-family: var(--font-head, inherit);
   font-weight: 600;
-  font-size: 16px;
+  font-size: 19px;
   color: var(--ink-0);
 }
 [data-brand="relaxed"] .vh-lead {
@@ -775,15 +808,16 @@ html.vh-booting body::before {
 [data-brand="relaxed"] .vh-tabs {
   display: flex;
   justify-content: center;
-  gap: 18px;
-  font-size: 13px;
+  gap: 24px;
+  font-size: 15px;
   color: var(--ink-2);
 }
 [data-brand="relaxed"] .vh-tab {
   background: none;
   border: 0;
   color: var(--ink-2);
-  padding: 2px 0;
+  font-size: 15px;
+  padding: 4px 0;
   cursor: pointer;
 }
 [data-brand="relaxed"] .vh-tab.on {
@@ -795,17 +829,19 @@ html.vh-booting body::before {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 7px;
+  gap: 9px;
+  max-width: 340px;
+  margin: 0 auto;
 }
 [data-brand="relaxed"] .vh-pill {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12.5px;
+  font-size: 14.5px;
   color: var(--ink-0);
   border: 1px solid var(--rx-line-strong, rgba(239, 235, 227, 0.26));
   border-radius: 999px;
-  padding: 7px 12px;
+  padding: 9px 15px;
   background: none;
   cursor: pointer;
   white-space: nowrap;
@@ -1245,7 +1281,12 @@ html.vh-booting body::before {
   transform-origin: center;
 }
 [data-brand="relaxed"] .orb-play .pmotif.core {
-  /* Sits in the quieted centre of the frame, which is ~40% of the orb's width. */
+  /* Sits in the quieted centre of the frame (~40% of the orb's width), absolutely centred over
+     the orb canvas so the line art glows INSIDE the core, not below the orb. */
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: 40%;
   height: 40%;
   color: #f6ecd8; /* champagne: strokes are made of the orb's light */
