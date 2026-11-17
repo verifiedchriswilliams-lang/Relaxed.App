@@ -183,6 +183,7 @@ export default function VoicedHello({
     }
   });
   const [micResult, setMicResult] = useState("?");
+  const [micFailed, setMicFailed] = useState(false);
   const [agentState, setAgentState] = useState("idle");
   const [agentErr, setAgentErr] = useState("");
   const [agentMode, setAgentMode] = useState("");
@@ -289,11 +290,15 @@ export default function VoicedHello({
       const mic = await navigator.mediaDevices.getUserMedia({ audio: true });
       mic.getTracks().forEach((t) => t.stop()); // permission secured; the agent opens its own
       setMicResult("granted");
+      setMicFailed(false);
       begin(); // grant = begin: play the intro + connect the agent (clean session, in-gesture)
     } catch (err) {
-      const nm = (err as { name?: string } | null)?.name;
-      setMicResult("declined:" + (nm || "unknown"));
-      onExit(); // no mic -> classic tap/type home
+      const nm = (err as { name?: string } | null)?.name || "unknown";
+      setMicResult("declined:" + nm);
+      // Don't silently drop into the classic UI: a stuck permission or a transient iOS audio
+      // hiccup also throws here, and auto-exiting hides why and offers no retry. Stay on the
+      // card, show what happened, and let them try again or choose to type.
+      setMicFailed(true);
     }
   };
 
@@ -627,12 +632,25 @@ export default function VoicedHello({
       {step === "load" && loadReady && loadPhase === "mic" && (
         <div className="vh-load vh-load-modal">
           <div className="vh-miccard">
-            <div className="vh-micwhy">
-              relaxed is a voice-first experience. allow the microphone to set up your session
-              just by talking.
-            </div>
-            <button className="vh-begin" onClick={requestMic}>allow microphone</button>
-            <button className="vh-type" onClick={onExit}>maybe later</button>
+            {!micFailed ? (
+              <>
+                <div className="vh-micwhy">
+                  relaxed is a voice-first experience. allow the microphone to set up your session
+                  just by talking.
+                </div>
+                <button className="vh-begin" onClick={requestMic}>allow microphone</button>
+                <button className="vh-type" onClick={onExit}>maybe later</button>
+              </>
+            ) : (
+              <>
+                <div className="vh-micwhy">
+                  the microphone didn&rsquo;t start. if you meant to allow it, make sure it&rsquo;s
+                  on for relaxed.app in your browser settings, then try again. or set up by typing.
+                </div>
+                <button className="vh-begin" onClick={requestMic}>try again</button>
+                <button className="vh-type" onClick={onExit}>type instead</button>
+              </>
+            )}
           </div>
         </div>
       )}
