@@ -631,7 +631,7 @@ export default function VoicedHello({
     <div className="vh" role="dialog" aria-label="Welcome to relaxed">
       {dbg && (
         <div className="vh-dbg" aria-hidden="true">
-          mic:{micResult} · agent:{agentState}
+          build:nov17-c · mic:{micResult} · agent:{agentState}
           {agentErr ? ` (${agentErr})` : ""} · mode:{agentMode || "-"}
         </div>
       )}
