@@ -220,6 +220,10 @@ spending a headline on it:
   ambient wind-down. V1 is built in `native/tvos/`; see "The plan" above and the
   folder's README.
 - **ElevenMind iPad layout pass** — its own aurora/glass large-screen design.
+- **Website as app-promo, not a desktop app** — reposition the web as a marketing/
+  download surface for the native app rather than a full desktop-supported experience.
+  Could simplify what we are required to support (fewer desktop/browser edge cases to
+  carry). Parked for a deliberate decision; revisit alongside native-release priorities.
 - **Exploration** — multi-day programs / journeys, a second script/voice provider
   for resilience (Anthropic + ElevenLabs are single points of failure today),
   availability beyond the current storefronts.

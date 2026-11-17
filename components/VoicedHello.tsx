@@ -399,7 +399,11 @@ export default function VoicedHello({
   // The orb holds the video's final-frame position (centred) through name / intention / time,
   // and only floats UP on the soundscape + voice pickers, where the taller content needs the
   // room. (It rides back to centre for compose/play on the page side.)
-  const orbUp = step === "soundscape" || step === "voice";
+  // Orb stays centred (last video frame) through name/intention/time, then drifts up to one
+  // calm raised spot for soundscape, voice AND review, so it never drops back down into the
+  // review ("mad libs") copy.
+  const orbUp =
+    step === "soundscape" || step === "voice" || step === "review";
   // The orb is always in "speaking" mode: it brightens/warms to the app's own voice
   // (voiceLevel) whenever a line plays, and settles calm when silent (level ~0). It
   // never reacts to the mic.
@@ -634,7 +638,7 @@ export default function VoicedHello({
     <div className="vh" role="dialog" aria-label="Welcome to relaxed">
       {dbg && (
         <div className="vh-dbg" aria-hidden="true">
-          build:nov17-e · mic:{micResult} · agent:{agentState}
+          build:nov17-f · mic:{micResult} · agent:{agentState}
           {agentErr ? ` (${agentErr})` : ""} · mode:{agentMode || "-"}
         </div>
       )}
@@ -691,11 +695,15 @@ export default function VoicedHello({
 
       {step !== "load" && step !== "intro" && (
         <div
-          className={`vh-orb vh-orb-in${orbUp ? " up" : ""}${
-            step === "soundscape" || step === "voice" ? " pick" : ""
-          }`}
+          className={`vh-orb vh-orb-in${orbUp ? " up" : ""}`}
         >
-          <RingOrb mode={orbMode} levelSource={orbLevel} reduced={reduced} running />
+          <RingOrb
+            mode={orbMode}
+            levelSource={orbLevel}
+            reduced={reduced}
+            running
+            transparent
+          />
         </div>
       )}
 

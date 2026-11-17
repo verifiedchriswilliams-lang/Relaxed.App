@@ -47,7 +47,9 @@ _As of 2026-10-08._
   in isolation at the dev route `/ring-orb`. Supersedes the earlier `liquid-glass-orb` spike.
   **Full build landed on main (flag still off):** the complete guided flow is
   built out, name → intention → time → **soundscape** → **voice** → review → begin, with the
-  orb floating up once for the settings and back to centre for compose/session/close
+  orb held at the video's last-frame centre for name/intention/time, then drifting up once
+  (a slow, ~2.8s zen rise) and staying raised through **soundscape**, **voice** and **review**
+  so it never drops back into the copy, then back to centre for compose/session/close
   (`components/VoicedHello.tsx`). It is driven by an **ElevenLabs guided agent**
   (`lib/voiceAgent.ts`, `@elevenlabs/client`, agent id in `NEXT_PUBLIC_ELEVENLABS_AGENT_ID`;
   spec in [voice-agent-spec.md](./voice-agent-spec.md)). The agent **connects inside the "tap to
@@ -80,6 +82,17 @@ _As of 2026-10-08._
   prompts because that origin was allowed, not because of any header difference (neither
   site sets a Permissions-Policy). Safari mic state is per-origin and separate from the
   native app's `NSMicrophoneUsageDescription`.
+  **Live-QA polish (2026-11-17, flag still off):** the orb now renders on a **transparent
+  canvas everywhere** (`RingOrb transparent`, premultiplied coverage alpha), so there is no
+  dark box behind it on the onboarding screens or the composer/player; the orb body stays
+  fully opaque, so it is as bright as before. The pickers/review raise was softened (−30%, not
+  −40%) and slowed to a ~2.8s zen drift, and the orb now **stays raised through review** (no
+  drop into the mad-libs copy). The **composing orb** was enlarged to 300px to match the
+  player and read as the same living orb, not a small placeholder. **Deferred (known, flag
+  off):** classic-UI flash between "begin session" and the composing screen; soundscape/voice
+  previews are louder than the agent voice; the agent keeps talking over the preview auditions
+  (should fall quiet while previewing); and post-session / second-visit navigation back to the
+  orb conversation (currently lands on the classic text UI).
 - Nothing in Apple review. **1.4.2 approved and launched 2026-10-08** (start-from-watch +
   watch-face widget + setup-screen layout). 1.4.1 released 2026-10-04 (expedited). The web
   continues to deploy continuously on push to `main`.

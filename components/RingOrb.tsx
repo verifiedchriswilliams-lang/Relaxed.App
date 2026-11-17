@@ -37,10 +37,11 @@ export interface RingOrbProps {
    *  so a per-soundscape motif can sit in the core. Can change at runtime (e.g. the
    *  compose transition); the texture swaps in place without re-initialising WebGL. */
   texture?: "calm" | "play";
-  /** Render the orb on a TRANSPARENT canvas with additive blending, so its light blends over
-   *  whatever is behind it (e.g. the player screen's vignette) instead of painting a flat Ink
-   *  rectangle ("black box"). Default false = opaque Ink canvas (used by the onboarding orb,
-   *  which sits on a flat Ink overlay). Captured at mount. */
+  /** Render the orb on a TRANSPARENT canvas (premultiplied coverage alpha), so its light blends
+   *  over whatever is behind it (the onboarding Ink overlay, the player screen's vignette)
+   *  instead of painting a flat Ink rectangle ("black box"). The orb body stays fully opaque, so
+   *  it is as bright as the opaque canvas; only the texture's black surround is transparent.
+   *  Default false = opaque Ink canvas. Captured at mount. */
   transparent?: boolean;
   className?: string;
   style?: React.CSSProperties;
@@ -103,7 +104,10 @@ const FRAG = `
     // (player/compose) - alpha is the orb's own coverage (bright ribbons/core opaque, the gaps
     // clear) so it blends over the page with NO Ink rectangle. Premultiplied output.
     vec3 lit = col * uBright;
-    float cover = clamp(max(max(lit.r, lit.g), lit.b) * 1.3, 0.0, 1.0);
+    // Coverage ramps up fast: the orb body (any real light) is fully opaque = full brightness,
+    // and only the texture's black surround stays transparent, so there is no dim box and the
+    // orb is as bright as the opaque version.
+    float cover = clamp(max(max(lit.r, lit.g), lit.b) * 4.0, 0.0, 1.0);
     if (uOpaque > 0.5) {
       gl_FragColor = vec4(uBg + lit, 1.0);
     } else {
