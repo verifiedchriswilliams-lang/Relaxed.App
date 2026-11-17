@@ -537,6 +537,7 @@
   z-index: 3;
   opacity: 0;
   transition: opacity 0.9s ease;
+  pointer-events: none; /* while fading (and if ever left mounted) never intercept taps */
 }
 /* Ink pre-fill: covers the classic home the moment the voiced overlay is triggered, while
    its lazy chunk loads, so nothing flashes through. Sits just under the overlay (.vh z 60). */

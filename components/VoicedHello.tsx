@@ -197,6 +197,8 @@ export default function VoicedHello({
   // fallback runs. agentRef holds the controller for the orb's level + teardown.
   const agentRef = useRef<VoiceAgentController | null>(null);
   const agentActive = useRef(false);
+  // Hand-off timers (video drop + orb drift). Fire once; cleared only on unmount.
+  const handoffTimers = useRef<number[]>([]);
 
   // Collected selections (local mirror for display; also pushed to the app via pick*).
   const [name, setName] = useState(knownName);
@@ -368,22 +370,22 @@ export default function VoicedHello({
   useEffect(() => {
     if (step !== "intro" || !introDone) return;
     setStep("name");
-    // Cross-fade: the orb fades in over the video's frozen last frame, then the video drops.
-    const drop = window.setTimeout(() => setVideoGone(true), 900);
-    // Let the orb settle where the video left it (centred) for a beat, then drift up.
-    const rise = window.setTimeout(() => setDrifted(true), 1100);
-    // Now that the orb has established, connect the agent (she greets here, over the orb, not
-    // over the video). Audio output was unlocked in the tap, so her voice plays. No agent ->
-    // app-TTS greeting + tap/type.
+    // Drop the video and drift the orb up, a beat apart. These run ONCE at the hand-off; we do
+    // NOT clear them in a cleanup, because setStep("name") re-runs this effect immediately and a
+    // cleanup would cancel them before they fire (the old bug: the orb never drifted and the
+    // video was never removed, so it sat invisible on top and ate every tap). Cleared only on
+    // unmount, via handoffTimers below.
+    handoffTimers.current.push(
+      window.setTimeout(() => setVideoGone(true), 900),
+      window.setTimeout(() => setDrifted(true), 1100),
+    );
+    // The orb has established; connect the agent (she greets here, over the orb, not over the
+    // video). Audio output was unlocked in the tap, so her voice plays. No agent -> app-TTS.
     if (agentConfigured()) {
       void startAgent();
     } else {
       void say(GREETING);
     }
-    return () => {
-      window.clearTimeout(drop);
-      window.clearTimeout(rise);
-    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, introDone]);
 
@@ -603,6 +605,7 @@ export default function VoicedHello({
   useEffect(() => {
     return () => {
       if (previewTimer.current) window.clearTimeout(previewTimer.current);
+      handoffTimers.current.forEach((t) => window.clearTimeout(t));
       void agentRef.current?.stop();
       agentRef.current = null;
       agentActive.current = false;
@@ -631,7 +634,7 @@ export default function VoicedHello({
     <div className="vh" role="dialog" aria-label="Welcome to relaxed">
       {dbg && (
         <div className="vh-dbg" aria-hidden="true">
-          build:nov17-c · mic:{micResult} · agent:{agentState}
+          build:nov17-d · mic:{micResult} · agent:{agentState}
           {agentErr ? ` (${agentErr})` : ""} · mode:{agentMode || "-"}
         </div>
       )}
