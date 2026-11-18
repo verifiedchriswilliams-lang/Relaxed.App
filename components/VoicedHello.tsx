@@ -36,6 +36,7 @@ type Step =
   | "soundscape"
   | "voice"
   | "review"
+  | "composing"
   | "returning";
 
 export interface LastSessionLite {
@@ -73,8 +74,11 @@ export interface VoicedHelloProps {
   onPreviewVoice?: (voice: VoiceChoice, accent: Accent) => void;
   /** Stop any audition in progress. */
   onStopPreview?: () => void;
-  /** Confirm at review: begin composing (the app reads the now-synced state). */
-  onBegin: () => void;
+  /** Confirm at review: begin composing (the app reads the now-synced state). Returns true if
+   *  the app started composing on this same overlay (so the orb stays put and the copy swaps to
+   *  "composing"), or false if it dismissed the overlay instead (e.g. a locked selection opened
+   *  the paywall), in which case the overlay should stay on review. */
+  onBegin: () => boolean;
   /** Returning: repeat the last session as-is. */
   onRepeatLast?: () => void;
   /** Open the history/recent list (returning). */
@@ -201,6 +205,10 @@ export default function VoicedHello({
   // the latest one, not the connect-time closure — otherwise the session composes from defaults.
   const onBeginRef = useRef(onBegin);
   onBeginRef.current = onBegin;
+  // The agent's begin_session tool (built once at connect) must run the SAME compose-in-place
+  // flow as the review button, so it swaps to the composing copy on the same orb. Kept in a ref
+  // because the tool closure is captured before startCompose exists.
+  const startComposeRef = useRef<() => void>(() => {});
 
   // Collected selections (local mirror for display; also pushed to the app via pick*).
   const [name, setName] = useState(knownName);
@@ -220,6 +228,12 @@ export default function VoicedHello({
   // The selected voice pill's key (free voices share a `voice` value across accents, so the
   // highlight + "continue" track the exact option by key).
   const [selVoiceKey, setSelVoiceKey] = useState<string>("");
+
+  // Composing step: the "begin session" screen stays put (same orb, same raised position) and
+  // only the copy swaps to the composing language, so there is no hard cut to a rebuilt screen.
+  // genStep walks the three step rows (0..2) while the page composes underneath.
+  const [genStep, setGenStep] = useState(0);
+  const composeTimers = useRef<number[]>([]);
 
   // Speak a line through the app TTS. The orb reacts on its own via voiceLevel, so this
   // just needs to fire the audio (best-effort; silent if no speak fn is wired). Once the
@@ -403,7 +417,10 @@ export default function VoicedHello({
   // calm raised spot for soundscape, voice AND review, so it never drops back down into the
   // review ("mad libs") copy.
   const orbUp =
-    step === "soundscape" || step === "voice" || step === "review";
+    step === "soundscape" ||
+    step === "voice" ||
+    step === "review" ||
+    step === "composing";
   // The orb is always in "speaking" mode: it brightens/warms to the app's own voice
   // (voiceLevel) whenever a line plays, and settles calm when silent (level ~0). It
   // never reacts to the mic.
@@ -567,7 +584,7 @@ export default function VoicedHello({
         if (s) commitSoundscape(s as Soundscape, true);
       },
       set_voice: ({ selection, name: vn }) => commitVoiceFromAgent(selection, vn),
-      begin_session: () => onBeginRef.current(),
+      begin_session: () => startComposeRef.current(),
     };
     setAgentState("connecting");
     const ctrl = await startVoiceAgent({
@@ -610,6 +627,7 @@ export default function VoicedHello({
     return () => {
       if (previewTimer.current) window.clearTimeout(previewTimer.current);
       handoffTimers.current.forEach((t) => window.clearTimeout(t));
+      composeTimers.current.forEach((t) => window.clearTimeout(t));
       void agentRef.current?.stop();
       agentRef.current = null;
       agentActive.current = false;
@@ -628,6 +646,26 @@ export default function VoicedHello({
   );
   const durLabel = openEnded ? "open-ended" : duration ? `${duration}-minute` : "";
 
+  // "begin session": keep this exact screen (same orb, same raised position) and only swap the
+  // copy to the composing language, then start the real compose underneath. No screen rebuild,
+  // so there is no hard flash from the review screen to a separate composing screen. onBegin
+  // runs the page's generation while staying on this overlay; the page dismisses the overlay
+  // straight into the player once the session is ready.
+  const startCompose = useCallback(() => {
+    // Start the compose first: if the app kept this overlay up (not locked), swap the copy to
+    // the composing language on the SAME screen; if it dismissed us (paywall), stay on review.
+    const composing = onBeginRef.current();
+    if (!composing) return;
+    setStep("composing");
+    setGenStep(0);
+    composeTimers.current.push(
+      window.setTimeout(() => setGenStep(1), 2000),
+      window.setTimeout(() => setGenStep(2), 4000),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  startComposeRef.current = startCompose;
+
   // ---- render helpers ----
   const soundsFor = (cat: SoundCat) => SOUNDSCAPES.filter((s) => s.cat === cat);
 
@@ -638,7 +676,7 @@ export default function VoicedHello({
     <div className="vh" role="dialog" aria-label="Welcome to relaxed">
       {dbg && (
         <div className="vh-dbg" aria-hidden="true">
-          build:nov17-f · mic:{micResult} · agent:{agentState}
+          build:nov18-a · mic:{micResult} · agent:{agentState}
           {agentErr ? ` (${agentErr})` : ""} · mode:{agentMode || "-"}
         </div>
       )}
@@ -913,8 +951,40 @@ export default function VoicedHello({
               <span>remember me on this device</span>
               <button className={`vh-toggle${remember ? " on" : ""}`} aria-pressed={remember} aria-label="remember me" onClick={() => setRemember((v) => !v)} />
             </div>
-            <button className="vh-begin" onClick={onBegin}>begin session</button>
+            <button className="vh-begin" onClick={startCompose}>begin session</button>
             <button className="vh-type" onClick={onExit}>not now</button>
+          </div>
+        </div>
+      )}
+
+      {/* COMPOSING — same screen as review: the orb does not move or change, only the copy
+          swaps in. The page composes underneath and then dismisses straight into the player. */}
+      {step === "composing" && (
+        <div className="vh-zone">
+          <div className="vh-mid" style={{ gap: 12 }}>
+            <div className="vh-lead">composing your session</div>
+            <div className="vh-detail">
+              {(name.trim() || "you")} · {ctxLabel.toLowerCase()} · {durLabel} · {soundName.toLowerCase()}
+            </div>
+            <div className="vh-steps">
+              {["crafting your journey", "scoring your soundscape", "giving it voice"].map(
+                (label, i) => (
+                  <div
+                    key={i}
+                    className={`vh-step${i < genStep ? " done" : ""}${i === genStep ? " active" : ""}`}
+                  >
+                    <span className="vh-sdot" />
+                    <span>{label}</span>
+                  </div>
+                ),
+              )}
+            </div>
+          </div>
+          <div className="vh-foot">
+            <div className="vh-gfoot">
+              no progress bar. settle in, and find a position you can hold
+              {openEnded ? " for as long as you like." : ` for ${duration} minutes.`}
+            </div>
           </div>
         </div>
       )}

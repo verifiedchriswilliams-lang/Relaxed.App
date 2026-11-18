@@ -1414,7 +1414,7 @@ export default function Home() {
     }
   }
 
-  async function begin() {
+  async function begin(fromVoiced = false) {
     // Paywall gate: if the chosen session uses a locked premium bed, premium
     // voice, or infinite duration, open the unlock sheet instead of starting.
     // (Everything remains previewable in the tray; the gate is only here.)
@@ -1435,7 +1435,7 @@ export default function Home() {
       setPaywallOpen(true);
       return;
     }
-    await startSession();
+    await startSession(fromVoiced);
   }
 
   // Starts the chosen session immediately. Callers MUST gate first: begin() does,
@@ -1443,7 +1443,7 @@ export default function Home() {
   // bypasses the paywall check so a just-completed purchase flows straight into
   // the session the person was trying to start, rather than dropping back to the
   // tray (the React `entitled` state may also not have updated yet in that tick).
-  async function startSession() {
+  async function startSession(fromVoiced = false) {
     // Unlock the audio engine within this tap so mobile browsers will let the
     // voice + soundscape play once ready. Stop any tray audition first.
     engineRef.current.stopPreview();
@@ -1477,6 +1477,7 @@ export default function Home() {
       setScript("");
       setNote("");
       setIsPreview(false);
+      if (fromVoiced) setHello(false); // dismiss the voiced overlay straight into the player
       setScreen("player");
       startPlayback([]);
       return;
@@ -1489,7 +1490,11 @@ export default function Home() {
       return;
     }
 
-    setScreen("generating");
+    // Voiced path: the overlay already shows the composing copy on the same orb (no screen
+    // rebuild, no flash), so DON'T switch to the page's generating screen. Stay on "setup" with
+    // the overlay up; dismiss straight into the player once ready (below). Classic path shows
+    // the page's generating screen as before.
+    if (!fromVoiced) setScreen("generating");
     setGenStep(0);
     // Walk the "composing" steps so it reads as real work being done. Thanks to
     // the cache the session is usually ready almost instantly, but we hold the
@@ -1538,11 +1543,13 @@ export default function Home() {
       window.clearTimeout(stepA);
       window.clearTimeout(stepB);
       await finishComposing();
+      if (fromVoiced) setHello(false); // dismiss the voiced overlay straight into the player
       setScreen("player");
       startPlayback(Array.isArray(data.segments) ? data.segments : []);
     } catch (e) {
       window.clearTimeout(stepA);
       window.clearTimeout(stepB);
+      if (fromVoiced) setHello(false); // drop the overlay so the error is visible on setup
       setError(e instanceof Error ? e.message : "Something went wrong.");
       setScreen("setup");
     }
@@ -2616,9 +2623,19 @@ export default function Home() {
           onStopPreview={() => engineRef.current.stopPreview()}
           onBegin={() => {
             markHelloSeen();
-            setHello(false);
+            // Locked selection (premium bed/voice or infinite): dismiss the overlay so the
+            // paywall sheet is visible, and run the classic gate. The overlay stays on review.
+            if (sessionLocked) {
+              setHello(false);
+              window.setTimeout(() => void begin(), 40);
+              return false;
+            }
+            // Not locked: keep the overlay up and compose underneath, so the orb never moves and
+            // the copy just swaps to "composing" on the same screen. The page dismisses the
+            // overlay straight into the player when the session is ready (see startSession).
             // Let the picked choices flush to state, then start the real session.
-            window.setTimeout(() => void begin(), 40);
+            window.setTimeout(() => void begin(true), 40);
+            return true;
           }}
           onRepeatLast={() => {
             markHelloSeen();
@@ -2957,7 +2974,7 @@ export default function Home() {
 
             <button
               className="begin"
-              onClick={begin}
+              onClick={() => begin()}
               // A custom session needs an intention only when a voice will speak
               // it. With voice "none" the session is a pure soundscape (begin()
               // skips generation and ignores the text), so no intention is needed.

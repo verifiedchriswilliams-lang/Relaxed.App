@@ -88,11 +88,18 @@ _As of 2026-10-08._
   fully opaque, so it is as bright as before. The pickers/review raise was softened (−30%, not
   −40%) and slowed to a ~2.8s zen drift, and the orb now **stays raised through review** (no
   drop into the mad-libs copy). The **composing orb** was enlarged to 300px to match the
-  player and read as the same living orb, not a small placeholder. **Deferred (known, flag
-  off):** classic-UI flash between "begin session" and the composing screen; soundscape/voice
-  previews are louder than the agent voice; the agent keeps talking over the preview auditions
-  (should fall quiet while previewing); and post-session / second-visit navigation back to the
-  orb conversation (currently lands on the classic text UI).
+  player and read as the same living orb, not a small placeholder.
+  **Seamless begin→composing (2026-11-18, flag still off):** tapping "begin session" no longer
+  rebuilds the screen. The review and composing states are now the **same overlay screen** —
+  the orb does not move, resize or change; only the copy swaps from the review sentence to
+  "composing your session" + the step rows. The page composes underneath while the voiced
+  overlay stays up (it skips the classic `generating` screen for the voiced path via a
+  `fromVoiced` flag through `begin`/`startSession`), then dismisses straight into the player
+  once ready. This removes the hard flash between "begin session" and composing. **Deferred
+  (known, flag off):** the composing→player handoff still cuts (overlay orb → centred player
+  orb); soundscape/voice previews are louder than the agent voice; the agent keeps talking over
+  the preview auditions (should fall quiet while previewing); and post-session / second-visit
+  navigation back to the orb conversation (currently lands on the classic text UI).
 - Nothing in Apple review. **1.4.2 approved and launched 2026-10-08** (start-from-watch +
   watch-face widget + setup-screen layout). 1.4.1 released 2026-10-04 (expedited). The web
   continues to deploy continuously on push to `main`.
